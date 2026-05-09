@@ -1,0 +1,30 @@
+
+> ayala-crm@0.0.0 dev
+> vite --host 0.0.0.0 --port 5173
+
+12:45:32 PM [vite] (client) Re-optimizing dependencies because vite config has changed
+
+  VITE v8.0.11  ready in 1710 ms
+
+  ➜  Local:   http://localhost:5173/
+  ➜  Network: http://217.216.82.205:5173/
+  ➜  Network: http://172.18.0.1:5173/
+  ➜  Network: http://172.19.0.1:5173/
+12:45:34 PM [vite] (client) [optimizer] scanning dependencies...
+12:45:35 PM [vite] (client) [optimizer] bundling dependencies...
+4:20:44 PM [vite] (client) hmr update /src/index.css, /src/pages/KanbanPage.tsx
+4:21:02 PM [vite] (client) hmr update /src/index.css
+4:21:06 PM [vite] (client) hmr update /src/index.css
+4:21:15 PM [vite] (client) hmr update /src/index.css, /src/pages/TurmasPage.tsx
+4:21:21 PM [vite] (client) hmr update /src/index.css, /src/pages/TurmasPage.tsx, /src/pages/DashboardPage.tsx
+4:21:29 PM [vite] (client) hmr update /src/index.css, /src/pages/KanbanPage.tsx, /src/pages/DashboardPage.tsx, /src/pages/LeadsPage.tsx, /src/components/leads/LeadDetail.tsx
+4:22:30 PM [vite] (client) hmr update /src/components/ui/AppShell.tsx, /src/index.css
+4:22:40 PM [vite] (client) hmr update /src/App.tsx, /src/index.css
+4:23:41 PM [vite] (client) hmr update /src/pages/TurmasPage.tsx, /src/index.css
+4:23:43 PM [vite] (client) [optimizer] bundling dependencies...
+4:23:44 PM [vite] (client) ✨ new dependencies optimized: @radix-ui/react-dialog
+4:23:44 PM [vite] (client) ✨ optimized dependencies changed. reloading
+4:23:52 PM [vite] (client) hmr update /src/index.css, /src/components/turmas/InscritoRow.tsx
+4:24:58 PM [vite] (client) hmr update /src/index.css, /src/components/leads/LeadDetail.tsx
+4:25:16 PM [vite] (client) hmr update /src/pages/LeadsPage.tsx, /src/index.css
+4:25:30 PM [vite] (client) hmr update /src/pages/LoginPage.tsx, /src/index.css
