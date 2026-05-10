@@ -9,7 +9,8 @@ export function useTurmas() {
       const { data, error } = await supabase
         .from('turmas')
         .select('*')
-        .order('data_inicio', { ascending: true })
+        .order('status', { ascending: true, nullsFirst: false })
+        .order('data_inicio', { ascending: true, nullsFirst: false })
       if (error) throw error
       return (data ?? []) as Turma[]
     },

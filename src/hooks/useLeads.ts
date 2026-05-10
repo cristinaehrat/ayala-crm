@@ -2,18 +2,30 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Lead } from '@/lib/types'
 
-export type LeadFilter = 'todos' | 'ag_ismenia' | 'qualificados' | 'hot_lead' | 'curitiba' | 'joinville'
+export type LeadFilter =
+  | 'todos'
+  | 'ag_ismenia'
+  | 'qualificados'
+  | 'hot_lead'
+  | 'lista_espera'
+  | 'curitiba'
+  | 'joinville'
+  | 'aguardando_pagamento'
+  | 'inscrito'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = any
 
 const FILTER_MAP: Record<LeadFilter, (q: AnyQuery) => AnyQuery> = {
-  todos:        (q) => q,
-  ag_ismenia:   (q) => q.eq('status', 'aguardando_ismenia'),
-  qualificados: (q) => q.eq('status', 'qualificado'),
-  hot_lead:     (q) => q.eq('etiqueta_chatwoot', 'hot_lead'),
-  curitiba:     (q) => q.ilike('canal_origem', '%curitiba%'),
-  joinville:    (q) => q.ilike('canal_origem', '%joinville%'),
+  todos:                (q) => q,
+  ag_ismenia:           (q) => q.eq('status', 'aguardando_ismenia'),
+  qualificados:         (q) => q.eq('status', 'qualificado'),
+  hot_lead:             (q) => q.eq('etiqueta_chatwoot', 'hot_lead'),
+  lista_espera:         (q) => q.eq('etiqueta_chatwoot', 'lista_espera'),
+  curitiba:             (q) => q.ilike('canal_origem', '%curitiba%'),
+  joinville:            (q) => q.ilike('canal_origem', '%joinville%'),
+  aguardando_pagamento: (q) => q.eq('etiqueta_chatwoot', 'aguardando_pagamento'),
+  inscrito:             (q) => q.eq('status', 'inscrito'),
 }
 
 export function useLeads(filter: LeadFilter = 'todos') {
@@ -23,7 +35,8 @@ export function useLeads(filter: LeadFilter = 'todos') {
       let query = supabase
         .from('leads_v2')
         .select('*')
-        .order('updated_at', { ascending: false })
+        .order('ultimo_contato', { ascending: false, nullsFirst: false })
+        .order('data_entrada', { ascending: false, nullsFirst: false })
         .limit(200)
 
       query = FILTER_MAP[filter](query)
@@ -58,7 +71,7 @@ export function useUpdateLeadStatus() {
     mutationFn: async ({ id, status }: { id: string; status: string }) => {
       const { error } = await supabase
         .from('leads_v2')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update({ status, ultimo_contato: new Date().toISOString() })
         .eq('id', id)
       if (error) throw error
     },
@@ -75,7 +88,7 @@ export function useUpdateLead() {
     mutationFn: async ({ id, data }: { id: string; data: Partial<Lead> }) => {
       const { error } = await supabase
         .from('leads_v2')
-        .update({ ...data, updated_at: new Date().toISOString() })
+        .update({ ...data, ultimo_contato: new Date().toISOString() })
         .eq('id', id)
       if (error) throw error
     },
@@ -103,7 +116,7 @@ export function useCreateLead() {
         ...data,
         status: 'lead_novo',
         data_entrada: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        ultimo_contato: new Date().toISOString(),
       })
       if (error) throw error
     },

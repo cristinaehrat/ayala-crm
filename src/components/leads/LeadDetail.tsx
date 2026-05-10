@@ -1,11 +1,12 @@
 import {
-  Phone, MessageCircle, ExternalLink, X, User, Building2, MapPin, Calendar, Edit2, Check,
+  Phone, MessageCircle, ExternalLink, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
 } from 'lucide-react'
 import { useLead, useUpdateLead } from '@/hooks/useLeads'
 import { ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, formatPhone, initials, relativeTime } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { toast } from 'sonner'
 import { KANBAN_COLUMNS } from '@/lib/types'
+import { supabase } from '@/lib/supabase'
 
 const CHAT_BASE = 'https://chat.ayalaoficial.com.br'
 const MARCAS = ['', 'Volvo', 'DAF', 'Scania']
@@ -44,6 +45,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   const { data: lead, isLoading } = useLead(leadId)
   const updateLead = useUpdateLead()
   const [editMode, setEditMode] = useState(false)
+  const [nota, setNota] = useState('')
+  const [savingNota, setSavingNota] = useState(false)
   const [form, setForm] = useState<EditForm>({
     nome: '', empresa_oficina: '', cidade: '', uf: '', perfil: '',
     status: '', marca_interesse: '', potencial: '', proximo_passo: '',
@@ -84,6 +87,23 @@ export default function LeadDetail({ leadId, onClose }: Props) {
 
   function set(field: keyof EditForm, value: string) {
     setForm((f) => ({ ...f, [field]: value }))
+  }
+
+  async function handleSaveNota() {
+    if (!nota.trim() || !lead) return
+    setSavingNota(true)
+    try {
+      const { data: { user } } = await supabase.auth.getUser()
+      const autor = user?.email ?? 'sistema'
+      const ts = new Date().toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+      const linha = `[${ts} — ${autor}] ${nota.trim()}`
+      const obs = lead.observacoes ? `${lead.observacoes}\n${linha}` : linha
+      await updateLead.mutateAsync({ id: lead.id, data: { observacoes: obs } })
+      setNota('')
+      toast.success('Anotação salva')
+    } finally {
+      setSavingNota(false)
+    }
   }
 
   async function handleSave() {
@@ -250,7 +270,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
           <Phone size={15} /> Ligar
         </a>
         <a
-          href={`https://wa.me/${lead.telefone}`}
+          href={`https://wa.me/${lead.telefone?.replace(/\D/g, '')}`}
           target="_blank"
           rel="noreferrer"
           className="flex-1 flex items-center justify-center gap-2 btn-primary text-center"
@@ -288,14 +308,38 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         <InfoRow label="Canal origem" value={lead.canal_origem} />
       </div>
 
-      {/* Observações */}
-      <div className="px-4 pb-6">
+      {/* Observações + Timeline */}
+      <div className="px-4 pb-4">
         <span className="text-xs font-display font-semibold text-muted uppercase tracking-wide">
-          Observações
+          Histórico / Observações
         </span>
-        <p className="text-sm text-white/80 whitespace-pre-wrap mt-2">
+        <p className="text-sm text-white/80 whitespace-pre-wrap mt-2 leading-relaxed">
           {lead.observacoes ?? <span className="text-muted italic">Sem observações</span>}
         </p>
+      </div>
+
+      {/* Anotação Rápida */}
+      <div className="px-4 pb-6">
+        <p className="text-xs font-display font-semibold text-orange uppercase tracking-wide mb-2">
+          Anotação Rápida
+        </p>
+        <div className="flex gap-2">
+          <textarea
+            value={nota}
+            onChange={(e) => setNota(e.target.value)}
+            placeholder="Digite uma anotação... (Data/Hora/Autor são adicionados automaticamente)"
+            rows={2}
+            className="input-field resize-none flex-1 text-xs"
+          />
+          <button
+            onClick={handleSaveNota}
+            disabled={!nota.trim() || savingNota}
+            className="btn-primary px-3 py-2 flex items-center gap-1 self-end"
+            aria-label="Salvar anotação"
+          >
+            <Send size={14} />
+          </button>
+        </div>
       </div>
     </div>
   )

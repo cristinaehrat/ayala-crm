@@ -10,6 +10,7 @@ import TurmasPage from '@/pages/TurmasPage'
 import VisitaPage from '@/pages/VisitaPage'
 import DashboardPage from '@/pages/DashboardPage'
 import FinanceiroPage from '@/pages/FinanceiroPage'
+import RelatoriosPage from '@/pages/RelatoriosPage'
 import AppShell from '@/components/ui/AppShell'
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -57,6 +58,7 @@ export default function App() {
           <Route path="kanban" element={<KanbanPage />} />
           <Route path="turmas" element={<TurmasPage />} />
           <Route path="financeiro" element={<FinanceiroPage />} />
+          <Route path="relatorios" element={<RelatoriosPage />} />
           <Route path="visita" element={<VisitaPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
         </Route>

@@ -1,8 +1,10 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import Modal from '@/components/ui/Modal'
 import { useUpdateInscrito, useCreateInscrito } from '@/hooks/useInscritos'
+import { supabase } from '@/lib/supabase'
 import type { Inscrito } from '@/lib/types'
 import { toast } from 'sonner'
+import { Upload, Loader2 } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -10,6 +12,8 @@ interface Props {
   inscrito: Inscrito | null
   turmaId: string
 }
+
+const FORMA_PAGAMENTO_OPTS = ['PIX', 'Boleto', 'Cartão', 'Transferência', 'Dinheiro'] as const
 
 const FLUXO_OPTS = [
   { value: '', label: '—' },
@@ -45,6 +49,8 @@ type Form = {
   fluxo_pagamento: string
   custodia_entrada: string
   comprovante_validado: boolean
+  cobrar_em_aula: boolean
+  url_comprovante: string
   vencimento_1: string
   vencimento_2: string
   vencimento_3: string
@@ -69,6 +75,8 @@ function fromInscrito(i: Inscrito | null): Form {
     fluxo_pagamento:       i?.fluxo_pagamento ?? '',
     custodia_entrada:      i?.custodia_entrada ?? '',
     comprovante_validado:  i?.comprovante_validado ?? false,
+    cobrar_em_aula:        i?.cobrar_em_aula ?? false,
+    url_comprovante:       i?.url_comprovante ?? '',
     vencimento_1:          i?.vencimento_1 ?? '',
     vencimento_2:          i?.vencimento_2 ?? '',
     vencimento_3:          i?.vencimento_3 ?? '',
@@ -98,6 +106,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 export default function InscritoModal({ open, onClose, inscrito, turmaId }: Props) {
   const [form, setForm] = useState<Form>(() => fromInscrito(inscrito))
+  const [uploading, setUploading] = useState(false)
+  const fileRef = useRef<HTMLInputElement>(null)
   const updateInscrito = useUpdateInscrito()
   const createInscrito = useCreateInscrito()
   const isEdit = !!inscrito
@@ -108,6 +118,28 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId }: Prop
 
   function set(field: keyof Form, value: string | boolean) {
     setForm((f) => ({ ...f, [field]: value }))
+  }
+
+  async function handleUpload(file: File) {
+    setUploading(true)
+    try {
+      let f = file
+      if (f.size > 1_500_000) {
+        const { default: compress } = await import('browser-image-compression')
+        f = await compress(f, { maxSizeMB: 1, maxWidthOrHeight: 1920, useWebWorker: true })
+      }
+      const ext = f.name.split('.').pop() ?? 'jpg'
+      const path = `${turmaId}/${inscrito?.id_inscricao ?? Date.now()}.${ext}`
+      const { error } = await supabase.storage.from('comprovantes').upload(path, f, { upsert: true })
+      if (error) throw error
+      const { data } = supabase.storage.from('comprovantes').getPublicUrl(path)
+      set('url_comprovante', data.publicUrl)
+      toast.success('Comprovante enviado')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro no upload')
+    } finally {
+      setUploading(false)
+    }
   }
 
   async function handleSave() {
@@ -132,6 +164,8 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId }: Prop
           fluxo_pagamento:       (form.fluxo_pagamento || null) as Inscrito['fluxo_pagamento'],
           custodia_entrada:      (form.custodia_entrada || null) as Inscrito['custodia_entrada'],
           comprovante_validado:  form.comprovante_validado,
+          cobrar_em_aula:        form.cobrar_em_aula,
+          url_comprovante:       form.url_comprovante || null,
           vencimento_1:          form.vencimento_1 || null,
           vencimento_2:          form.vencimento_2 || null,
           vencimento_3:          form.vencimento_3 || null,
@@ -196,14 +230,27 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId }: Prop
         {/* Pagamento */}
         <section className="space-y-3">
           <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Pagamento</p>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Forma">
-              <input className="input-field" placeholder="PIX, Boleto..." value={form.forma_pagamento} onChange={(e) => set('forma_pagamento', e.target.value)} />
-            </Field>
-            <Field label="Parcelas">
-              <input type="number" min="1" className="input-field" value={form.qtd_parcelas} onChange={(e) => set('qtd_parcelas', e.target.value)} />
-            </Field>
-          </div>
+          <Field label="Forma de Pagamento">
+            <div className="flex flex-wrap gap-2">
+              {FORMA_PAGAMENTO_OPTS.map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => set('forma_pagamento', form.forma_pagamento === f ? '' : f)}
+                  className={`px-3 py-2 rounded-lg text-xs font-display font-bold transition-colors cursor-pointer border ${
+                    form.forma_pagamento === f
+                      ? 'bg-orange border-orange text-white'
+                      : 'bg-transparent border-white/20 text-muted hover:border-orange/50 hover:text-white'
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </Field>
+          <Field label="Parcelas">
+            <input type="number" min="1" className="input-field" value={form.qtd_parcelas} onChange={(e) => set('qtd_parcelas', e.target.value)} />
+          </Field>
           <div className="grid grid-cols-2 gap-2">
             <Field label="Valor Parcela (R$)">
               <input type="number" className="input-field" value={form.valor_parcela} onChange={(e) => set('valor_parcela', e.target.value)} />
@@ -214,25 +261,59 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId }: Prop
               </select>
             </Field>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Field label="Custódia Entrada">
-              <select className="input-field" value={form.custodia_entrada} onChange={(e) => set('custodia_entrada', e.target.value)}>
-                {CUSTODIA_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </Field>
-            <Field label="Comprovante">
-              <div className="flex items-center gap-2 h-9 px-3 bg-white/5 border border-white/20 rounded-lg">
-                <input
-                  type="checkbox"
-                  id="comprovante"
-                  checked={form.comprovante_validado}
-                  onChange={(e) => set('comprovante_validado', e.target.checked)}
-                  className="w-4 h-4 accent-orange cursor-pointer"
-                />
-                <label htmlFor="comprovante" className="text-sm text-white cursor-pointer">Validado</label>
-              </div>
-            </Field>
+          <Field label="Custódia Entrada">
+            <select className="input-field" value={form.custodia_entrada} onChange={(e) => set('custodia_entrada', e.target.value)}>
+              {CUSTODIA_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+            </select>
+          </Field>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 h-9 px-3 bg-white/5 border border-white/20 rounded-lg">
+              <input
+                type="checkbox"
+                id="comprovante_validado"
+                checked={form.comprovante_validado}
+                onChange={(e) => set('comprovante_validado', e.target.checked)}
+                className="w-4 h-4 accent-orange cursor-pointer"
+              />
+              <label htmlFor="comprovante_validado" className="text-sm text-white cursor-pointer">Comprovante validado</label>
+            </div>
+            <div className="flex items-center gap-2 h-9 px-3 bg-white/5 border border-white/20 rounded-lg">
+              <input
+                type="checkbox"
+                id="cobrar_em_aula"
+                checked={form.cobrar_em_aula}
+                onChange={(e) => set('cobrar_em_aula', e.target.checked)}
+                className="w-4 h-4 accent-orange cursor-pointer"
+              />
+              <label htmlFor="cobrar_em_aula" className="text-sm text-orange font-display font-semibold cursor-pointer">Cobrar em Aula</label>
+            </div>
           </div>
+
+          <Field label="Comprovante PIX">
+            <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f) }} />
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                disabled={uploading}
+                className="flex items-center gap-2 btn-secondary text-xs px-3 py-2 flex-1 justify-center"
+              >
+                {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
+                {uploading ? 'Enviando...' : 'Anexar comprovante'}
+              </button>
+            </div>
+            {form.url_comprovante && (
+              <a
+                href={form.url_comprovante}
+                target="_blank"
+                rel="noreferrer"
+                className="block text-xs text-orange underline mt-1 truncate"
+              >
+                Ver comprovante anexado
+              </a>
+            )}
+          </Field>
         </section>
 
         {/* Vencimentos */}

@@ -84,6 +84,16 @@ export default function VisitaPage() {
 
     try {
       if (isOnline) {
+        // Preserve etiqueta_chatwoot if lead already exists
+        const { data: existing } = await supabase
+          .from('leads_v2')
+          .select('etiqueta_chatwoot')
+          .eq('telefone', payload.telefone as string)
+          .maybeSingle()
+        if (existing?.etiqueta_chatwoot) {
+          payload.etiqueta_chatwoot = existing.etiqueta_chatwoot
+        }
+
         const { error } = await supabase.from('leads_v2').upsert(payload, {
           onConflict: 'telefone',
           ignoreDuplicates: false,

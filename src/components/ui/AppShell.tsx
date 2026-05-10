@@ -1,17 +1,18 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
-  Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign,
+  Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign, BarChart2,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import SyncBadge from '@/components/visita/SyncBadge'
 
 const NAV = [
-  { to: '/leads',      label: 'Leads',      Icon: Users },
-  { to: '/kanban',     label: 'Funil',      Icon: KanbanSquare },
-  { to: '/turmas',     label: 'Turmas',     Icon: GraduationCap },
-  { to: '/financeiro', label: 'Financeiro', Icon: DollarSign },
-  { to: '/visita',     label: 'Visita',     Icon: ClipboardList },
-  { to: '/dashboard',  label: 'Dashboard',  Icon: LayoutDashboard },
+  { to: '/leads',       label: 'Leads',      Icon: Users },
+  { to: '/kanban',      label: 'Funil',      Icon: KanbanSquare },
+  { to: '/turmas',      label: 'Turmas',     Icon: GraduationCap },
+  { to: '/financeiro',  label: 'Financeiro', Icon: DollarSign },
+  { to: '/relatorios',  label: 'Relatórios', Icon: BarChart2 },
+  { to: '/visita',      label: 'Visita',     Icon: ClipboardList },
+  { to: '/dashboard',   label: 'Dashboard',  Icon: LayoutDashboard },
 ]
 
 export default function AppShell() {

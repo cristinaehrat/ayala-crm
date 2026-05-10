@@ -7,9 +7,12 @@ interface Props {
   id: string
   label: string
   leads: Lead[]
+  colIdx?: number
+  totalCols?: number
+  onMoveCard?: (leadId: string, direction: 'prev' | 'next') => void
 }
 
-export default function KanbanColumn({ id, label, leads }: Props) {
+export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMoveCard }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
@@ -29,7 +32,13 @@ export default function KanbanColumn({ id, label, leads }: Props) {
       <div ref={setNodeRef} className="flex-1 overflow-y-auto p-2 space-y-2 min-h-24">
         <SortableContext items={leads.map((l) => l.id)} strategy={verticalListSortingStrategy}>
           {leads.map((lead) => (
-            <KanbanCard key={lead.id} lead={lead} />
+            <KanbanCard
+              key={lead.id}
+              lead={lead}
+              colIdx={colIdx}
+              totalCols={totalCols}
+              onMove={onMoveCard}
+            />
           ))}
         </SortableContext>
         {leads.length === 0 && (

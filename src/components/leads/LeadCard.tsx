@@ -1,4 +1,5 @@
-import { cn, initials, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES } from '@/lib/utils'
+import { cn, initials, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, findRotaMes } from '@/lib/utils'
+import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import type { Lead } from '@/lib/types'
 
 interface Props {
@@ -8,9 +9,12 @@ interface Props {
 }
 
 export default function LeadCard({ lead, active, onClick }: Props) {
-  const etiquetaCor = lead.etiqueta_chatwoot ? ETIQUETA_CORES[lead.etiqueta_chatwoot] : null
+  const { data: malha = [] } = useMalhaEstrategica()
+
+  const etiquetaCor   = lead.etiqueta_chatwoot ? ETIQUETA_CORES[lead.etiqueta_chatwoot] : null
   const etiquetaLabel = lead.etiqueta_chatwoot ? ETIQUETA_LABELS[lead.etiqueta_chatwoot] ?? lead.etiqueta_chatwoot : null
-  const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
+  const marca         = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
+  const rotaMes       = findRotaMes(lead.cidade, lead.marca_interesse, malha)
 
   return (
     <div
@@ -37,7 +41,7 @@ export default function LeadCard({ lead, active, onClick }: Props) {
               {lead.nome ?? lead.telefone}
             </p>
             <span className="text-muted text-xs shrink-0">
-              {relativeTime(lead.updated_at ?? lead.data_entrada)}
+              {relativeTime(lead.ultimo_contato ?? lead.data_entrada)}
             </span>
           </div>
 
@@ -45,26 +49,35 @@ export default function LeadCard({ lead, active, onClick }: Props) {
             {lead.empresa_oficina ?? lead.cidade ?? '—'}
           </p>
 
-          <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+          {/* Tags — máx 2 linhas, hierarquia visual */}
+          <div className="flex items-center gap-1 mt-2 flex-wrap overflow-hidden max-h-[2.5rem]">
+            {/* Tag primária: etiqueta com cor de status */}
             {etiquetaCor && etiquetaLabel && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold tracking-wide uppercase text-white"
+                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold tracking-wide uppercase text-white shrink-0"
                 style={{ backgroundColor: etiquetaCor }}
               >
                 {etiquetaLabel}
               </span>
             )}
+            {/* Tags secundárias: neutras, menores */}
             {marca && (
               <span
-                className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold tracking-wide text-white"
-                style={{ backgroundColor: marca.bg }}
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold text-white/70 shrink-0"
+                style={{ backgroundColor: `${marca.bg}99` }}
               >
                 {marca.label}
               </span>
             )}
             {lead.origem === 'visita' && (
-              <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold tracking-wide text-white bg-purple-700">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold text-muted bg-white/10 shrink-0">
                 Visita
+              </span>
+            )}
+            {/* Badge de Rota Estratégica */}
+            {rotaMes && (
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold text-white bg-orange/80 shrink-0">
+                📍 Rota {rotaMes}
               </span>
             )}
           </div>

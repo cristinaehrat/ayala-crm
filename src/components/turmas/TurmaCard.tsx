@@ -1,5 +1,5 @@
 import { Calendar, MapPin, Users } from 'lucide-react'
-import { MARCA_BADGES } from '@/lib/utils'
+import { MARCA_BADGES, formatDate } from '@/lib/utils'
 import type { Turma } from '@/lib/types'
 
 interface Props {
@@ -56,8 +56,8 @@ export default function TurmaCard({ turma, onClick, active }: Props) {
         <div className="flex items-center gap-1.5">
           <Calendar size={12} />
           <span>
-            {turma.data_inicio ?? '—'}
-            {turma.data_fim ? ` → ${turma.data_fim}` : ''}
+            {formatDate(turma.data_inicio)}
+            {turma.data_fim ? ` → ${formatDate(turma.data_fim)}` : ''}
           </span>
         </div>
         <div className="flex items-center gap-1.5">

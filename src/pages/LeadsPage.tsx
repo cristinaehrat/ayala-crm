@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useLeads, type LeadFilter } from '@/hooks/useLeads'
 import { useRealtime } from '@/hooks/useRealtime'
 import LeadFilters from '@/components/leads/LeadFilters'
@@ -7,9 +8,18 @@ import LeadDetail from '@/components/leads/LeadDetail'
 import NewLeadModal from '@/components/leads/NewLeadModal'
 import { Search, Plus } from 'lucide-react'
 
+const VALID_FILTERS: LeadFilter[] = [
+  'todos','ag_ismenia','qualificados','hot_lead','lista_espera',
+  'curitiba','joinville','aguardando_pagamento','inscrito',
+]
+
 export default function LeadsPage() {
   useRealtime()
-  const [filter, setFilter] = useState<LeadFilter>('todos')
+  const [searchParams] = useSearchParams()
+  const paramFilter = searchParams.get('filter') as LeadFilter | null
+  const [filter, setFilter] = useState<LeadFilter>(
+    paramFilter && VALID_FILTERS.includes(paramFilter) ? paramFilter : 'todos',
+  )
   const [search, setSearch] = useState('')
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [newLeadOpen, setNewLeadOpen] = useState(false)

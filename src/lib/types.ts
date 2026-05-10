@@ -24,7 +24,7 @@ export interface Lead {
   catalogo_id: string | null
   turma_selecionada: string | null
   data_entrada: string | null
-  updated_at: string | null
+  ultimo_contato: string | null
 }
 
 export interface Turma {
@@ -64,6 +64,8 @@ export interface Inscrito {
   forma_pagamento: string | null
   qtd_parcelas: number | null
   valor_parcela: number | null
+  url_comprovante: string | null
+  cobrar_em_aula: boolean | null
 }
 
 export interface CatalogoTreinamento {
@@ -71,6 +73,25 @@ export interface CatalogoTreinamento {
   nome_treinamento: string | null
   marca: string | null
   descricao_curta: string | null
+}
+
+export interface MalhaEstrategica {
+  id: string
+  mes: string
+  marca: string
+  cidade_base: string
+  regiao_estrategica: string | null
+  cidades_visitacao: string | null
+  objetivo: string | null
+  observacoes: string | null
+}
+
+export interface InscritoComTelefone extends Inscrito {
+  telefone_lead: string | null
+  nome_treinamento_turma: string | null
+  data_inicio_turma: string | null
+  cidade_turma: string | null
+  marca_turma: string | null
 }
 
 export type KanbanStatus =

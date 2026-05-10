@@ -74,3 +74,38 @@ export const MARCA_BADGES: Record<string, { bg: string; label: string }> = {
   DAF:    { bg: '#166534', label: 'DAF' },
   Scania: { bg: '#D97706', label: 'Scania' },
 }
+
+export function formatDate(d: string | null | undefined): string {
+  if (!d) return '—'
+  try {
+    return new Date(d + 'T12:00:00').toLocaleDateString('pt-BR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+  } catch {
+    return d
+  }
+}
+
+export function findRotaMes(
+  cidade: string | null | undefined,
+  marca: string | null | undefined,
+  malha: import('@/lib/types').MalhaEstrategica[],
+): string | null {
+  if (!cidade || !marca) return null
+  const cidadeLower = cidade.toLowerCase().trim()
+  const entry = malha.find((m) => {
+    if (m.marca !== marca) return false
+    const base = m.cidade_base.toLowerCase().split('/')[0].trim()
+    if (base.includes(cidadeLower) || cidadeLower.includes(base)) return true
+    if (m.cidades_visitacao) {
+      return m.cidades_visitacao
+        .split(',')
+        .map((c) => c.trim().toLowerCase().split('/')[0].trim())
+        .some((c) => c.includes(cidadeLower) || cidadeLower.includes(c))
+    }
+    return false
+  })
+  return entry ? entry.mes : null
+}

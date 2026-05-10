@@ -2,12 +2,15 @@ import type { LeadFilter } from '@/hooks/useLeads'
 import { cn } from '@/lib/utils'
 
 const FILTERS: { id: LeadFilter; label: string }[] = [
-  { id: 'todos',       label: 'Todos' },
-  { id: 'ag_ismenia',  label: 'Ag. Ismênia' },
-  { id: 'qualificados',label: 'Qualificados' },
-  { id: 'hot_lead',    label: 'Hot Lead' },
-  { id: 'curitiba',    label: 'Curitiba' },
-  { id: 'joinville',   label: 'Joinville' },
+  { id: 'todos',                label: 'Todos' },
+  { id: 'hot_lead',             label: 'Hot Lead' },
+  { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
+  { id: 'ag_ismenia',           label: 'Ag. Ismênia' },
+  { id: 'qualificados',         label: 'Qualificados' },
+  { id: 'inscrito',             label: 'Inscritos' },
+  { id: 'lista_espera',         label: 'Lista Espera' },
+  { id: 'curitiba',             label: 'Curitiba' },
+  { id: 'joinville',            label: 'Joinville' },
 ]
 
 interface Props {

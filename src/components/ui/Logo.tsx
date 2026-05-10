@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 const LOGO_URL =
-  'https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/logo-fundo-transparente.png'
+  'https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20RETANGULAR%20fundo%20TRANSPARENTE.png'
 
 interface Props {
   size?: number

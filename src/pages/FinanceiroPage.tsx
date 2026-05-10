@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useFinanceiro } from '@/hooks/useFinanceiro'
 import { useUpdateTurma } from '@/hooks/useTurmas'
 import { MARCA_BADGES } from '@/lib/utils'
-import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Check, Edit2 } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Check, Edit2, Building2, User } from 'lucide-react'
 import { toast } from 'sonner'
 
 const brl = (v: number) =>
@@ -94,17 +94,41 @@ export default function FinanceiroPage() {
 
       {/* Summary cards */}
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-        <SummaryCard label="Receita" value={data.total_receita} icon={<DollarSign size={16} />} />
-        <SummaryCard label="Recebido" value={data.total_recebido} icon={<TrendingUp size={16} />} />
-        <SummaryCard label="A Receber" value={data.total_a_receber} icon={<AlertCircle size={16} />} />
-        <SummaryCard label="Despesas" value={data.total_despesas} icon={<TrendingDown size={16} />} />
-        <SummaryCard
-          label="Margem Líquida"
-          value={data.total_margem}
-          icon={<TrendingUp size={16} />}
-          highlight
-        />
+        <SummaryCard label="Receita"        value={data.total_receita}    icon={<DollarSign size={16} />} />
+        <SummaryCard label="Recebido"       value={data.total_recebido}   icon={<TrendingUp size={16} />} />
+        <SummaryCard label="A Receber"      value={data.total_a_receber}  icon={<AlertCircle size={16} />} />
+        <SummaryCard label="Despesas"       value={data.total_despesas}   icon={<TrendingDown size={16} />} />
+        <SummaryCard label="Margem Líquida" value={data.total_margem}     icon={<TrendingUp size={16} />} highlight />
       </div>
+
+      {/* Custódia da Entrada */}
+      {(() => {
+        const allInscritos = data.turmas.flatMap((t) => t.inscritos)
+        const recIsm = allInscritos
+          .filter((i) => i.custodia_entrada === 'Ayala')
+          .reduce((s, i) => s + (i.valor_entrada ?? 0), 0)
+        const recPar = allInscritos
+          .filter((i) => i.custodia_entrada === 'Parceiro')
+          .reduce((s, i) => s + (i.valor_entrada ?? 0), 0)
+        return (
+          <div className="grid grid-cols-2 gap-3">
+            <div className="section-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <User size={14} className="text-orange" />
+                <span className="text-xs font-display font-semibold text-muted uppercase tracking-wide">Recebido Ismênia</span>
+              </div>
+              <p className="font-display font-bold text-lg text-orange">{brl(recIsm)}</p>
+            </div>
+            <div className="section-card p-4">
+              <div className="flex items-center gap-2 mb-2">
+                <Building2 size={14} className="text-blue-400" />
+                <span className="text-xs font-display font-semibold text-muted uppercase tracking-wide">Recebido Parceiros</span>
+              </div>
+              <p className="font-display font-bold text-lg text-blue-400">{brl(recPar)}</p>
+            </div>
+          </div>
+        )
+      })()}
 
       {/* Turmas table */}
       <div className="section-card overflow-hidden">
