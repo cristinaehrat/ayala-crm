@@ -70,9 +70,9 @@ export const ETIQUETA_LABELS: Record<string, string> = {
 }
 
 export const MARCA_BADGES: Record<string, { bg: string; label: string }> = {
-  Volvo:  { bg: '#1A3A6B', label: 'Volvo' },
-  DAF:    { bg: '#166534', label: 'DAF' },
-  Scania: { bg: '#D97706', label: 'Scania' },
+  volvo:  { bg: '#1A3A6B', label: 'Volvo' },
+  daf:    { bg: '#166534', label: 'DAF' },
+  scania: { bg: '#D97706', label: 'Scania' },
 }
 
 export function formatDate(d: string | null | undefined): string {

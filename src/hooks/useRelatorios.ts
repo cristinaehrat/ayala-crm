@@ -77,9 +77,12 @@ export interface TurmaFechamento {
   turma_id: string
   nome_turma: string | null
   cidade: string | null
+  data_inicio: string | null
+  status: string | null
   qtd_inscritos: number
   receita_total: number
   entradas_ayala: number
+  a_receber: number
   valor_recebido_isa_monteiro: number | null
   valor_recebido_isa_mg: number | null
 }
@@ -91,9 +94,9 @@ export interface FechamentoParceiro {
 }
 
 const PARCEIROS: Record<string, string> = {
-  Volvo:  'Treinatec Brasil',
-  DAF:    'Monteiro Eletro Diesel',
-  Scania: 'MG Soluções Automotivas',
+  volvo:  'Treinatec Brasil',
+  daf:    'Monteiro Eletro Diesel',
+  scania: 'MG Soluções Automotivas',
 }
 
 export function useFechamentoParceiros() {
@@ -103,10 +106,10 @@ export function useFechamentoParceiros() {
       const [turmasRes, inscritosRes] = await Promise.all([
         supabase
           .from('turmas')
-          .select('id,nome_treinamento,cidade,marca,valor_recebido_isa_monteiro,valor_recebido_isa_mg'),
+          .select('id,nome_treinamento,cidade,marca,data_inicio,status,valor_recebido_isa_monteiro,valor_recebido_isa_mg'),
         supabase
           .from('inscritos')
-          .select('id_turma,valor_total,valor_entrada,custodia_entrada'),
+          .select('id_turma,valor_total,valor_entrada,saldo_a_receber,custodia_entrada'),
       ])
       if (turmasRes.error) throw turmasRes.error
       if (inscritosRes.error) throw inscritosRes.error
@@ -116,6 +119,8 @@ export function useFechamentoParceiros() {
         nome_treinamento: string | null
         cidade: string | null
         marca: string | null
+        data_inicio: string | null
+        status: string | null
         valor_recebido_isa_monteiro: number | null
         valor_recebido_isa_mg: number | null
       }[]
@@ -123,21 +128,23 @@ export function useFechamentoParceiros() {
         id_turma: string | null
         valor_total: number | null
         valor_entrada: number | null
+        saldo_a_receber: number | null
         custodia_entrada: string | null
       }[]
 
-      return (['Volvo', 'DAF', 'Scania'] as const).map((marca) => {
+      return (['volvo', 'daf', 'scania'] as const).map((marca) => {
         const turmasDaMarca = turmas.filter((t) => t.marca === marca)
 
         const turmasData: TurmaFechamento[] = turmasDaMarca.map((t) => {
           const alunosDaTurma = inscritos.filter((i) => i.id_turma === t.id)
           const qtd_inscritos = alunosDaTurma.length
           const receita_total = alunosDaTurma.reduce((s, i) => s + (i.valor_total ?? 0), 0)
+          const a_receber = alunosDaTurma.reduce((s, i) => s + (i.saldo_a_receber ?? 0), 0)
 
           let entradas_ayala: number
-          if (marca === 'DAF') {
+          if (marca === 'daf') {
             entradas_ayala = qtd_inscritos * 300
-          } else if (marca === 'Volvo') {
+          } else if (marca === 'volvo') {
             entradas_ayala = alunosDaTurma
               .filter((i) => i.custodia_entrada === 'Ayala' || i.custodia_entrada === null)
               .reduce((s, i) => s + (i.valor_entrada ?? 0), 0)
@@ -149,9 +156,12 @@ export function useFechamentoParceiros() {
             turma_id: t.id,
             nome_turma: t.nome_treinamento,
             cidade: t.cidade,
+            data_inicio: t.data_inicio,
+            status: t.status,
             qtd_inscritos,
             receita_total,
             entradas_ayala,
+            a_receber,
             valor_recebido_isa_monteiro: t.valor_recebido_isa_monteiro,
             valor_recebido_isa_mg: t.valor_recebido_isa_mg,
           }

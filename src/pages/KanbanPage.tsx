@@ -10,6 +10,8 @@ import {
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
 import { useLeads, useUpdateLeadStatus } from '@/hooks/useLeads'
+import type { LeadFilter } from '@/hooks/useLeads'
+import LeadFilters from '@/components/leads/LeadFilters'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import type { Lead } from '@/lib/types'
 import KanbanColumn from '@/components/kanban/KanbanColumn'
@@ -28,7 +30,8 @@ function getColumnLeads(leads: Lead[], colId: string): Lead[] {
 }
 
 export default function KanbanPage() {
-  const { data: leads = [], isLoading } = useLeads('todos')
+  const [filter, setFilter] = useState<LeadFilter>('todos')
+  const { data: leads = [], isLoading } = useLeads(filter)
   const updateStatus = useUpdateLeadStatus()
   const queryClient = useQueryClient()
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -89,6 +92,8 @@ export default function KanbanPage() {
       <div className="px-4 pt-4 pb-2 shrink-0">
         <h1 className="font-display font-bold text-white text-lg">Funil Comercial</h1>
       </div>
+
+      <LeadFilters active={filter} onChange={setFilter} />
 
       {/* Mobile: column selector */}
       <div className="flex md:hidden items-center gap-2 px-4 pb-2 shrink-0">

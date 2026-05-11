@@ -1,9 +1,12 @@
 import { useState } from 'react'
 import { Plus, Trash2, Receipt } from 'lucide-react'
 import { useDespesas, useCreateDespesa, useDeleteDespesa } from '@/hooks/useDespesas'
+import { useFaturamentoMes } from '@/hooks/useFinanceiro'
 import { useTurmas } from '@/hooks/useTurmas'
 import { toast } from 'sonner'
 import type { Despesa } from '@/lib/types'
+
+const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 const CATEGORIAS = [
   { value: 'combustivel', label: 'Combustível',  emoji: '⛽', bg: 'bg-orange/80' },
@@ -61,12 +64,15 @@ export default function DespesasPage() {
   const [sheetOpen, setSheetOpen] = useState(false)
   const [sheetForm, setSheetForm] = useState<SheetForm>(EMPTY_FORM)
 
-  const { data: despesas = [], isLoading } = useDespesas(getMesParam(filtro))
+  const mes = getMesParam(filtro)
+  const { data: despesas = [], isLoading } = useDespesas(mes)
+  const { data: faturamento = 0 } = useFaturamentoMes(mes)
   const { data: turmas = [] } = useTurmas()
   const createDespesa = useCreateDespesa()
   const deleteDespesa = useDeleteDespesa()
 
   const total = despesas.reduce((acc, d) => acc + Number(d.valor), 0)
+  const resultado = faturamento - total
 
   function setSF(field: keyof SheetForm, value: string) {
     setSheetForm((f) => ({ ...f, [field]: value }))
@@ -130,14 +136,22 @@ export default function DespesasPage() {
           </div>
         </div>
 
-        {/* Total */}
-        {despesas.length > 0 && (
-          <div className="px-4 py-2 shrink-0">
-            <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between">
-              <span className="text-xs font-display font-semibold text-muted uppercase tracking-wide">Total do período</span>
-              <span className="font-display font-bold text-orange text-base">
-                R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </span>
+        {/* Strip faturamento / despesas / resultado */}
+        {filtro !== 'todos' && (
+          <div className="grid grid-cols-3 gap-3 px-4 py-2 shrink-0">
+            <div className="section-card p-3 text-center">
+              <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1">Faturamento</p>
+              <p className="font-display font-bold text-green-400 text-sm">{brl(faturamento)}</p>
+            </div>
+            <div className="section-card p-3 text-center">
+              <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1">Despesas</p>
+              <p className="font-display font-bold text-red-400 text-sm">{brl(total)}</p>
+            </div>
+            <div className="section-card p-3 text-center">
+              <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1">Resultado</p>
+              <p className={`font-display font-bold text-sm ${resultado >= 0 ? 'text-orange' : 'text-red-400'}`}>
+                {brl(resultado)}
+              </p>
             </div>
           </div>
         )}

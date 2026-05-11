@@ -2,6 +2,33 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Turma, Inscrito } from '@/lib/types'
 
+export function useFaturamentoMes(mes?: string) {
+  return useQuery<number>({
+    queryKey: ['faturamento-mes', mes ?? 'all'],
+    queryFn: async () => {
+      if (!mes) return 0
+      const { data: turmasData, error: tErr } = await supabase
+        .from('turmas')
+        .select('id')
+        .gte('data_inicio', `${mes}-01`)
+        .lte('data_inicio', `${mes}-31`)
+      if (tErr) throw tErr
+      const ids = (turmasData ?? []).map((t: { id: string }) => t.id)
+      if (!ids.length) return 0
+      const { data: inscritosData, error: iErr } = await supabase
+        .from('inscritos')
+        .select('valor_entrada')
+        .in('id_turma', ids)
+      if (iErr) throw iErr
+      return (inscritosData ?? []).reduce(
+        (s: number, i: { valor_entrada: number | null }) => s + (i.valor_entrada ?? 0),
+        0,
+      )
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
 export function useDespesasMes() {
   return useQuery<number>({
     queryKey: ['despesas-mes'],
