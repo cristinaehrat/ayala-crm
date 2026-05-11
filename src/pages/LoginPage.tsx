@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '@/lib/supabase'
 import { Lock, Mail } from 'lucide-react'
-import Logo from '@/components/ui/Logo'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -32,7 +31,16 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
             <div className="bg-white rounded-xl p-3 mb-4 inline-flex items-center justify-center">
-              <Logo size={200} />
+              <img
+                src="https://minio.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
+                alt="Ayala Treinamentos"
+                className="max-w-[220px] w-full object-contain"
+                onError={(e) => {
+                  e.currentTarget.style.display = 'none'
+                  e.currentTarget.parentElement!.innerHTML =
+                    '<span class="text-orange font-bold text-xl px-2">Ayala Treinamentos</span>'
+                }}
+              />
             </div>
             <h1 className="font-display font-bold text-2xl text-white">Ayala CRM</h1>
             <p className="text-muted text-sm mt-1">Linha Pesada</p>

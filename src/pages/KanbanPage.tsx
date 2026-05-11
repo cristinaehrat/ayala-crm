@@ -8,6 +8,7 @@ import {
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { useState } from 'react'
+import { useQueryClient } from '@tanstack/react-query'
 import { useLeads, useUpdateLeadStatus } from '@/hooks/useLeads'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import type { Lead } from '@/lib/types'
@@ -29,6 +30,7 @@ function getColumnLeads(leads: Lead[], colId: string): Lead[] {
 export default function KanbanPage() {
   const { data: leads = [], isLoading } = useLeads('todos')
   const updateStatus = useUpdateLeadStatus()
+  const queryClient = useQueryClient()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeCol, setActiveCol] = useState(0)
   const [moveSheetLeadId, setMoveSheetLeadId] = useState<string | null>(null)
@@ -42,22 +44,30 @@ export default function KanbanPage() {
     setActiveId(String(e.active.id))
   }
 
-  async function onDragEnd(e: DragEndEvent) {
+  function onDragEnd(e: DragEndEvent) {
     setActiveId(null)
     const { active, over } = e
     if (!over) return
     const lead = leads.find((l) => l.id === String(active.id))
     if (!lead) return
 
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: ['leads'] })
+
     const targetColumn = KANBAN_COLUMNS.find((c) => c.id === String(over.id))
     if (!targetColumn) {
       const targetLead = leads.find((l) => l.id === String(over.id))
       if (!targetLead || targetLead.status === lead.status) return
-      await updateStatus.mutateAsync({ id: lead.id, status: targetLead.status ?? 'lead_novo' })
+      updateStatus.mutate(
+        { id: lead.id, status: targetLead.status ?? 'lead_novo' },
+        { onSuccess: invalidate, onError: invalidate },
+      )
       return
     }
     if (targetColumn.id === lead.status) return
-    await updateStatus.mutateAsync({ id: lead.id, status: targetColumn.id })
+    updateStatus.mutate(
+      { id: lead.id, status: targetColumn.id },
+      { onSuccess: invalidate, onError: invalidate },
+    )
   }
 
   const activeLead = activeId ? leads.find((l) => l.id === activeId) : null

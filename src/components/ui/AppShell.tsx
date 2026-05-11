@@ -28,11 +28,19 @@ export default function AppShell() {
     <div className="flex flex-col h-screen bg-navy overflow-hidden">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-footer border-b border-white/10 shrink-0">
-        <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-orange flex items-center justify-center">
-            <span className="text-white font-display font-bold text-xs">A</span>
+        <div className="flex items-center">
+          <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
+            <img
+              src="https://minio.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
+              alt="Ayala"
+              className="w-28 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+                e.currentTarget.parentElement!.innerHTML =
+                  '<span class="text-orange font-bold text-sm px-2">Ayala</span>'
+              }}
+            />
           </div>
-          <span className="font-display font-bold text-sm text-white tracking-wide">Ayala CRM</span>
         </div>
         <div className="flex items-center gap-3">
           <SyncBadge />
@@ -71,11 +79,19 @@ export default function AppShell() {
 
       {/* Sidebar (desktop) */}
       <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-footer border-r border-white/10 flex-col pt-14 z-20">
-        <div className="flex items-center gap-2 px-4 py-4 border-b border-white/10 mb-2">
-          <div className="w-8 h-8 rounded-full bg-orange flex items-center justify-center">
-            <span className="text-white font-display font-bold text-sm">A</span>
+        <div className="px-4 py-4 border-b border-white/10 mb-2">
+          <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
+            <img
+              src="https://minio.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
+              alt="Ayala"
+              className="w-28 object-contain"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none'
+                e.currentTarget.parentElement!.innerHTML =
+                  '<span class="text-orange font-bold text-sm px-2">Ayala</span>'
+              }}
+            />
           </div>
-          <span className="font-display font-bold text-white">Ayala CRM</span>
         </div>
         {NAV.map(({ to, label, Icon }) => (
           <NavLink

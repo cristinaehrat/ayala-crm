@@ -11,8 +11,9 @@ export type LeadFilter =
   | 'aguardando_pagamento'
   | 'inscrito'
   | `uf:${string}`
+  | `cidade:${string}`
 
-type FixedFilter = Exclude<LeadFilter, `uf:${string}`>
+type FixedFilter = Exclude<LeadFilter, `uf:${string}` | `cidade:${string}`>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = any
@@ -39,7 +40,9 @@ export function useLeads(filter: LeadFilter = 'todos') {
         .limit(200)
 
       if (filter.startsWith('uf:')) {
-        query = query.eq('uf', filter.slice(3))
+        query = query.ilike('uf', filter.slice(3))
+      } else if (filter.startsWith('cidade:')) {
+        query = query.ilike('cidade', filter.slice(7))
       } else {
         query = FILTER_MAP[filter as FixedFilter](query)
       }
@@ -61,7 +64,29 @@ export function useDistinctUFs() {
         .not('uf', 'is', null)
         .order('uf')
       if (error) throw error
-      const all = (data ?? []).map((r: { uf: string | null }) => r.uf).filter(Boolean) as string[]
+      const all = (data ?? [])
+        .map((r: { uf: string | null }) => r.uf?.trim().toUpperCase())
+        .filter((v): v is string => !!v)
+      return [...new Set(all)]
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useDistinctCidades() {
+  return useQuery<string[]>({
+    queryKey: ['distinct-cidades'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads_v2')
+        .select('cidade')
+        .not('cidade', 'is', null)
+        .neq('cidade', '')
+        .order('cidade')
+      if (error) throw error
+      const all = (data ?? [])
+        .map((r: { cidade: string | null }) => r.cidade?.trim())
+        .filter((v): v is string => !!v)
       return [...new Set(all)]
     },
     staleTime: 5 * 60 * 1000,
