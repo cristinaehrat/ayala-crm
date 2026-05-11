@@ -31,7 +31,7 @@ export default function AppShell() {
         <div className="flex items-center">
           <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
             <img
-              src="https://minio.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
+              src="https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
               alt="Ayala"
               className="w-28 object-contain"
               onError={(e) => {
@@ -82,7 +82,7 @@ export default function AppShell() {
         <div className="px-4 py-4 border-b border-white/10 mb-2">
           <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
             <img
-              src="https://minio.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
+              src="https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
               alt="Ayala"
               className="w-28 object-contain"
               onError={(e) => {

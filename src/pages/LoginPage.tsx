@@ -32,7 +32,7 @@ export default function LoginPage() {
           <div className="flex flex-col items-center mb-8">
             <div className="bg-white rounded-xl p-3 mb-4 inline-flex items-center justify-center">
               <img
-                src="https://minio.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
+                src="https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
                 alt="Ayala Treinamentos"
                 className="max-w-[220px] w-full object-contain"
                 onError={(e) => {
