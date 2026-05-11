@@ -2,6 +2,24 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Turma, Inscrito } from '@/lib/types'
 
+export function useDespesasMes() {
+  return useQuery<number>({
+    queryKey: ['despesas-mes'],
+    queryFn: async () => {
+      const now = new Date()
+      const firstDay = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10)
+      const lastDay  = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().slice(0, 10)
+      const { data, error } = await supabase
+        .from('despesas_ayala')
+        .select('valor')
+        .gte('data', firstDay)
+        .lte('data', lastDay)
+      if (error) throw error
+      return (data ?? []).reduce((s: number, r: { valor: number }) => s + (r.valor ?? 0), 0)
+    },
+  })
+}
+
 export interface TurmaFinanceiro {
   turma: Turma
   inscritos: Inscrito[]

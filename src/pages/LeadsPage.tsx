@@ -10,7 +10,7 @@ import { Search, Plus } from 'lucide-react'
 
 const VALID_FILTERS: LeadFilter[] = [
   'todos','ag_ismenia','qualificados','hot_lead','lista_espera',
-  'curitiba','joinville','aguardando_pagamento','inscrito',
+  'aguardando_pagamento','inscrito',
 ]
 
 export default function LeadsPage() {

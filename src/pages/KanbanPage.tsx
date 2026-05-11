@@ -10,10 +10,21 @@ import {
 import { useState } from 'react'
 import { useLeads, useUpdateLeadStatus } from '@/hooks/useLeads'
 import { KANBAN_COLUMNS } from '@/lib/types'
+import type { Lead } from '@/lib/types'
 import KanbanColumn from '@/components/kanban/KanbanColumn'
 import KanbanCard from '@/components/kanban/KanbanCard'
 import MoverLeadSheet from '@/components/MoverLeadSheet'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
+
+function getColumnLeads(leads: Lead[], colId: string): Lead[] {
+  if (colId === 'aguardando_ismenia') {
+    return leads.filter((l) =>
+      l.status === 'aguardando_ismenia' ||
+      l.etiqueta_chatwoot?.toLowerCase().includes('aguardando_ismenia')
+    )
+  }
+  return leads.filter((l) => (l.status ?? 'lead_novo') === colId)
+}
 
 export default function KanbanPage() {
   const { data: leads = [], isLoading } = useLeads('todos')
@@ -60,7 +71,7 @@ export default function KanbanPage() {
   }
 
   const colLeadsCount = KANBAN_COLUMNS.map(({ id }) =>
-    leads.filter((l) => (l.status ?? 'lead_novo') === id).length,
+    getColumnLeads(leads, id).length,
   )
 
   return (
@@ -111,7 +122,7 @@ export default function KanbanPage() {
         {/* Mobile: single column view */}
         <div className="flex md:hidden flex-1 overflow-hidden px-4 pb-4">
           {KANBAN_COLUMNS.map(({ id, label }, i) => {
-            const colLeads = leads.filter((l) => (l.status ?? 'lead_novo') === id)
+            const colLeads = getColumnLeads(leads, id)
             return (
               <div
                 key={id}
@@ -133,7 +144,7 @@ export default function KanbanPage() {
         {/* Desktop: all columns horizontally — drag & drop funciona normalmente */}
         <div className="hidden md:flex flex-1 overflow-x-auto gap-3 px-4 pb-4">
           {KANBAN_COLUMNS.map(({ id, label }, i) => {
-            const colLeads = leads.filter((l) => (l.status ?? 'lead_novo') === id)
+            const colLeads = getColumnLeads(leads, id)
             return (
               <KanbanColumn
                 key={id}

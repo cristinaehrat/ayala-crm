@@ -1,4 +1,5 @@
 import type { LeadFilter } from '@/hooks/useLeads'
+import { useDistinctUFs } from '@/hooks/useLeads'
 import { cn } from '@/lib/utils'
 
 const FILTERS: { id: LeadFilter; label: string }[] = [
@@ -9,8 +10,6 @@ const FILTERS: { id: LeadFilter; label: string }[] = [
   { id: 'qualificados',         label: 'Qualificados' },
   { id: 'inscrito',             label: 'Inscritos' },
   { id: 'lista_espera',         label: 'Lista Espera' },
-  { id: 'curitiba',             label: 'Curitiba' },
-  { id: 'joinville',            label: 'Joinville' },
 ]
 
 interface Props {
@@ -19,6 +18,8 @@ interface Props {
 }
 
 export default function LeadFilters({ active, onChange }: Props) {
+  const { data: ufs = [] } = useDistinctUFs()
+
   return (
     <div className="flex gap-2 overflow-x-auto pb-1 px-3 pt-3 scrollbar-none">
       {FILTERS.map(({ id, label }) => (
@@ -35,6 +36,23 @@ export default function LeadFilters({ active, onChange }: Props) {
           {label}
         </button>
       ))}
+      {ufs.map((uf) => {
+        const filterId = `uf:${uf}` as LeadFilter
+        return (
+          <button
+            key={uf}
+            onClick={() => onChange(filterId)}
+            className={cn(
+              'shrink-0 px-3 py-1.5 rounded-full text-xs font-display font-semibold tracking-wide transition-colors cursor-pointer border',
+              active === filterId
+                ? 'bg-orange text-white border-orange'
+                : 'bg-transparent text-muted border-white/20 hover:border-orange/50 hover:text-white',
+            )}
+          >
+            {uf}
+          </button>
+        )
+      })}
     </div>
   )
 }

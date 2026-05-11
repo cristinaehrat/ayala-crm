@@ -110,15 +110,17 @@ export type KanbanStatus =
   | 'lead_novo'
   | 'qualificado'
   | 'aguardando_ismenia'
+  | 'aguardando_pagamento'
   | 'inscrito'
-  | 'pgto_confirmado'
+  | 'lista_espera'
   | 'perdido'
 
 export const KANBAN_COLUMNS: { id: KanbanStatus; label: string }[] = [
-  { id: 'lead_novo',          label: 'Novo Lead' },
-  { id: 'qualificado',        label: 'Qualificado' },
-  { id: 'aguardando_ismenia', label: 'Ag. Ismênia' },
-  { id: 'inscrito',           label: 'Inscrito' },
-  { id: 'pgto_confirmado',    label: 'Pago' },
-  { id: 'perdido',            label: 'Perdido' },
+  { id: 'lead_novo',            label: 'Novo Lead' },
+  { id: 'qualificado',          label: 'Qualificado' },
+  { id: 'aguardando_ismenia',   label: 'Ag. Ismênia' },
+  { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
+  { id: 'inscrito',             label: 'Inscrito' },
+  { id: 'lista_espera',         label: 'Lista Espera' },
+  { id: 'perdido',              label: 'Perdido' },
 ]

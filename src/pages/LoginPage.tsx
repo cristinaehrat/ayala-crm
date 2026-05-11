@@ -31,7 +31,9 @@ export default function LoginPage() {
         <div className="bg-footer/80 border border-white/10 rounded-2xl p-8 shadow-2xl backdrop-blur-sm">
           {/* Logo */}
           <div className="flex flex-col items-center mb-8">
-            <Logo size={220} className="mb-4" />
+            <div className="bg-white rounded-xl p-3 mb-4 inline-flex items-center justify-center">
+              <Logo size={200} />
+            </div>
             <h1 className="font-display font-bold text-2xl text-white">Ayala CRM</h1>
             <p className="text-muted text-sm mt-1">Linha Pesada</p>
           </div>

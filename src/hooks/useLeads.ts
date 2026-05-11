@@ -8,22 +8,21 @@ export type LeadFilter =
   | 'qualificados'
   | 'hot_lead'
   | 'lista_espera'
-  | 'curitiba'
-  | 'joinville'
   | 'aguardando_pagamento'
   | 'inscrito'
+  | `uf:${string}`
+
+type FixedFilter = Exclude<LeadFilter, `uf:${string}`>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = any
 
-const FILTER_MAP: Record<LeadFilter, (q: AnyQuery) => AnyQuery> = {
+const FILTER_MAP: Record<FixedFilter, (q: AnyQuery) => AnyQuery> = {
   todos:                (q) => q,
-  ag_ismenia:           (q) => q.eq('status', 'aguardando_ismenia'),
+  ag_ismenia:           (q) => q.ilike('etiqueta_chatwoot', '%aguardando_ismenia%'),
   qualificados:         (q) => q.eq('status', 'qualificado'),
   hot_lead:             (q) => q.eq('etiqueta_chatwoot', 'hot_lead'),
   lista_espera:         (q) => q.eq('etiqueta_chatwoot', 'lista_espera'),
-  curitiba:             (q) => q.ilike('canal_origem', '%curitiba%'),
-  joinville:            (q) => q.ilike('canal_origem', '%joinville%'),
   aguardando_pagamento: (q) => q.eq('etiqueta_chatwoot', 'aguardando_pagamento'),
   inscrito:             (q) => q.eq('status', 'inscrito'),
 }
@@ -39,12 +38,33 @@ export function useLeads(filter: LeadFilter = 'todos') {
         .order('data_entrada', { ascending: false, nullsFirst: false })
         .limit(200)
 
-      query = FILTER_MAP[filter](query)
+      if (filter.startsWith('uf:')) {
+        query = query.eq('uf', filter.slice(3))
+      } else {
+        query = FILTER_MAP[filter as FixedFilter](query)
+      }
 
       const { data, error } = await query
       if (error) throw error
       return (data ?? []) as Lead[]
     },
+  })
+}
+
+export function useDistinctUFs() {
+  return useQuery<string[]>({
+    queryKey: ['distinct-ufs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads_v2')
+        .select('uf')
+        .not('uf', 'is', null)
+        .order('uf')
+      if (error) throw error
+      const all = (data ?? []).map((r: { uf: string | null }) => r.uf).filter(Boolean) as string[]
+      return [...new Set(all)]
+    },
+    staleTime: 5 * 60 * 1000,
   })
 }
 
