@@ -1,14 +1,15 @@
 import { useLeads } from '@/hooks/useLeads'
 import { useTurmas } from '@/hooks/useTurmas'
 import { useFinanceiro } from '@/hooks/useFinanceiro'
-import { Flame, Clock, DollarSign, AlertTriangle, BarChart2 } from 'lucide-react'
+import { Flame, Clock, DollarSign, AlertTriangle, BarChart2, ChevronRight } from 'lucide-react'
 import { MARCA_BADGES } from '@/lib/utils'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 const brl = (v: number) =>
   v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export default function DashboardPage() {
+  const navigate = useNavigate()
   const { data: leads = [], isLoading: leadsLoading } = useLeads('todos')
   const { data: turmas = [], isLoading: turmasLoading } = useTurmas()
   const { data: financeiro } = useFinanceiro()
@@ -103,7 +104,11 @@ export default function DashboardPage() {
                 .map(({ turma, receita_total }) => {
                   const marca = turma.marca ? MARCA_BADGES[turma.marca] : null
                   return (
-                    <div key={turma.id} className="flex items-center gap-3">
+                    <div
+                      key={turma.id}
+                      onClick={() => navigate(`/turmas?turma=${turma.id}`)}
+                      className="flex items-center gap-3 cursor-pointer hover:bg-white/5 rounded-lg px-2 -mx-2 py-1 -my-1 transition-colors"
+                    >
                       {marca && (
                         <span
                           className="shrink-0 px-2 py-0.5 rounded text-xs font-display font-bold text-white"
@@ -121,6 +126,7 @@ export default function DashboardPage() {
                       <p className="text-xs font-display font-bold text-orange shrink-0">
                         {brl(receita_total)}
                       </p>
+                      <ChevronRight size={13} className="text-muted shrink-0" />
                     </div>
                   )
                 })}

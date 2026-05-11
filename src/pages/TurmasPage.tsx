@@ -1,16 +1,18 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTurmas } from '@/hooks/useTurmas'
 import { useInscritos } from '@/hooks/useInscritos'
 import TurmaCard from '@/components/turmas/TurmaCard'
 import InscritoRow from '@/components/turmas/InscritoRow'
 import InscritoModal from '@/components/turmas/InscritoModal'
+import TurmaRelatorio from '@/components/turmas/TurmaRelatorio'
 import type { Inscrito } from '@/lib/types'
-import { X, Users, Plus, GraduationCap } from 'lucide-react'
+import { X, Users, Plus, GraduationCap, Printer } from 'lucide-react'
 
 export default function TurmasPage() {
   const [searchParams] = useSearchParams()
   const inscreverLeadId = searchParams.get('inscrever')
+  const turmaFromUrl = searchParams.get('turma')
 
   const { data: turmas = [], isLoading } = useTurmas()
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -18,6 +20,11 @@ export default function TurmasPage() {
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingInscrito, setEditingInscrito] = useState<Inscrito | null>(null)
+  const [printMode, setPrintMode] = useState(false)
+
+  useEffect(() => {
+    if (turmaFromUrl) setSelectedId(turmaFromUrl)
+  }, [turmaFromUrl])
 
   const selectedTurma = turmas.find((t) => t.id === selectedId)
 
@@ -98,6 +105,13 @@ export default function TurmasPage() {
                   <span>Vincular Lead</span>
                 </button>
                 <button
+                  onClick={() => setPrintMode(true)}
+                  className="text-muted hover:text-white cursor-pointer"
+                  aria-label="Relatório PDF"
+                >
+                  <Printer size={16} />
+                </button>
+                <button
                   onClick={() => setSelectedId(null)}
                   className="text-muted hover:text-white cursor-pointer"
                   aria-label="Fechar"
@@ -131,6 +145,14 @@ export default function TurmasPage() {
           inscrito={editingInscrito}
           turmaId={selectedId}
           leadId={inscreverLeadId}
+        />
+      )}
+
+      {printMode && selectedTurma && (
+        <TurmaRelatorio
+          turma={selectedTurma}
+          inscritos={inscritos}
+          onClose={() => setPrintMode(false)}
         />
       )}
     </>

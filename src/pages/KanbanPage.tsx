@@ -17,6 +17,7 @@ import type { Lead } from '@/lib/types'
 import KanbanColumn from '@/components/kanban/KanbanColumn'
 import KanbanCard from '@/components/kanban/KanbanCard'
 import MoverLeadSheet from '@/components/MoverLeadSheet'
+import LeadDetail from '@/components/leads/LeadDetail'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 function getColumnLeads(leads: Lead[], colId: string): Lead[] {
@@ -37,6 +38,7 @@ export default function KanbanPage() {
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeCol, setActiveCol] = useState(0)
   const [moveSheetLeadId, setMoveSheetLeadId] = useState<string | null>(null)
+  const [openLeadId, setOpenLeadId] = useState<string | null>(null)
 
   // TouchSensor removido: conflita com scroll vertical no mobile
   const sensors = useSensors(
@@ -141,7 +143,7 @@ export default function KanbanPage() {
             return (
               <div
                 key={id}
-                className={`${i === activeCol ? 'flex' : 'hidden'} flex-col w-full`}
+                className={`${i === activeCol ? 'flex' : 'hidden'} flex-col w-full h-full`}
               >
                 <KanbanColumn
                   id={id}
@@ -150,6 +152,7 @@ export default function KanbanPage() {
                   colIdx={i}
                   totalCols={KANBAN_COLUMNS.length}
                   onMoverLead={(id) => setMoveSheetLeadId(id)}
+                  onOpenLead={(id) => setOpenLeadId(id)}
                 />
               </div>
             )
@@ -168,6 +171,7 @@ export default function KanbanPage() {
                 leads={colLeads}
                 colIdx={i}
                 totalCols={KANBAN_COLUMNS.length}
+                onOpenLead={(id) => setOpenLeadId(id)}
               />
             )
           })}
@@ -184,6 +188,10 @@ export default function KanbanPage() {
           open={!!moveSheetLeadId}
           onClose={() => setMoveSheetLeadId(null)}
         />
+      )}
+
+      {openLeadId && (
+        <LeadDetail leadId={openLeadId} onClose={() => setOpenLeadId(null)} />
       )}
     </div>
   )

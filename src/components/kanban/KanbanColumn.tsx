@@ -10,14 +10,15 @@ interface Props {
   colIdx?: number
   totalCols?: number
   onMoverLead?: (leadId: string) => void
+  onOpenLead?: (leadId: string) => void
 }
 
-export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMoverLead }: Props) {
+export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMoverLead, onOpenLead }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
     <div
-      className={`flex flex-col w-64 shrink-0 rounded-xl border transition-colors
+      className={`flex flex-col w-full md:w-64 shrink-0 rounded-xl border transition-colors
         ${isOver ? 'border-orange/50 bg-orange/5' : 'border-white/10 bg-white/3'}`}
     >
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/10">
@@ -38,6 +39,7 @@ export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMo
               colIdx={colIdx}
               totalCols={totalCols}
               onMoverLead={onMoverLead}
+              onOpenLead={onOpenLead}
             />
           ))}
         </SortableContext>

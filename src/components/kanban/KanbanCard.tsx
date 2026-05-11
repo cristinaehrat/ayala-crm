@@ -4,20 +4,33 @@ import { ArrowRightLeft } from 'lucide-react'
 import { initials, MARCA_BADGES, findRotaMes } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import type { Lead } from '@/lib/types'
+import { useRef } from 'react'
 
 interface Props {
   lead: Lead
   colIdx?: number
   totalCols?: number
   onMoverLead?: (leadId: string) => void
+  onOpenLead?: (leadId: string) => void
 }
 
-export default function KanbanCard({ lead, onMoverLead }: Props) {
+export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lead.id,
   })
   const { data: malha = [] } = useMalhaEstrategica()
   const rotaMes = findRotaMes(lead.cidade, lead.marca_interesse, malha)
+  const lastClick = useRef(0)
+
+  function handleClick() {
+    const now = Date.now()
+    if (now - lastClick.current < 350) {
+      onOpenLead?.(lead.id)
+      lastClick.current = 0
+    } else {
+      lastClick.current = now
+    }
+  }
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -33,6 +46,7 @@ export default function KanbanCard({ lead, onMoverLead }: Props) {
       style={style}
       {...attributes}
       {...listeners}
+      onClick={handleClick}
       className="bg-navy2/50 border border-white/10 rounded-lg p-3 cursor-grab active:cursor-grabbing
                  hover:border-orange/30 transition-colors"
     >

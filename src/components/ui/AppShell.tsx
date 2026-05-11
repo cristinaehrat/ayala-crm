@@ -29,18 +29,18 @@ export default function AppShell() {
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-footer border-b border-white/10 shrink-0">
         <div className="flex items-center">
-          <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
-            <img
-              src="https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
-              alt="Ayala"
-              className="w-28 object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                e.currentTarget.parentElement!.innerHTML =
-                  '<span class="text-orange font-bold text-sm px-2">Ayala</span>'
-              }}
-            />
-          </div>
+          <img
+            src="https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA-LOGO-RETANG-512X200-TRANSP.png"
+            alt="Ayala"
+            className="h-8 w-auto object-contain"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+              e.currentTarget.insertAdjacentHTML(
+                'afterend',
+                '<span class="text-orange font-bold text-sm px-2">Ayala</span>',
+              )
+            }}
+          />
         </div>
         <div className="flex items-center gap-3">
           <SyncBadge />
@@ -80,18 +80,18 @@ export default function AppShell() {
       {/* Sidebar (desktop) */}
       <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-footer border-r border-white/10 flex-col pt-14 z-20 print:hidden">
         <div className="px-4 py-4 border-b border-white/10 mb-2">
-          <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
-            <img
-              src="https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png"
-              alt="Ayala"
-              className="w-28 object-contain"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                e.currentTarget.parentElement!.innerHTML =
-                  '<span class="text-orange font-bold text-sm px-2">Ayala</span>'
-              }}
-            />
-          </div>
+          <img
+            src="https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA-LOGO-RETANG-512X200-TRANSP.png"
+            alt="Ayala"
+            className="h-9 w-auto object-contain"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none'
+              e.currentTarget.insertAdjacentHTML(
+                'afterend',
+                '<span class="text-orange font-bold text-sm px-2">Ayala</span>',
+              )
+            }}
+          />
         </div>
         {NAV.map(({ to, label, Icon }) => (
           <NavLink
