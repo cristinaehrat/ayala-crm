@@ -9,10 +9,10 @@ interface Props {
   leads: Lead[]
   colIdx?: number
   totalCols?: number
-  onMoveCard?: (leadId: string, direction: 'prev' | 'next') => void
+  onMoverLead?: (leadId: string) => void
 }
 
-export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMoveCard }: Props) {
+export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMoverLead }: Props) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
@@ -37,7 +37,7 @@ export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMo
               lead={lead}
               colIdx={colIdx}
               totalCols={totalCols}
-              onMove={onMoveCard}
+              onMoverLead={onMoverLead}
             />
           ))}
         </SortableContext>

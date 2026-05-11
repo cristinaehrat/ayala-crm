@@ -7,31 +7,58 @@ import { toast } from 'sonner'
 import { CheckCircle } from 'lucide-react'
 
 const MARCAS = ['Volvo', 'DAF', 'Scania'] as const
-const POTENCIAIS = ['Individual', 'Grupo', 'Sem interesse'] as const
-const TIPOS_OFICINA = ['Mecânica', 'Elétrica', 'Auto Center', 'Frota', 'Outra'] as const
+
+const TIPOS_OFICINA = [
+  { value: 'mecanica_movel',  label: 'Mecânica Móvel' },
+  { value: 'mecatronica',     label: 'Mecatrônica' },
+  { value: 'transportadora',  label: 'Transportadora' },
+  { value: 'eletrica_diesel', label: 'Elétrica Diesel' },
+  { value: 'mecanica_diesel', label: 'Mecânica Diesel' },
+  { value: 'diesel_sos',      label: 'Diesel SOS' },
+  { value: 'eletro_mecanica', label: 'Eletro-Mecânica' },
+] as const
+
+const POTENCIAIS = [
+  { value: 'alto',          label: 'Alto' },
+  { value: 'medio',         label: 'Médio' },
+  { value: 'baixo',         label: 'Baixo' },
+  { value: 'sem_interesse', label: 'Sem Interesse' },
+] as const
+
+const PERFIS = [
+  { value: 'individual', label: 'Individual' },
+  { value: 'grupo_b2b',  label: 'Grupo B2B' },
+] as const
+
 const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
 
 interface VisitaForm {
   empresa_oficina: string
+  tipo_oficina: string
+  multimarcas: boolean
+  especializacao_oficina: string
+  qtd_interessados: string
   nome: string
   telefone: string
   cidade: string
   uf: string
-  marca_interesse: string
+  marcas: string[]
+  perfil: string
   potencial: string
-  tipo_oficina: string
-  qtd_interessados: string
   resultado_visita: string
   proximo_passo: string
   data_retorno: string
-  observacoes: string
   consultor: string
+  observacoes: string
 }
 
 const EMPTY: VisitaForm = {
-  empresa_oficina: '', nome: '', telefone: '', cidade: '', uf: '',
-  marca_interesse: '', potencial: '', tipo_oficina: '', qtd_interessados: '',
-  resultado_visita: '', proximo_passo: '', data_retorno: '', observacoes: '', consultor: '',
+  empresa_oficina: '', tipo_oficina: '', multimarcas: false,
+  especializacao_oficina: '', qtd_interessados: '',
+  nome: '', telefone: '', cidade: '', uf: '',
+  marcas: [], perfil: '', potencial: '',
+  resultado_visita: '', proximo_passo: '', data_retorno: '',
+  consultor: '', observacoes: '',
 }
 
 export default function VisitaPage() {
@@ -40,64 +67,50 @@ export default function VisitaPage() {
   const [saved, setSaved] = useState(false)
   const { isOnline } = useOfflineSync()
 
-  const set = (field: keyof VisitaForm, value: string) =>
-    setForm((prev) => ({ ...prev, [field]: value }))
+  function set<K extends keyof VisitaForm>(field: K, value: VisitaForm[K]) {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
 
-  const isValid =
-    form.empresa_oficina.trim() &&
-    form.nome.trim() &&
-    form.telefone.trim() &&
-    form.cidade.trim() &&
-    form.uf &&
-    form.marca_interesse &&
-    form.potencial
+  function toggleMarca(m: string) {
+    setForm(prev => ({
+      ...prev,
+      marcas: prev.marcas.includes(m)
+        ? prev.marcas.filter(x => x !== m)
+        : [...prev.marcas, m],
+    }))
+  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!isValid) return
     setLoading(true)
 
     const payload: Record<string, unknown> = {
-      empresa_oficina: form.empresa_oficina.trim(),
-      nome: form.nome.trim(),
-      telefone: toE164(form.telefone),
-      cidade: form.cidade.trim(),
-      uf: form.uf,
-      marca_interesse: form.marca_interesse,
-      potencial: form.potencial,
-      tipo_oficina: form.tipo_oficina || null,
-      resultado_visita: form.resultado_visita || null,
-      proximo_passo: form.proximo_passo || null,
-      data_retorno: form.data_retorno || null,
-      observacoes: form.observacoes || null,
-      consultor: form.consultor || null,
-      origem: 'visita',
-      canal_origem: 'visita',
-      status: 'qualificado',
-      data_visita: new Date().toISOString().split('T')[0],
-      data_entrada: new Date().toISOString(),
-    }
-
-    if (form.qtd_interessados) {
-      payload.qtd_interessados = parseInt(form.qtd_interessados)
+      empresa_oficina:           form.empresa_oficina.trim() || null,
+      nome_responsavel_treinamento: form.nome.trim() || null,
+      whatsapp_responsavel:      toE164(form.telefone) || null,
+      cidade:                    form.cidade.trim() || null,
+      uf:                        form.uf || null,
+      tipo_oficina:              form.tipo_oficina || null,
+      marca_interesse:           form.marcas.length ? form.marcas.join(',').toLowerCase() : null,
+      potencial:                 form.potencial || null,
+      perfil:                    form.perfil || null,
+      multimarcas:               form.multimarcas,
+      especializacao_oficina:    form.especializacao_oficina.trim() || null,
+      qtd_interessados:          form.qtd_interessados || null,
+      resultado_visita:          form.resultado_visita.trim() || null,
+      proximo_passo:             form.proximo_passo.trim() || null,
+      data_retorno:              form.data_retorno || null,
+      consultor:                 form.consultor.trim() || null,
+      observacoes:               form.observacoes.trim() || null,
+      canal_origem:              'visita',
+      data_visita:               new Date().toISOString().split('T')[0],
     }
 
     try {
       if (isOnline) {
-        // Preserve etiqueta_chatwoot if lead already exists
-        const { data: existing } = await supabase
-          .from('leads_v2')
-          .select('etiqueta_chatwoot')
-          .eq('telefone', payload.telefone as string)
-          .maybeSingle()
-        if (existing?.etiqueta_chatwoot) {
-          payload.etiqueta_chatwoot = existing.etiqueta_chatwoot
-        }
-
-        const { error } = await supabase.from('leads_v2').upsert(payload, {
-          onConflict: 'telefone',
-          ignoreDuplicates: false,
-        })
+        const { error } = await supabase
+          .from('cadastro_prospectos')
+          .upsert(payload, { onConflict: 'whatsapp_responsavel', ignoreDuplicates: false })
         if (error) throw error
         toast.success('Visita registrada com sucesso!')
       } else {
@@ -140,67 +153,108 @@ export default function VisitaPage() {
         {saved && (
           <div className="flex items-center gap-2 bg-green-900/40 border border-green-700/40 rounded-xl p-3 mb-4">
             <CheckCircle size={16} className="text-green-400 shrink-0" />
-            <p className="text-green-400 text-sm font-display font-semibold">
-              Visita registrada!
-            </p>
+            <p className="text-green-400 text-sm font-display font-semibold">Visita registrada!</p>
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Obrigatórios */}
-          <Section title="Dados da Oficina *">
-            <Field label="Nome da oficina *">
+          {/* SEÇÃO 1 — DADOS DA OFICINA */}
+          <Section title="Dados da Oficina">
+            <Field label="Nome da oficina">
               <input
                 type="text"
                 value={form.empresa_oficina}
                 onChange={(e) => set('empresa_oficina', e.target.value)}
                 placeholder="Ex: Oficina Silva e Filhos"
                 className="input-field"
-                required
+              />
+            </Field>
+
+            <Field label="Tipo de oficina" className="mt-3">
+              <select
+                value={form.tipo_oficina}
+                onChange={(e) => set('tipo_oficina', e.target.value)}
+                className="input-field"
+              >
+                <option value="">Selecione</option>
+                {TIPOS_OFICINA.map((t) => (
+                  <option key={t.value} value={t.value}>{t.label}</option>
+                ))}
+              </select>
+            </Field>
+
+            <div className="flex items-center gap-3 mt-3 h-12 px-3 bg-white/5 border border-white/20 rounded-lg">
+              <input
+                type="checkbox"
+                id="multimarcas"
+                checked={form.multimarcas}
+                onChange={(e) => set('multimarcas', e.target.checked)}
+                className="w-4 h-4 accent-orange cursor-pointer"
+              />
+              <label htmlFor="multimarcas" className="text-sm font-display font-semibold text-white cursor-pointer">
+                Multimarcas
+              </label>
+            </div>
+
+            <Field label="Especialização da oficina" className="mt-3">
+              <input
+                type="text"
+                value={form.especializacao_oficina}
+                onChange={(e) => set('especializacao_oficina', e.target.value)}
+                placeholder="Ex: Especializado Mercedes"
+                className="input-field"
+              />
+            </Field>
+
+            <Field label="Qtd. interessados" className="mt-3">
+              <input
+                type="number"
+                value={form.qtd_interessados}
+                onChange={(e) => set('qtd_interessados', e.target.value)}
+                placeholder="0"
+                min="0"
+                className="input-field"
               />
             </Field>
           </Section>
 
-          <Section title="Contato *">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Nome *">
-                <input
-                  type="text"
-                  value={form.nome}
-                  onChange={(e) => set('nome', e.target.value)}
-                  placeholder="Nome do contato"
-                  className="input-field"
-                  required
-                />
-              </Field>
-              <Field label="Telefone *">
-                <input
-                  type="tel"
-                  value={form.telefone}
-                  onChange={(e) => set('telefone', e.target.value)}
-                  placeholder="(47) 99999-9999"
-                  className="input-field"
-                  required
-                />
-              </Field>
-            </div>
+          {/* SEÇÃO 2 — CONTATO */}
+          <Section title="Contato">
+            <Field label="Nome do responsável">
+              <input
+                type="text"
+                value={form.nome}
+                onChange={(e) => set('nome', e.target.value)}
+                placeholder="Nome do contato"
+                className="input-field"
+              />
+            </Field>
+
+            <Field label="Telefone / WhatsApp" className="mt-3">
+              <input
+                type="tel"
+                value={form.telefone}
+                onChange={(e) => set('telefone', e.target.value)}
+                placeholder="(47) 99999-9999"
+                className="input-field"
+              />
+            </Field>
+
             <div className="grid grid-cols-2 gap-3 mt-3">
-              <Field label="Cidade *">
+              <Field label="Cidade">
                 <input
                   type="text"
                   value={form.cidade}
                   onChange={(e) => set('cidade', e.target.value)}
                   placeholder="Joinville"
                   className="input-field"
-                  required
                 />
               </Field>
-              <Field label="UF *">
+              <Field label="UF">
                 <select
                   value={form.uf}
                   onChange={(e) => set('uf', e.target.value)}
                   className="input-field"
-                  required
                 >
                   <option value="">UF</option>
                   {UFS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
@@ -209,18 +263,19 @@ export default function VisitaPage() {
             </div>
           </Section>
 
-          <Section title="Interesse *">
-            <Field label="Marca de interesse *">
+          {/* SEÇÃO 3 — INTERESSE */}
+          <Section title="Interesse">
+            <Field label="Marca de interesse">
               <div className="flex gap-2">
                 {MARCAS.map((m) => (
                   <button
                     key={m}
                     type="button"
-                    onClick={() => set('marca_interesse', m)}
-                    className={`flex-1 py-2.5 rounded-lg text-sm font-display font-bold transition-colors cursor-pointer border ${
-                      form.marca_interesse === m
-                        ? 'border-orange text-white bg-orange'
-                        : 'border-white/20 text-muted bg-transparent hover:border-orange/50'
+                    onClick={() => toggleMarca(m)}
+                    className={`flex-1 rounded-lg text-sm font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
+                      form.marcas.includes(m)
+                        ? 'border-orange bg-navy2 text-white'
+                        : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
                     }`}
                   >
                     {m}
@@ -229,58 +284,54 @@ export default function VisitaPage() {
               </div>
             </Field>
 
-            <Field label="Potencial *" className="mt-3">
+            <Field label="Tipo do lead" className="mt-3">
+              <div className="flex gap-2">
+                {PERFIS.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => set('perfil', form.perfil === p.value ? '' : p.value)}
+                    className={`flex-1 rounded-lg text-sm font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
+                      form.perfil === p.value
+                        ? 'border-orange bg-navy2 text-white'
+                        : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
+            <Field label="Potencial" className="mt-3">
               <div className="flex gap-2">
                 {POTENCIAIS.map((p) => (
                   <button
-                    key={p}
+                    key={p.value}
                     type="button"
-                    onClick={() => set('potencial', p)}
-                    className={`flex-1 py-2 rounded-lg text-xs font-display font-semibold transition-colors cursor-pointer border ${
-                      form.potencial === p
-                        ? 'border-orange text-white bg-orange'
-                        : 'border-white/20 text-muted bg-transparent hover:border-orange/50'
+                    onClick={() => set('potencial', form.potencial === p.value ? '' : p.value)}
+                    className={`flex-1 rounded-lg text-xs font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
+                      form.potencial === p.value
+                        ? 'border-orange bg-navy2 text-white'
+                        : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
                     }`}
                   >
-                    {p}
+                    {p.label}
                   </button>
                 ))}
               </div>
             </Field>
           </Section>
 
-          {/* Opcionais */}
+          {/* SEÇÃO 4 — DETALHES */}
           <Section title="Detalhes (opcional)">
-            <div className="grid grid-cols-2 gap-3">
-              <Field label="Tipo de oficina">
-                <select
-                  value={form.tipo_oficina}
-                  onChange={(e) => set('tipo_oficina', e.target.value)}
-                  className="input-field"
-                >
-                  <option value="">Selecione</option>
-                  {TIPOS_OFICINA.map((t) => <option key={t} value={t}>{t}</option>)}
-                </select>
-              </Field>
-              <Field label="Qtd. interessados">
-                <input
-                  type="number"
-                  value={form.qtd_interessados}
-                  onChange={(e) => set('qtd_interessados', e.target.value)}
-                  placeholder="0"
-                  min="0"
-                  className="input-field"
-                />
-              </Field>
-            </div>
-
-            <Field label="Resultado da visita" className="mt-3">
-              <input
-                type="text"
+            <Field label="Resultado da visita">
+              <textarea
                 value={form.resultado_visita}
                 onChange={(e) => set('resultado_visita', e.target.value)}
                 placeholder="Ex: Muito interesse, pediu proposta"
-                className="input-field"
+                rows={3}
+                className="input-field resize-none"
               />
             </Field>
 
@@ -327,7 +378,7 @@ export default function VisitaPage() {
 
           <button
             type="submit"
-            disabled={!isValid || loading}
+            disabled={loading}
             className="btn-primary w-full py-3.5 text-base"
           >
             {loading ? 'Salvando...' : isOnline ? 'Registrar Visita' : 'Salvar Offline'}
@@ -350,7 +401,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 function Field({ label, children, className }: { label: string; children: React.ReactNode; className?: string }) {
   return (
     <div className={className}>
-      <label className="block text-xs font-display font-semibold text-muted mb-1.5">{label}</label>
+      <label className="field-label">{label}</label>
       {children}
     </div>
   )

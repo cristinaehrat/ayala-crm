@@ -57,7 +57,7 @@ export interface Inscrito {
   pagante_nome_nf: string | null
   pagante_documento: string | null
   pagante_email_nf: string | null
-  fluxo_pagamento: 'link_whatsapp' | 'boleto_parceiro' | 'maquina_presencial' | 'pix_direto' | null
+  fluxo_pagamento: string | null
   custodia_entrada: 'Ayala' | 'Parceiro' | null
   comprovante_validado: boolean | null
   observacoes_negociacao: string | null
@@ -92,6 +92,18 @@ export interface InscritoComTelefone extends Inscrito {
   data_inicio_turma: string | null
   cidade_turma: string | null
   marca_turma: string | null
+}
+
+export interface Despesa {
+  id: string
+  data: string
+  categoria: string
+  descricao: string | null
+  valor: number
+  viagem_referencia: string | null
+  turma_id: string | null
+  criado_por: string | null
+  created_at: string | null
 }
 
 export type KanbanStatus =

@@ -1,12 +1,15 @@
 import {
   Phone, MessageCircle, ExternalLink, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
+  ArrowRightLeft, GraduationCap,
 } from 'lucide-react'
 import { useLead, useUpdateLead } from '@/hooks/useLeads'
 import { ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, formatPhone, initials, relativeTime } from '@/lib/utils'
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
+import MoverLeadSheet from '@/components/MoverLeadSheet'
 
 const CHAT_BASE = 'https://chat.ayalaoficial.com.br'
 const MARCAS = ['', 'Volvo', 'DAF', 'Scania']
@@ -44,7 +47,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export default function LeadDetail({ leadId, onClose }: Props) {
   const { data: lead, isLoading } = useLead(leadId)
   const updateLead = useUpdateLead()
+  const navigate = useNavigate()
   const [editMode, setEditMode] = useState(false)
+  const [moveSheetOpen, setMoveSheetOpen] = useState(false)
   const [nota, setNota] = useState('')
   const [savingNota, setSavingNota] = useState(false)
   const [form, setForm] = useState<EditForm>({
@@ -212,6 +217,14 @@ export default function LeadDetail({ leadId, onClose }: Props) {
     )
   }
 
+  function handleInscrever() {
+    if (lead!.status !== 'inscrito') {
+      toast.info('Marque o lead como "Inscrito" antes de vinculá-lo a uma turma.')
+      return
+    }
+    navigate('/turmas?inscrever=' + lead!.id)
+  }
+
   /* ── VIEW MODE ── */
   return (
     <div className="flex flex-col h-full overflow-y-auto">
@@ -277,6 +290,19 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         >
           <MessageCircle size={15} /> WhatsApp
         </a>
+        <button
+          onClick={() => setMoveSheetOpen(true)}
+          className="flex-1 flex items-center justify-center gap-2 btn-secondary text-center"
+        >
+          <ArrowRightLeft size={15} /> Mover
+        </button>
+        <button
+          onClick={handleInscrever}
+          className="shrink-0 flex items-center justify-center gap-1 btn-secondary px-3"
+          title="Inscrever em Turma"
+        >
+          <GraduationCap size={15} />
+        </button>
         {lead.conversation_id && (
           <a
             href={`${CHAT_BASE}/app/accounts/1/conversations/${lead.conversation_id}`}
@@ -341,6 +367,12 @@ export default function LeadDetail({ leadId, onClose }: Props) {
           </button>
         </div>
       </div>
+
+      <MoverLeadSheet
+        leadId={lead.id}
+        open={moveSheetOpen}
+        onClose={() => setMoveSheetOpen(false)}
+      />
     </div>
   )
 }

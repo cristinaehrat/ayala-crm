@@ -1,6 +1,6 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
-import { ChevronLeft, ChevronRight } from 'lucide-react'
+import { ArrowRightLeft } from 'lucide-react'
 import { initials, MARCA_BADGES, findRotaMes } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import type { Lead } from '@/lib/types'
@@ -9,10 +9,10 @@ interface Props {
   lead: Lead
   colIdx?: number
   totalCols?: number
-  onMove?: (leadId: string, direction: 'prev' | 'next') => void
+  onMoverLead?: (leadId: string) => void
 }
 
-export default function KanbanCard({ lead, colIdx, totalCols, onMove }: Props) {
+export default function KanbanCard({ lead, onMoverLead }: Props) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: lead.id,
   })
@@ -26,8 +26,6 @@ export default function KanbanCard({ lead, colIdx, totalCols, onMove }: Props) {
   }
 
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
-  const isFirst = colIdx === 0
-  const isLast  = totalCols !== undefined && colIdx === totalCols - 1
 
   return (
     <div
@@ -74,27 +72,17 @@ export default function KanbanCard({ lead, colIdx, totalCols, onMove }: Props) {
         )}
       </div>
 
-      {/* Controles mobile — visíveis apenas em telas pequenas, sem conflito com scroll */}
-      {onMove && (
+      {onMoverLead && (
         <div
-          className="flex md:hidden items-center justify-between mt-2 pt-2 border-t border-white/10"
+          className="flex md:hidden justify-center mt-2 pt-2 border-t border-white/10"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <button
-            onClick={(e) => { e.stopPropagation(); onMove(lead.id, 'prev') }}
-            disabled={isFirst}
-            className="flex items-center gap-1 text-xs text-muted hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-default transition-colors"
-            aria-label="Recuar etapa"
+            onClick={(e) => { e.stopPropagation(); onMoverLead(lead.id) }}
+            className="flex items-center gap-1.5 text-xs text-muted hover:text-white transition-colors cursor-pointer"
+            aria-label="Mover lead"
           >
-            <ChevronLeft size={14} /> Recuar
-          </button>
-          <button
-            onClick={(e) => { e.stopPropagation(); onMove(lead.id, 'next') }}
-            disabled={isLast}
-            className="flex items-center gap-1 text-xs text-muted hover:text-white disabled:opacity-30 cursor-pointer disabled:cursor-default transition-colors"
-            aria-label="Avançar etapa"
-          >
-            Avançar <ChevronRight size={14} />
+            <ArrowRightLeft size={13} /> Mover Lead
           </button>
         </div>
       )}

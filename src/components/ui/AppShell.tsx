@@ -1,18 +1,19 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
-  Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign, BarChart2,
+  Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign, BarChart2, Receipt,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import SyncBadge from '@/components/visita/SyncBadge'
 
 const NAV = [
-  { to: '/leads',       label: 'Leads',      Icon: Users },
-  { to: '/kanban',      label: 'Funil',      Icon: KanbanSquare },
-  { to: '/turmas',      label: 'Turmas',     Icon: GraduationCap },
-  { to: '/financeiro',  label: 'Financeiro', Icon: DollarSign },
-  { to: '/relatorios',  label: 'Relatórios', Icon: BarChart2 },
-  { to: '/visita',      label: 'Visita',     Icon: ClipboardList },
-  { to: '/dashboard',   label: 'Dashboard',  Icon: LayoutDashboard },
+  { to: '/leads',      label: 'Leads',      Icon: Users },
+  { to: '/kanban',     label: 'Funil',      Icon: KanbanSquare },
+  { to: '/turmas',     label: 'Turmas',     Icon: GraduationCap },
+  { to: '/financeiro', label: 'Financeiro', Icon: DollarSign },
+  { to: '/relatorios', label: 'Relatórios', Icon: BarChart2 },
+  { to: '/visita',     label: 'Visita',     Icon: ClipboardList },
+  { to: '/despesas',   label: 'Despesas',   Icon: Receipt },
+  { to: '/dashboard',  label: 'Dashboard',  Icon: LayoutDashboard },
 ]
 
 export default function AppShell() {
@@ -51,13 +52,13 @@ export default function AppShell() {
       </main>
 
       {/* Bottom Nav (mobile) */}
-      <nav className="flex items-center justify-around bg-footer border-t border-white/10 pb-safe shrink-0 md:hidden">
+      <nav className="flex items-center overflow-x-auto scrollbar-hide bg-footer border-t border-white/10 pb-safe shrink-0 md:hidden">
         {NAV.map(({ to, label, Icon }) => (
           <NavLink
             key={to}
             to={to}
             className={({ isActive }) =>
-              `flex flex-col items-center gap-0.5 py-2 px-2 text-xs font-display font-semibold transition-colors cursor-pointer ${
+              `flex flex-col items-center gap-0.5 py-2 px-2 text-xs font-display font-semibold transition-colors cursor-pointer shrink-0 min-w-[72px] ${
                 isActive ? 'text-orange' : 'text-muted hover:text-white'
               }`
             }

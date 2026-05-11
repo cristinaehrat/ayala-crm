@@ -12,6 +12,7 @@ import { useLeads, useUpdateLeadStatus } from '@/hooks/useLeads'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import KanbanColumn from '@/components/kanban/KanbanColumn'
 import KanbanCard from '@/components/kanban/KanbanCard'
+import MoverLeadSheet from '@/components/MoverLeadSheet'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function KanbanPage() {
@@ -19,6 +20,7 @@ export default function KanbanPage() {
   const updateStatus = useUpdateLeadStatus()
   const [activeId, setActiveId] = useState<string | null>(null)
   const [activeCol, setActiveCol] = useState(0)
+  const [moveSheetLeadId, setMoveSheetLeadId] = useState<string | null>(null)
 
   // TouchSensor removido: conflita com scroll vertical no mobile
   const sensors = useSensors(
@@ -45,15 +47,6 @@ export default function KanbanPage() {
     }
     if (targetColumn.id === lead.status) return
     await updateStatus.mutateAsync({ id: lead.id, status: targetColumn.id })
-  }
-
-  async function handleMoveCard(leadId: string, direction: 'prev' | 'next') {
-    const lead = leads.find((l) => l.id === leadId)
-    if (!lead) return
-    const curIdx  = KANBAN_COLUMNS.findIndex((c) => c.id === (lead.status ?? 'lead_novo'))
-    const nextIdx = direction === 'next' ? curIdx + 1 : curIdx - 1
-    if (nextIdx < 0 || nextIdx >= KANBAN_COLUMNS.length) return
-    await updateStatus.mutateAsync({ id: lead.id, status: KANBAN_COLUMNS[nextIdx].id })
   }
 
   const activeLead = activeId ? leads.find((l) => l.id === activeId) : null
@@ -130,7 +123,7 @@ export default function KanbanPage() {
                   leads={colLeads}
                   colIdx={i}
                   totalCols={KANBAN_COLUMNS.length}
-                  onMoveCard={handleMoveCard}
+                  onMoverLead={(id) => setMoveSheetLeadId(id)}
                 />
               </div>
             )
@@ -158,6 +151,14 @@ export default function KanbanPage() {
           {activeLead ? <KanbanCard lead={activeLead} /> : null}
         </DragOverlay>
       </DndContext>
+
+      {moveSheetLeadId && (
+        <MoverLeadSheet
+          leadId={moveSheetLeadId}
+          open={!!moveSheetLeadId}
+          onClose={() => setMoveSheetLeadId(null)}
+        />
+      )}
     </div>
   )
 }

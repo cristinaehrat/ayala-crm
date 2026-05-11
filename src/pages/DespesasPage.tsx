@@ -1,0 +1,300 @@
+import { useState } from 'react'
+import { Plus, Trash2, Receipt } from 'lucide-react'
+import { useDespesas, useCreateDespesa, useDeleteDespesa } from '@/hooks/useDespesas'
+import { useTurmas } from '@/hooks/useTurmas'
+import { toast } from 'sonner'
+import type { Despesa } from '@/lib/types'
+
+const CATEGORIAS = [
+  { value: 'combustivel', label: 'Combustível',  emoji: '⛽', bg: 'bg-orange/80' },
+  { value: 'hotel',       label: 'Hotel',         emoji: '🏨', bg: 'bg-blue-600' },
+  { value: 'alimentacao', label: 'Alimentação',   emoji: '🍽️', bg: 'bg-green-700' },
+  { value: 'marketing',   label: 'Marketing',     emoji: '📣', bg: 'bg-purple-700' },
+  { value: 'material',    label: 'Material',      emoji: '📦', bg: 'bg-gray-600' },
+  { value: 'outros',      label: 'Outros',        emoji: '📎', bg: 'bg-white/20' },
+] as const
+
+type CategoriaValue = typeof CATEGORIAS[number]['value']
+
+const CATEGORIA_MAP = Object.fromEntries(CATEGORIAS.map((c) => [c.value, c])) as Record<
+  CategoriaValue,
+  typeof CATEGORIAS[number]
+>
+
+type FiltroMes = 'todos' | 'atual' | 'anterior'
+
+function getMesParam(filtro: FiltroMes): string | undefined {
+  if (filtro === 'todos') return undefined
+  const now = new Date()
+  if (filtro === 'atual') {
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`
+  }
+  const prev = new Date(now.getFullYear(), now.getMonth() - 1, 1)
+  return `${prev.getFullYear()}-${String(prev.getMonth() + 1).padStart(2, '0')}`
+}
+
+type SheetForm = {
+  data: string
+  categoria: CategoriaValue | ''
+  descricao: string
+  valor: string
+  viagem_referencia: string
+  turma_id: string
+}
+
+const EMPTY_FORM: SheetForm = {
+  data: new Date().toISOString().slice(0, 10),
+  categoria: '',
+  descricao: '',
+  valor: '',
+  viagem_referencia: '',
+  turma_id: '',
+}
+
+function formatDate(iso: string) {
+  const [, m, d] = iso.split('-')
+  return `${d}/${m}`
+}
+
+export default function DespesasPage() {
+  const [filtro, setFiltro] = useState<FiltroMes>('atual')
+  const [sheetOpen, setSheetOpen] = useState(false)
+  const [sheetForm, setSheetForm] = useState<SheetForm>(EMPTY_FORM)
+
+  const { data: despesas = [], isLoading } = useDespesas(getMesParam(filtro))
+  const { data: turmas = [] } = useTurmas()
+  const createDespesa = useCreateDespesa()
+  const deleteDespesa = useDeleteDespesa()
+
+  const total = despesas.reduce((acc, d) => acc + Number(d.valor), 0)
+
+  function setSF(field: keyof SheetForm, value: string) {
+    setSheetForm((f) => ({ ...f, [field]: value }))
+  }
+
+  function openSheet() {
+    setSheetForm({ ...EMPTY_FORM, data: new Date().toISOString().slice(0, 10) })
+    setSheetOpen(true)
+  }
+
+  async function handleSave() {
+    if (!sheetForm.categoria) { toast.error('Selecione uma categoria'); return }
+    if (!sheetForm.valor || isNaN(parseFloat(sheetForm.valor))) { toast.error('Informe o valor'); return }
+
+    await createDespesa.mutateAsync({
+      data: sheetForm.data,
+      categoria: sheetForm.categoria,
+      descricao: sheetForm.descricao || null,
+      valor: parseFloat(sheetForm.valor.replace(',', '.')),
+      viagem_referencia: sheetForm.viagem_referencia || null,
+      turma_id: sheetForm.turma_id || null,
+      criado_por: null,
+    } as Omit<Despesa, 'id' | 'created_at'>)
+
+    toast.success('Despesa registrada')
+    setSheetOpen(false)
+  }
+
+  async function handleDelete(id: string) {
+    await deleteDespesa.mutateAsync(id)
+    toast.success('Despesa removida')
+  }
+
+  return (
+    <>
+      <div className="h-full md:ml-56 flex flex-col overflow-hidden">
+        {/* Header */}
+        <div className="px-4 pt-4 pb-2 shrink-0">
+          <div className="flex items-center justify-between mb-3">
+            <h1 className="font-display font-bold text-white text-lg">Despesas</h1>
+            <button onClick={openSheet} className="btn-primary flex items-center gap-2 px-4">
+              <Plus size={16} /> Nova Despesa
+            </button>
+          </div>
+
+          {/* Filtros */}
+          <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+            {(['todos', 'atual', 'anterior'] as FiltroMes[]).map((f) => (
+              <button
+                key={f}
+                onClick={() => setFiltro(f)}
+                className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-display font-semibold border transition-colors cursor-pointer ${
+                  filtro === f
+                    ? 'bg-orange border-orange text-white'
+                    : 'bg-transparent border-white/20 text-muted hover:text-white hover:border-orange/40'
+                }`}
+              >
+                {f === 'todos' ? 'Todos' : f === 'atual' ? 'Este Mês' : 'Mês Anterior'}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Total */}
+        {despesas.length > 0 && (
+          <div className="px-4 py-2 shrink-0">
+            <div className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 flex items-center justify-between">
+              <span className="text-xs font-display font-semibold text-muted uppercase tracking-wide">Total do período</span>
+              <span className="font-display font-bold text-orange text-base">
+                R$ {total.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Lista */}
+        <div className="flex-1 overflow-y-auto px-4 pb-4">
+          {isLoading && (
+            <div className="flex justify-center py-8">
+              <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
+            </div>
+          )}
+          {!isLoading && despesas.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <Receipt size={32} className="text-muted mb-3" />
+              <p className="text-muted text-sm">Nenhuma despesa registrada</p>
+            </div>
+          )}
+          {despesas.map((d) => {
+            const cat = CATEGORIA_MAP[d.categoria as CategoriaValue]
+            return (
+              <div
+                key={d.id}
+                className="flex items-start justify-between py-3 border-b border-white/10 last:border-0"
+              >
+                <div className="flex items-start gap-3 min-w-0 flex-1">
+                  <span className="text-xs text-muted font-display shrink-0 mt-0.5 w-10">{formatDate(d.data)}</span>
+                  <div className="min-w-0">
+                    {cat && (
+                      <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-display font-bold text-white ${cat.bg} mb-1`}>
+                        {cat.emoji} {cat.label}
+                      </span>
+                    )}
+                    {d.descricao && <p className="text-sm text-white">{d.descricao}</p>}
+                    {d.viagem_referencia && <p className="text-xs text-muted mt-0.5">{d.viagem_referencia}</p>}
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0 ml-3">
+                  <p className="text-sm font-display font-bold text-orange">
+                    R$ {Number(d.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <button
+                    onClick={() => handleDelete(d.id)}
+                    disabled={deleteDespesa.isPending}
+                    className="text-muted hover:text-red-400 transition-colors p-1 cursor-pointer disabled:opacity-50"
+                    aria-label="Remover despesa"
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </div>
+
+      {/* Bottom sheet nova despesa */}
+      {sheetOpen && (
+        <>
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setSheetOpen(false)} aria-hidden="true" />
+          <div className="fixed bottom-0 left-0 right-0 bg-footer border-t border-white/10 rounded-t-2xl z-50 p-4 max-h-[90vh] overflow-y-auto">
+            <p className="font-display font-bold text-white text-base mb-4">Nova Despesa</p>
+
+            <div className="space-y-4">
+              {/* Data */}
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-1">Data</label>
+                <input
+                  type="date"
+                  className="input-field"
+                  value={sheetForm.data}
+                  onChange={(e) => setSF('data', e.target.value)}
+                />
+              </div>
+
+              {/* Categoria */}
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-2">Categoria</label>
+                <div className="flex flex-wrap gap-2">
+                  {CATEGORIAS.map(({ value, label, emoji }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSF('categoria', value)}
+                      className={`px-3 py-2 rounded-lg text-xs font-display font-bold transition-colors cursor-pointer border ${
+                        sheetForm.categoria === value
+                          ? 'bg-orange border-orange text-white'
+                          : 'bg-transparent border-white/20 text-muted hover:border-orange/50 hover:text-white'
+                      }`}
+                    >
+                      {emoji} {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-1">Descrição</label>
+                <input
+                  className="input-field"
+                  placeholder="Ex: Posto BR - Chapecó"
+                  value={sheetForm.descricao}
+                  onChange={(e) => setSF('descricao', e.target.value)}
+                />
+              </div>
+
+              {/* Valor */}
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-1">Valor (R$)</label>
+                <input
+                  inputMode="decimal"
+                  className="input-field"
+                  placeholder="0,00"
+                  value={sheetForm.valor}
+                  onChange={(e) => setSF('valor', e.target.value)}
+                />
+              </div>
+
+              {/* Viagem / Referência */}
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-1">Viagem / Referência</label>
+                <input
+                  className="input-field"
+                  placeholder="Ex: Chapecó Jun/26"
+                  value={sheetForm.viagem_referencia}
+                  onChange={(e) => setSF('viagem_referencia', e.target.value)}
+                />
+              </div>
+
+              {/* Vincular turma */}
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-1">Vincular Turma (opcional)</label>
+                <select
+                  className="input-field"
+                  value={sheetForm.turma_id}
+                  onChange={(e) => setSF('turma_id', e.target.value)}
+                >
+                  <option value="">—</option>
+                  {turmas.map((t) => (
+                    <option key={t.id} value={t.id}>
+                      {t.nome_treinamento} — {t.cidade}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <button
+                onClick={handleSave}
+                disabled={createDespesa.isPending}
+                className="btn-primary w-full"
+              >
+                {createDespesa.isPending ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
+    </>
+  )
+}

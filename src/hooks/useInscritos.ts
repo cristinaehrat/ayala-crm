@@ -40,6 +40,7 @@ export function useCreateInscrito() {
   return useMutation({
     mutationFn: async (data: {
       id_turma: string
+      id_lead?: string
       nome: string
       empresa_oficina?: string
       valor_total?: number

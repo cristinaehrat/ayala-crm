@@ -1,7 +1,7 @@
 import { useState } from 'react'
 
 const LOGO_URL =
-  'https://s3.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20RETANGULAR%20fundo%20TRANSPARENTE.png'
+  'https://minio.ayalaoficial.com.br/logos-ismenia-ayala-treinamentos/ISMENIA%20LOGO%20FINAL%20fundo%20branco.png'
 
 interface Props {
   size?: number
@@ -32,8 +32,7 @@ export default function Logo({ size = 64, className = '' }: Props) {
     <img
       src={LOGO_URL}
       alt="Ayala Treinamentos"
-      width={size}
-      height={size}
+      style={{ maxWidth: size, width: '100%', height: 'auto' }}
       className={`object-contain ${className}`}
       onError={() => setFailed(true)}
     />

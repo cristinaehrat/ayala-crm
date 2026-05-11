@@ -1,13 +1,17 @@
 import { useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useTurmas } from '@/hooks/useTurmas'
 import { useInscritos } from '@/hooks/useInscritos'
 import TurmaCard from '@/components/turmas/TurmaCard'
 import InscritoRow from '@/components/turmas/InscritoRow'
 import InscritoModal from '@/components/turmas/InscritoModal'
 import type { Inscrito } from '@/lib/types'
-import { X, Users, Plus } from 'lucide-react'
+import { X, Users, Plus, GraduationCap } from 'lucide-react'
 
 export default function TurmasPage() {
+  const [searchParams] = useSearchParams()
+  const inscreverLeadId = searchParams.get('inscrever')
+
   const { data: turmas = [], isLoading } = useTurmas()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { data: inscritos = [] } = useInscritos(selectedId)
@@ -41,6 +45,14 @@ export default function TurmasPage() {
         {/* Turmas grid */}
         <div className={`flex flex-col overflow-y-auto p-4 ${selectedId ? 'hidden md:flex md:flex-1' : 'flex-1'}`}>
           <h1 className="font-display font-bold text-white text-lg mb-4">Turmas</h1>
+          {inscreverLeadId && (
+            <div className="flex items-center gap-2 bg-orange/10 border border-orange/30 rounded-xl px-4 py-3 mb-4">
+              <GraduationCap size={16} className="text-orange shrink-0" />
+              <p className="text-sm text-white font-display font-semibold">
+                Selecione uma turma para inscrever este lead
+              </p>
+            </div>
+          )}
           {turmas.length === 0 && (
             <p className="text-muted text-sm">Nenhuma turma cadastrada.</p>
           )}
@@ -50,7 +62,14 @@ export default function TurmasPage() {
                 key={turma.id}
                 turma={turma}
                 active={selectedId === turma.id}
-                onClick={() => setSelectedId(turma.id === selectedId ? null : turma.id)}
+                onClick={() => {
+                  const wasSelected = selectedId === turma.id
+                  setSelectedId(wasSelected ? null : turma.id)
+                  if (!wasSelected && inscreverLeadId) {
+                    setEditingInscrito(null)
+                    setModalOpen(true)
+                  }
+                }}
               />
             ))}
           </div>
@@ -73,10 +92,10 @@ export default function TurmasPage() {
                 <button
                   onClick={openCreate}
                   className="flex items-center gap-1 text-xs btn-primary px-2.5 py-1.5"
-                  aria-label="Adicionar inscrito"
+                  aria-label="Vincular lead à turma"
                 >
                   <Plus size={14} />
-                  <span>Novo</span>
+                  <span>Vincular Lead</span>
                 </button>
                 <button
                   onClick={() => setSelectedId(null)}
@@ -111,6 +130,7 @@ export default function TurmasPage() {
           onClose={() => setModalOpen(false)}
           inscrito={editingInscrito}
           turmaId={selectedId}
+          leadId={inscreverLeadId}
         />
       )}
     </>

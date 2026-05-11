@@ -42,7 +42,7 @@ export default function LeadsPage() {
       <div className="flex h-full md:ml-56">
         {/* Left panel — list */}
         <div
-          className={`flex flex-col border-r border-white/10 bg-navy
+          className={`flex flex-col overflow-hidden border-r border-white/10 bg-navy
             ${selectedId ? 'hidden md:flex md:w-80 lg:w-96' : 'flex w-full md:w-80 lg:w-96'}`}
         >
           {/* Search + New */}

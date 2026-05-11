@@ -33,8 +33,8 @@ export function useOfflineSync() {
     for (const item of items) {
       try {
         await db.pendentes.update(item.id!, { syncStatus: 'sincronizando' })
-        const { error } = await supabase.from('leads_v2').upsert(item.payload, {
-          onConflict: 'telefone',
+        const { error } = await supabase.from('cadastro_prospectos').upsert(item.payload, {
+          onConflict: 'whatsapp_responsavel',
           ignoreDuplicates: false,
         })
         if (error) throw error
