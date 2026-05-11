@@ -73,16 +73,21 @@ export function useListaChamada() {
 }
 
 // Tab 3 — Fechamento Financeiro por Parceiro
+export interface TurmaFechamento {
+  turma_id: string
+  nome_turma: string | null
+  cidade: string | null
+  qtd_inscritos: number
+  receita_total: number
+  entradas_ayala: number
+  valor_recebido_isa_monteiro: number | null
+  valor_recebido_isa_mg: number | null
+}
+
 export interface FechamentoParceiro {
   marca: string
   parceiro: string
-  qtd_turmas: number
-  qtd_alunos: number
-  faturamento_bruto: number
-  custodia_ayala: number
-  custodia_parceiro: number
-  despesas: number
-  saldo_liquido: number
+  turmas: TurmaFechamento[]
 }
 
 const PARCEIROS: Record<string, string> = {
@@ -96,47 +101,66 @@ export function useFechamentoParceiros() {
     queryKey: ['relatorios', 'fechamento_parceiros'],
     queryFn: async () => {
       const [turmasRes, inscritosRes] = await Promise.all([
-        supabase.from('turmas').select('id,marca,despesas_operacionais_total'),
-        supabase.from('inscritos').select('id_turma,valor_total,valor_entrada,saldo_a_receber,custodia_entrada'),
+        supabase
+          .from('turmas')
+          .select('id,nome_treinamento,cidade,marca,valor_recebido_isa_monteiro,valor_recebido_isa_mg'),
+        supabase
+          .from('inscritos')
+          .select('id_turma,valor_total,valor_entrada,custodia_entrada'),
       ])
       if (turmasRes.error) throw turmasRes.error
       if (inscritosRes.error) throw inscritosRes.error
 
-      const turmas   = (turmasRes.data ?? []) as { id: string; marca: string | null; despesas_operacionais_total: number | null }[]
-      const inscritos = inscritosRes.data ?? []
+      const turmas = (turmasRes.data ?? []) as {
+        id: string
+        nome_treinamento: string | null
+        cidade: string | null
+        marca: string | null
+        valor_recebido_isa_monteiro: number | null
+        valor_recebido_isa_mg: number | null
+      }[]
+      const inscritos = (inscritosRes.data ?? []) as {
+        id_turma: string | null
+        valor_total: number | null
+        valor_entrada: number | null
+        custodia_entrada: string | null
+      }[]
 
-      const marcas = ['Volvo', 'DAF', 'Scania']
-
-      return marcas.map((marca) => {
+      return (['Volvo', 'DAF', 'Scania'] as const).map((marca) => {
         const turmasDaMarca = turmas.filter((t) => t.marca === marca)
-        const turmaIds      = turmasDaMarca.map((t) => t.id)
-        const alunos        = inscritos.filter((i) => turmaIds.includes(i.id_turma ?? ''))
 
-        const faturamento_bruto = alunos.reduce((s, i) => s + (i.valor_total ?? 0), 0)
-        const custodia_ayala    = alunos
-          .filter((i) => i.custodia_entrada === 'Ayala')
-          .reduce((s, i) => s + (i.valor_entrada ?? 0), 0)
-        const custodia_parceiro = alunos
-          .filter((i) => i.custodia_entrada === 'Parceiro')
-          .reduce((s, i) => s + (i.valor_entrada ?? 0), 0)
-        const despesas = turmasDaMarca.reduce(
-          (s, t) => s + (t.despesas_operacionais_total ?? 0),
-          0,
-        )
-        // Saldo líquido = O que o parceiro precisa repassar à Ismênia
-        // = Faturamento total - o que a Ismênia já tem (custódia Ayala) - despesas operacionais
-        const saldo_liquido = faturamento_bruto - custodia_ayala - despesas
+        const turmasData: TurmaFechamento[] = turmasDaMarca.map((t) => {
+          const alunosDaTurma = inscritos.filter((i) => i.id_turma === t.id)
+          const qtd_inscritos = alunosDaTurma.length
+          const receita_total = alunosDaTurma.reduce((s, i) => s + (i.valor_total ?? 0), 0)
+
+          let entradas_ayala: number
+          if (marca === 'DAF') {
+            entradas_ayala = qtd_inscritos * 300
+          } else if (marca === 'Volvo') {
+            entradas_ayala = alunosDaTurma
+              .filter((i) => i.custodia_entrada === 'Ayala' || i.custodia_entrada === null)
+              .reduce((s, i) => s + (i.valor_entrada ?? 0), 0)
+          } else {
+            entradas_ayala = 0
+          }
+
+          return {
+            turma_id: t.id,
+            nome_turma: t.nome_treinamento,
+            cidade: t.cidade,
+            qtd_inscritos,
+            receita_total,
+            entradas_ayala,
+            valor_recebido_isa_monteiro: t.valor_recebido_isa_monteiro,
+            valor_recebido_isa_mg: t.valor_recebido_isa_mg,
+          }
+        })
 
         return {
           marca,
-          parceiro:       PARCEIROS[marca] ?? marca,
-          qtd_turmas:     turmasDaMarca.length,
-          qtd_alunos:     alunos.length,
-          faturamento_bruto,
-          custodia_ayala,
-          custodia_parceiro,
-          despesas,
-          saldo_liquido,
+          parceiro: PARCEIROS[marca],
+          turmas: turmasData,
         }
       })
     },

@@ -38,6 +38,8 @@ export interface Turma {
   vagas_disponiveis: number | null
   status: string | null
   despesas_operacionais_total: number | null
+  valor_recebido_isa_monteiro: number | null
+  valor_recebido_isa_mg: number | null
 }
 
 export interface Inscrito {

@@ -10,8 +10,8 @@ const FILTERS: { id: LeadFilter; label: string }[] = [
   { id: 'hot_lead',             label: 'Hot Lead' },
   { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
   { id: 'qualificados',         label: 'Qualificados' },
-  { id: 'inscrito',             label: 'Inscritos' },
   { id: 'lista_espera',         label: 'Lista Espera' },
+  { id: 'visualizou_preco',     label: 'Visualizou Preço' },
 ]
 
 interface Props {

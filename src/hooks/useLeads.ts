@@ -10,6 +10,7 @@ export type LeadFilter =
   | 'lista_espera'
   | 'aguardando_pagamento'
   | 'inscrito'
+  | 'visualizou_preco'
   | `uf:${string}`
   | `cidade:${string}`
 
@@ -26,6 +27,7 @@ const FILTER_MAP: Record<FixedFilter, (q: AnyQuery) => AnyQuery> = {
   lista_espera:         (q) => q.eq('etiqueta_chatwoot', 'lista_espera'),
   aguardando_pagamento: (q) => q.eq('etiqueta_chatwoot', 'aguardando_pagamento'),
   inscrito:             (q) => q.eq('status', 'inscrito'),
+  visualizou_preco:     (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
 }
 
 export function useLeads(filter: LeadFilter = 'todos') {
@@ -62,12 +64,11 @@ export function useDistinctUFs() {
         .from('leads_v2')
         .select('uf')
         .not('uf', 'is', null)
-        .order('uf')
       if (error) throw error
       const all = (data ?? [])
         .map((r: { uf: string | null }) => r.uf?.trim().toUpperCase())
         .filter((v): v is string => !!v)
-      return [...new Set(all)]
+      return [...new Set(all)].sort()
     },
     staleTime: 5 * 60 * 1000,
   })

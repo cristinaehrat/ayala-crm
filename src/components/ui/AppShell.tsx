@@ -60,7 +60,7 @@ export default function AppShell() {
       </main>
 
       {/* Bottom Nav (mobile) */}
-      <nav className="flex items-center overflow-x-auto scrollbar-hide bg-footer border-t border-white/10 pb-safe shrink-0 md:hidden">
+      <nav className="flex items-center overflow-x-auto scrollbar-hide bg-footer border-t border-white/10 pb-safe shrink-0 md:hidden print:hidden">
         {NAV.map(({ to, label, Icon }) => (
           <NavLink
             key={to}
@@ -78,7 +78,7 @@ export default function AppShell() {
       </nav>
 
       {/* Sidebar (desktop) */}
-      <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-footer border-r border-white/10 flex-col pt-14 z-20">
+      <aside className="hidden md:flex fixed left-0 top-0 h-full w-56 bg-footer border-r border-white/10 flex-col pt-14 z-20 print:hidden">
         <div className="px-4 py-4 border-b border-white/10 mb-2">
           <div className="bg-white rounded-lg p-1.5 flex items-center justify-center">
             <img

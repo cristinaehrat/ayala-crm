@@ -1,8 +1,10 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useListaEspera, useListaChamada, useFechamentoParceiros } from '@/hooks/useRelatorios'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
-import { MARCA_BADGES, formatDate, formatPhone } from '@/lib/utils'
-import { Search, AlertCircle } from 'lucide-react'
+import { useUpdateTurma } from '@/hooks/useTurmas'
+import { MARCA_BADGES, formatDate, formatPhone, cn } from '@/lib/utils'
+import { Search, AlertCircle, Check, Edit2, ChevronDown, Printer } from 'lucide-react'
+import { toast } from 'sonner'
 
 type Tab = 'lista_espera' | 'lista_chamada' | 'fechamento' | 'mapa'
 
@@ -275,8 +277,90 @@ function ListaChamada() {
 }
 
 // ─── Tab 3: Fechamento Financeiro por Parceiro ─────────────────────────────
+function CampoManualEditor({
+  turmaId,
+  field,
+  value,
+  label,
+}: {
+  turmaId: string
+  field: 'valor_recebido_isa_monteiro' | 'valor_recebido_isa_mg'
+  value: number | null
+  label: string
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(String(value ?? ''))
+  const update = useUpdateTurma()
+
+  async function save() {
+    const n = parseFloat(draft.replace(',', '.'))
+    if (isNaN(n)) return
+    const patch = field === 'valor_recebido_isa_monteiro'
+      ? { valor_recebido_isa_monteiro: n }
+      : { valor_recebido_isa_mg: n }
+    await update.mutateAsync({ id: turmaId, data: patch })
+    toast.success('Salvo')
+    setEditing(false)
+  }
+
+  if (editing) {
+    return (
+      <div className="flex items-center gap-1.5 print:hidden">
+        <span className="text-xs text-muted">R$</span>
+        <input
+          type="number"
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          className="input-field py-0.5 px-2 text-xs w-28"
+          autoFocus
+          onKeyDown={(e) => e.key === 'Enter' && save()}
+        />
+        <button
+          onClick={save}
+          disabled={update.isPending}
+          className="text-orange hover:text-orange2 cursor-pointer"
+          aria-label="Salvar"
+        >
+          <Check size={14} />
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <button
+      onClick={() => { setDraft(String(value ?? '')); setEditing(true) }}
+      className="flex items-center gap-1 text-xs text-muted hover:text-white cursor-pointer"
+    >
+      <span>{label}: {value !== null ? brl(value) : '—'}</span>
+      <Edit2 size={11} className="print:hidden" />
+    </button>
+  )
+}
+
 function FechamentoFinanceiro() {
   const { data: parceiros = [], isLoading } = useFechamentoParceiros()
+  const [openParceiros, setOpenParceiros] = useState<string[]>(['Volvo', 'DAF', 'Scania'])
+  const [printMarca, setPrintMarca] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!printMarca) return
+    window.print()
+    setPrintMarca(null)
+  }, [printMarca])
+
+  function toggleParceiro(marca: string) {
+    setOpenParceiros((prev) =>
+      prev.includes(marca) ? prev.filter((m) => m !== marca) : [...prev, marca],
+    )
+  }
+
+  function handlePrint(marca: string) {
+    if (!openParceiros.includes(marca)) {
+      setOpenParceiros((prev) => [...prev, marca])
+    }
+    setPrintMarca(marca)
+  }
 
   if (isLoading) return (
     <div className="flex justify-center py-12">
@@ -286,52 +370,168 @@ function FechamentoFinanceiro() {
 
   return (
     <div className="space-y-4">
-      <p className="text-xs text-muted">
-        Consolidado por parceiro — separação entre custódia Ayala (Ismênia) e custódia Parceiro.
+      <p className="text-xs text-muted print:hidden">
+        Fechamento detalhado por parceiro e turma.
       </p>
 
       {parceiros.map((p) => {
         const badge = MARCA_BADGES[p.marca]
+        const isOpen = openParceiros.includes(p.marca)
+        const isDAF = p.marca === 'DAF'
+        const isScania = p.marca === 'Scania'
+        const totalInscritos = p.turmas.reduce((s, t) => s + t.qtd_inscritos, 0)
+
         return (
-          <div key={p.marca} className="section-card p-5 space-y-4">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <h3 className="font-display font-bold text-white text-sm">{p.parceiro}</h3>
-                <p className="text-xs text-muted mt-0.5">{p.qtd_turmas} turmas · {p.qtd_alunos} alunos</p>
-              </div>
-              {badge && (
-                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold text-white" style={{ backgroundColor: badge.bg }}>
-                  {badge.label}
-                </span>
-              )}
+          <div
+            key={p.marca}
+            className={cn(
+              'section-card overflow-hidden',
+              printMarca !== null && printMarca !== p.marca ? 'print:hidden' : '',
+            )}
+          >
+            {/* Cabeçalho visível apenas no print */}
+            <div className="hidden print:block px-5 pt-4 pb-2 border-b border-black/10">
+              <p className="font-bold text-base">{p.parceiro}</p>
+              <p className="text-xs text-gray-500">{new Date().toLocaleDateString('pt-BR')}</p>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-xs">
-              <div className="bg-white/5 rounded-lg p-3">
-                <p className="text-muted uppercase tracking-wide font-display font-semibold text-[10px]">Faturamento Bruto</p>
-                <p className="text-white font-display font-bold text-base mt-1">{brl(p.faturamento_bruto)}</p>
+            {/* Accordion header */}
+            <div
+              className="px-5 py-4 flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-white/5 transition-colors print:hidden"
+              onClick={() => toggleParceiro(p.marca)}
+            >
+              <div className="flex items-center gap-3">
+                {badge && (
+                  <span
+                    className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold text-white"
+                    style={{ backgroundColor: badge.bg }}
+                  >
+                    {badge.label}
+                  </span>
+                )}
+                <div>
+                  <h3 className="font-display font-bold text-white text-sm">{p.parceiro}</h3>
+                  <p className="text-xs text-muted">
+                    {p.turmas.length} turma{p.turmas.length !== 1 ? 's' : ''} · {totalInscritos} aluno{totalInscritos !== 1 ? 's' : ''}
+                  </p>
+                </div>
               </div>
-              <div className="bg-orange/10 border border-orange/20 rounded-lg p-3">
-                <p className="text-orange uppercase tracking-wide font-display font-semibold text-[10px]">Custódia Ismênia (Ayala)</p>
-                <p className="text-orange font-display font-bold text-base mt-1">{brl(p.custodia_ayala)}</p>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={(e) => { e.stopPropagation(); handlePrint(p.marca) }}
+                  className="flex items-center gap-1.5 text-xs text-muted hover:text-white cursor-pointer px-2 py-1 border border-white/20 rounded-lg hover:border-white/40 transition-colors"
+                >
+                  <Printer size={12} />
+                  <span>PDF</span>
+                </button>
+                <ChevronDown
+                  size={16}
+                  className={cn('text-muted transition-transform duration-200', isOpen ? 'rotate-180' : '')}
+                />
               </div>
-              <div className="bg-blue-900/30 border border-blue-700/20 rounded-lg p-3">
-                <p className="text-blue-400 uppercase tracking-wide font-display font-semibold text-[10px]">Custódia Parceiro</p>
-                <p className="text-blue-300 font-display font-bold text-base mt-1">{brl(p.custodia_parceiro)}</p>
-              </div>
-              <div className="bg-red-900/20 border border-red-700/20 rounded-lg p-3">
-                <p className="text-red-400 uppercase tracking-wide font-display font-semibold text-[10px]">Despesas Operacionais</p>
-                <p className="text-red-300 font-display font-bold text-base mt-1">{brl(p.despesas)}</p>
-              </div>
-              <div className={`col-span-2 md:col-span-2 rounded-lg p-3 border ${p.saldo_liquido >= 0 ? 'bg-green-900/20 border-green-700/20' : 'bg-red-900/20 border-red-700/20'}`}>
-                <p className={`uppercase tracking-wide font-display font-semibold text-[10px] ${p.saldo_liquido >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  Saldo Líquido a Repassar à Ismênia
-                </p>
-                <p className={`font-display font-bold text-xl mt-1 ${p.saldo_liquido >= 0 ? 'text-green-300' : 'text-red-300'}`}>
-                  {brl(p.saldo_liquido)}
-                </p>
-                <p className="text-[10px] text-muted mt-1">Faturamento − Custódia Ayala − Despesas</p>
-              </div>
+            </div>
+
+            {/* Conteúdo — sempre no DOM; hidden na tela se fechado, mas visível no print */}
+            <div className={isOpen ? '' : 'hidden print:block'}>
+              {p.turmas.length === 0 ? (
+                <p className="text-center py-6 text-muted text-sm">Nenhuma turma encontrada</p>
+              ) : (
+                <>
+                  {/* Desktop */}
+                  <div className="hidden md:block overflow-x-auto border-t border-white/10">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="border-b border-white/10">
+                          <th className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">Turma</th>
+                          <th className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">Inscritos</th>
+                          <th className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">Receita Total</th>
+                          {!isScania && (
+                            <th className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">
+                              {isDAF ? 'Entradas (× R$ 300)' : 'Entradas Ayala'}
+                            </th>
+                          )}
+                          {(isDAF || isScania) && (
+                            <th className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">
+                              Recebido Ismênia
+                            </th>
+                          )}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {p.turmas.map((t) => (
+                          <tr key={t.turma_id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                            <td className="px-4 py-3">
+                              <p className="font-display font-semibold text-white text-xs">{t.nome_turma ?? '—'}</p>
+                              {t.cidade && <p className="text-muted text-xs">{t.cidade}</p>}
+                            </td>
+                            <td className="px-4 py-3 text-xs text-white">{t.qtd_inscritos}</td>
+                            <td className="px-4 py-3 text-xs text-white">{brl(t.receita_total)}</td>
+                            {!isScania && (
+                              <td className="px-4 py-3 text-xs text-green-400">{brl(t.entradas_ayala)}</td>
+                            )}
+                            {isDAF && (
+                              <td className="px-4 py-3">
+                                <CampoManualEditor
+                                  turmaId={t.turma_id}
+                                  field="valor_recebido_isa_monteiro"
+                                  value={t.valor_recebido_isa_monteiro}
+                                  label="Recebido Ismênia"
+                                />
+                              </td>
+                            )}
+                            {isScania && (
+                              <td className="px-4 py-3">
+                                <CampoManualEditor
+                                  turmaId={t.turma_id}
+                                  field="valor_recebido_isa_mg"
+                                  value={t.valor_recebido_isa_mg}
+                                  label="Recebido Ismênia"
+                                />
+                              </td>
+                            )}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Mobile cards */}
+                  <div className="md:hidden divide-y divide-white/5 border-t border-white/10">
+                    {p.turmas.map((t) => (
+                      <div key={t.turma_id} className="p-4 space-y-2">
+                        <p className="font-display font-bold text-white text-sm">{t.nome_turma ?? '—'}</p>
+                        {t.cidade && <p className="text-xs text-muted">{t.cidade}</p>}
+                        <div className="grid grid-cols-2 gap-2 text-xs">
+                          <div><span className="text-muted">Inscritos: </span><span className="text-white">{t.qtd_inscritos}</span></div>
+                          <div><span className="text-muted">Receita: </span><span className="text-white">{brl(t.receita_total)}</span></div>
+                          {!isScania && (
+                            <div>
+                              <span className="text-muted">{isDAF ? 'Entradas: ' : 'Entradas Ayala: '}</span>
+                              <span className="text-green-400">{brl(t.entradas_ayala)}</span>
+                            </div>
+                          )}
+                        </div>
+                        {isDAF && (
+                          <CampoManualEditor
+                            turmaId={t.turma_id}
+                            field="valor_recebido_isa_monteiro"
+                            value={t.valor_recebido_isa_monteiro}
+                            label="Recebido Ismênia"
+                          />
+                        )}
+                        {isScania && (
+                          <CampoManualEditor
+                            turmaId={t.turma_id}
+                            field="valor_recebido_isa_mg"
+                            value={t.valor_recebido_isa_mg}
+                            label="Recebido Ismênia"
+                          />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </>
+              )}
             </div>
           </div>
         )
@@ -423,7 +623,7 @@ export default function RelatoriosPage() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 px-4 py-3 shrink-0 border-b border-white/10 overflow-x-auto scrollbar-none">
+      <div className="flex gap-2 px-4 py-3 shrink-0 border-b border-white/10 overflow-x-auto scrollbar-none print:hidden">
         {TABS.map(({ id, label }) => (
           <button
             key={id}

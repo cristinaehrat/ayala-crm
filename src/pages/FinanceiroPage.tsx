@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useFinanceiro, useDespesasMes } from '@/hooks/useFinanceiro'
+import { useDespesas } from '@/hooks/useDespesas'
 import { useUpdateTurma } from '@/hooks/useTurmas'
-import { MARCA_BADGES } from '@/lib/utils'
+import { MARCA_BADGES, formatDate } from '@/lib/utils'
 import { TrendingUp, TrendingDown, DollarSign, AlertCircle, Check, Edit2, Building2, User, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -80,6 +81,8 @@ function DespesasEditor({ turmaId, value }: { turmaId: string; value: number | n
 export default function FinanceiroPage() {
   const { data, isLoading } = useFinanceiro()
   const { data: despesasMes = 0 } = useDespesasMes()
+  const mesAtual = new Date().toISOString().slice(0, 7)
+  const { data: despesasList = [] } = useDespesas(mesAtual)
 
   if (isLoading) {
     return (
@@ -105,6 +108,55 @@ export default function FinanceiroPage() {
         <SummaryCard label="Despesas do Mês"  value={despesasMes}          icon={<Calendar size={16} />} colorClass="text-red-400" />
         <SummaryCard label="Desp. Operac."    value={data.total_despesas}  icon={<TrendingDown size={16} />} />
         <SummaryCard label="Margem Líquida"   value={margemLiquida}        icon={<TrendingUp size={16} />} highlight />
+      </div>
+
+      {/* Despesas do Mês — lista de lançamentos */}
+      <div className="section-card overflow-hidden">
+        <div className="px-4 py-3 border-b border-white/10 flex items-center justify-between">
+          <h2 className="font-display font-semibold text-white text-sm">Despesas do Mês</h2>
+          <span className="font-display font-bold text-red-400 text-sm">{brl(despesasMes)}</span>
+        </div>
+        {despesasList.length === 0 ? (
+          <p className="text-center py-6 text-muted text-sm">Nenhuma despesa registrada este mês</p>
+        ) : (
+          <>
+            <div className="hidden md:block overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-white/10">
+                    {['Data', 'Categoria', 'Descrição', 'Valor'].map((h) => (
+                      <th key={h} className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">
+                        {h}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {despesasList.map((d) => (
+                    <tr key={d.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                      <td className="px-4 py-3 text-xs text-muted">{formatDate(d.data)}</td>
+                      <td className="px-4 py-3 text-xs text-white">{d.categoria}</td>
+                      <td className="px-4 py-3 text-xs text-muted">{d.descricao ?? '—'}</td>
+                      <td className="px-4 py-3 text-xs text-red-400 font-display font-semibold">{brl(d.valor)}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="md:hidden divide-y divide-white/5">
+              {despesasList.map((d) => (
+                <div key={d.id} className="p-4 flex items-start justify-between gap-2">
+                  <div>
+                    <p className="font-display font-semibold text-white text-xs">{d.categoria}</p>
+                    <p className="text-muted text-xs mt-0.5">{d.descricao ?? '—'}</p>
+                    <p className="text-muted text-xs mt-0.5">{formatDate(d.data)}</p>
+                  </div>
+                  <span className="text-red-400 font-display font-bold text-xs shrink-0">{brl(d.valor)}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
       </div>
 
       {/* Custódia da Entrada */}
