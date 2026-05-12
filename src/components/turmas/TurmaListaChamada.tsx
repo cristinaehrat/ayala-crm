@@ -122,6 +122,7 @@ export default function TurmaListaChamada({ turma, inscritos, onClose }: Props) 
               <th className="text-left px-3 py-2 border border-gray-200 font-bold">Telefone</th>
               <th className="text-left px-3 py-2 border border-gray-200 font-bold">Forma Pgto</th>
               <th className="text-left px-3 py-2 border border-gray-200 font-bold">Cobrança / Forma Pgto</th>
+              <th className="text-left px-3 py-2 border border-gray-200 font-bold">Observações</th>
             </tr>
           </thead>
           <tbody>
@@ -157,6 +158,9 @@ export default function TurmaListaChamada({ turma, inscritos, onClose }: Props) 
                       <span className="text-gray-400 text-xs">—</span>
                     )}
                   </td>
+                  <td className="px-3 py-2 border border-gray-200 text-xs text-gray-700">
+                    {cobrar ? (i.observacoes_negociacao || '—') : <span className="text-gray-300">—</span>}
+                  </td>
                 </tr>
               )
             })}
@@ -164,7 +168,7 @@ export default function TurmaListaChamada({ turma, inscritos, onClose }: Props) 
           {inscritos.length === 0 && (
             <tbody>
               <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-gray-500 border border-gray-200">
+                <td colSpan={6} className="px-3 py-6 text-center text-gray-500 border border-gray-200">
                   Nenhum inscrito nesta turma.
                 </td>
               </tr>

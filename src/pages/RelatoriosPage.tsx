@@ -239,7 +239,7 @@ function ListaChamada() {
     ...new Map(
       inscritos
         .filter((i) => i.id_turma && i.nome_treinamento_turma)
-        .map((i) => [i.id_turma!, { id: i.id_turma!, nome: i.nome_treinamento_turma! }])
+        .map((i) => [i.id_turma!, { id: i.id_turma!, nome: i.nome_treinamento_turma!, data: i.data_inicio_turma }])
     ).values(),
   ]
 
@@ -294,8 +294,8 @@ function ListaChamada() {
           className="input-field flex-1 min-w-48 text-xs"
         >
           <option value="">Todas as turmas</option>
-          {turmasOpts.map(({ id, nome }) => (
-            <option key={id} value={id}>{nome}</option>
+          {turmasOpts.map(({ id, nome, data }) => (
+            <option key={id} value={id}>{nome}{data ? ` — ${formatDate(data)}` : ''}</option>
           ))}
         </select>
         <label className="flex items-center gap-2 text-xs text-muted cursor-pointer">
