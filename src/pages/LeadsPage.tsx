@@ -10,7 +10,7 @@ import { Search, Plus } from 'lucide-react'
 
 const VALID_FILTERS: LeadFilter[] = [
   'todos','ag_ismenia','qualificados','hot_lead','lista_espera',
-  'aguardando_pagamento',
+  'aguardando_pagamento','visualizou_preco',
 ]
 
 export default function LeadsPage() {
@@ -43,7 +43,7 @@ export default function LeadsPage() {
         {/* Left panel — list */}
         <div
           className={`flex flex-col overflow-hidden border-r border-white/10 bg-navy
-            ${selectedId ? 'hidden md:flex md:w-80 lg:w-96' : 'flex w-full md:w-80 lg:w-96'}`}
+            ${selectedId ? 'hidden md:flex md:w-96 lg:w-[440px]' : 'flex w-full md:w-96 lg:w-[440px]'}`}
         >
           {/* Search + New */}
           <div className="px-3 pt-3 pb-1 flex gap-2">

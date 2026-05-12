@@ -41,12 +41,12 @@ export default function LeadFilters({ active, onChange }: Props) {
   const activeCidade = active.startsWith('cidade:') ? active.slice(7) : null
 
   const pillBase =
-    'shrink-0 px-3 py-1.5 rounded-full text-xs font-display font-semibold tracking-wide transition-colors cursor-pointer border flex items-center gap-1'
+    'px-2.5 py-1 rounded-full text-xs font-display font-semibold tracking-wide transition-colors cursor-pointer border flex items-center gap-1'
   const pillActive = 'bg-orange text-white border-orange'
   const pillInactive = 'bg-transparent text-muted border-white/20 hover:border-orange/50 hover:text-white'
 
   return (
-    <div className="flex gap-2 overflow-x-auto pb-1 px-3 pt-3 scrollbar-none">
+    <div className="flex flex-wrap gap-1.5 px-3 pt-3 pb-2">
       {FILTERS.map(({ id, label }) => (
         <button
           key={id}
