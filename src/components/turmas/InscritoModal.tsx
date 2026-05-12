@@ -20,7 +20,8 @@ const FLUXO_OPTS = [
   { value: 'link_whatsapp',      label: 'Link WhatsApp' },
   { value: 'boleto_parceiro',    label: 'Boleto Parceiro' },
   { value: 'maquina_presencial', label: 'Máquina Presencial' },
-  { value: 'pix_direto',         label: 'PIX Direto' },
+  { value: 'pix_direto',         label: 'PIX' },
+  { value: 'dinheiro',           label: 'Dinheiro' },
 ] as const
 
 const CUSTODIA_OPTS = [
@@ -46,6 +47,7 @@ type Form = {
   saldo_a_receber: string
   status_financeiro: string
   custodia_entrada: string
+  qtd_parcelas: string
   comprovante_validado: boolean
   cobrar_em_aula: boolean
   url_comprovante: string
@@ -79,6 +81,7 @@ function fromInscrito(i: Inscrito | null): Form {
     saldo_a_receber:       String(i?.saldo_a_receber ?? ''),
     status_financeiro:     i?.status_financeiro ?? '',
     custodia_entrada:      i?.custodia_entrada ?? '',
+    qtd_parcelas:          String(i?.qtd_parcelas ?? ''),
     comprovante_validado:  i?.comprovante_validado ?? false,
     cobrar_em_aula:        i?.cobrar_em_aula ?? false,
     url_comprovante:       i?.url_comprovante ?? '',
@@ -161,7 +164,9 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
   const [searchResults, setSearchResults] = useState<Lead[]>([])
   const [searching, setSearching] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
+  const [showEmpresaSuggestions, setShowEmpresaSuggestions] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
+  const { data: empresaSuggestions = [] } = useSearchEmpresas(form.empresa_oficina)
   const updateInscrito = useUpdateInscrito()
   const createInscrito = useCreateInscrito()
   const deleteInscrito = useDeleteInscrito()
@@ -359,6 +364,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
             saldo_a_receber:       n(form.saldo_a_receber),
             status_financeiro:     form.status_financeiro || null,
             fluxo_pagamento:       fluxoCSV,
+            qtd_parcelas:          form.qtd_parcelas ? parseInt(form.qtd_parcelas, 10) : null,
             custodia_entrada:      (form.custodia_entrada || null) as Inscrito['custodia_entrada'],
             comprovante_validado:  form.comprovante_validado,
             cobrar_em_aula:        form.cobrar_em_aula,
@@ -481,7 +487,33 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                   />
                 </Field>
                 <Field label="Empresa / Oficina">
-                  <input className="input-field" value={form.empresa_oficina} onChange={(e) => set('empresa_oficina', e.target.value)} />
+                  <div className="relative">
+                    <input
+                      className="input-field"
+                      value={form.empresa_oficina}
+                      onChange={(e) => { set('empresa_oficina', e.target.value); setShowEmpresaSuggestions(true) }}
+                      onBlur={() => setTimeout(() => setShowEmpresaSuggestions(false), 150)}
+                    />
+                    {showEmpresaSuggestions && empresaSuggestions.length > 0 && (
+                      <div className="absolute z-20 top-full left-0 right-0 mt-1 border border-white/10 rounded-lg bg-navy overflow-hidden shadow-lg">
+                        {empresaSuggestions.map((emp) => (
+                          <button
+                            key={emp.id}
+                            type="button"
+                            onClick={() => {
+                              set('empresa_oficina', emp.nome_fantasia ?? emp.razao_social ?? '')
+                              fillEmpresaFields(emp)
+                              setShowEmpresaSuggestions(false)
+                            }}
+                            className="w-full text-left px-3 py-2 hover:bg-white/10 border-b border-white/5 last:border-0 cursor-pointer transition-colors"
+                          >
+                            <p className="text-xs font-display font-semibold text-white">{emp.razao_social ?? emp.nome_fantasia}</p>
+                            <p className="text-xs text-muted">{emp.cnpj ?? ''}{emp.cidade ? ` · ${emp.cidade}` : ''}</p>
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </Field>
               </section>
             )}
@@ -528,11 +560,24 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                   ))}
                 </div>
               </Field>
-              <Field label="Custódia Entrada">
-                <select className="input-field" value={form.custodia_entrada} onChange={(e) => set('custodia_entrada', e.target.value)}>
-                  {CUSTODIA_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
-                </select>
-              </Field>
+              <div className="grid grid-cols-2 gap-2">
+                <Field label="Entrada Recebida Por">
+                  <select className="input-field" value={form.custodia_entrada} onChange={(e) => set('custodia_entrada', e.target.value)}>
+                    {CUSTODIA_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </Field>
+                <Field label="Em Quantas Vezes">
+                  <input
+                    type="number"
+                    min={1}
+                    max={12}
+                    className="input-field"
+                    placeholder="1"
+                    value={form.qtd_parcelas}
+                    onChange={(e) => set('qtd_parcelas', e.target.value)}
+                  />
+                </Field>
+              </div>
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 h-9 px-3 bg-white/5 border border-white/20 rounded-lg">
                   <input type="checkbox" id="comprovante_validado" checked={form.comprovante_validado} onChange={(e) => set('comprovante_validado', e.target.checked)} className="w-4 h-4 accent-orange cursor-pointer" />

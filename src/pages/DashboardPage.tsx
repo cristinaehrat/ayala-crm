@@ -1,7 +1,7 @@
 import { useLeads } from '@/hooks/useLeads'
 import { useTurmas } from '@/hooks/useTurmas'
 import { useFinanceiro } from '@/hooks/useFinanceiro'
-import { Flame, Clock, DollarSign, AlertTriangle, BarChart2, ChevronRight } from 'lucide-react'
+import { Eye, Clock, DollarSign, AlertTriangle, BarChart2, ChevronRight } from 'lucide-react'
 import { MARCA_BADGES } from '@/lib/utils'
 import { Link, useNavigate } from 'react-router-dom'
 
@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const { data: turmas = [], isLoading: turmasLoading } = useTurmas()
   const { data: financeiro } = useFinanceiro()
 
-  const hotLeads  = leads.filter((l) => l.etiqueta_chatwoot?.toLowerCase().includes('hot_lead')).length
+  const visPreco  = leads.filter((l) => l.etiqueta_chatwoot?.toLowerCase().includes('visualizou_preco')).length
   const agIsmenia = leads.filter((l) => l.etiqueta_chatwoot?.toLowerCase().includes('aguardando_ismenia')).length
 
   const turmasAbertas = turmas.filter((t) => t.status === 'aberta')
@@ -29,13 +29,13 @@ export default function DashboardPage() {
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {/* Ação imediata */}
         <div className="grid grid-cols-2 gap-3">
-          <Link to="/leads?filter=hot_lead">
-            <div className={`section-card p-4 transition-colors hover:border-orange/60 hover:bg-white/10 cursor-pointer ${hotLeads > 0 ? 'border-orange/40' : ''}`}>
-              <div className="mb-2 text-red-400"><Flame size={18} /></div>
-              <p className={`font-display font-bold text-2xl ${hotLeads > 0 ? 'text-orange' : 'text-white'}`}>
-                {leadsLoading ? '—' : hotLeads}
+          <Link to="/leads?filter=visualizou_preco">
+            <div className={`section-card p-4 transition-colors hover:border-blue-400/60 hover:bg-white/10 cursor-pointer ${visPreco > 0 ? 'border-blue-400/40' : ''}`}>
+              <div className="mb-2 text-blue-400"><Eye size={18} /></div>
+              <p className={`font-display font-bold text-2xl ${visPreco > 0 ? 'text-blue-400' : 'text-white'}`}>
+                {leadsLoading ? '—' : visPreco}
               </p>
-              <p className="text-xs text-muted font-display font-semibold mt-0.5">Hot Leads</p>
+              <p className="text-xs text-muted font-display font-semibold mt-0.5">Visualizou Preço</p>
             </div>
           </Link>
           <Link to="/leads?filter=ag_ismenia">

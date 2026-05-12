@@ -14,6 +14,7 @@ const FLUXO_LABEL: Record<string, string> = {
   boleto_parceiro:    'Boleto',
   maquina_presencial: 'Máquina',
   pix_direto:         'PIX',
+  dinheiro:           'Dinheiro',
 }
 
 function formatFluxo(csv: string | null, fallback: string | null) {
@@ -32,32 +33,39 @@ function formatDate(iso: string | null) {
 
 export default function TurmaListaChamada({ turma, inscritos, onClose }: Props) {
   const [telefones, setTelefones] = useState<Record<string, string>>({})
+  const [telefonesLoaded, setTelefonesLoaded] = useState(false)
   const hoje = new Date().toLocaleDateString('pt-BR')
 
-  // Buscar telefones dos leads
+  // Buscar telefones dos leads — print só dispara após completar
   useEffect(() => {
     const ids = inscritos.map((i) => i.id_lead).filter(Boolean) as string[]
-    if (ids.length === 0) return
+    if (ids.length === 0) {
+      setTelefonesLoaded(true)
+      return
+    }
     supabase
       .from('leads_v2')
       .select('id,telefone')
       .in('id', ids)
       .then(({ data }) => {
-        if (!data) return
-        const map: Record<string, string> = {}
-        for (const l of data) map[l.id] = l.telefone ?? ''
-        setTelefones(map)
+        if (data) {
+          const map: Record<string, string> = {}
+          for (const l of data) map[l.id] = l.telefone ?? ''
+          setTelefones(map)
+        }
+        setTelefonesLoaded(true)
       })
   }, [inscritos])
 
   useEffect(() => {
-    window.print()
-  }, [])
+    if (telefonesLoaded) window.print()
+  }, [telefonesLoaded])
 
   const cobrarCount = inscritos.filter((i) => i.cobrar_em_aula).length
 
   return (
     <div className="fixed inset-0 z-50 bg-white text-black overflow-y-auto">
+      <style>{`@media print { @page { margin: 0.5cm; } }`}</style>
       {/* Toolbar — oculto na impressão */}
       <div className="print:hidden flex items-center justify-between px-6 py-3 border-b border-gray-200 bg-gray-50 sticky top-0">
         <p className="font-semibold text-sm text-gray-700">Lista de Chamada</p>
@@ -113,7 +121,7 @@ export default function TurmaListaChamada({ turma, inscritos, onClose }: Props) 
               <th className="text-left px-3 py-2 border border-gray-200 font-bold">Nome</th>
               <th className="text-left px-3 py-2 border border-gray-200 font-bold">Telefone</th>
               <th className="text-left px-3 py-2 border border-gray-200 font-bold">Forma Pgto</th>
-              <th className="text-center px-3 py-2 border border-gray-200 font-bold">Cobrar em Aula</th>
+              <th className="text-left px-3 py-2 border border-gray-200 font-bold">Cobrança / Forma Pgto</th>
             </tr>
           </thead>
           <tbody>
@@ -136,11 +144,15 @@ export default function TurmaListaChamada({ turma, inscritos, onClose }: Props) 
                   <td className="px-3 py-2 border border-gray-200 text-xs">
                     {formatFluxo(i.fluxo_pagamento, i.forma_pagamento)}
                   </td>
-                  <td className="px-3 py-2 border border-gray-200 text-center">
+                  <td className="px-3 py-2 border border-gray-200">
                     {cobrar ? (
-                      <span className="inline-flex items-center gap-1 font-bold text-red-700 text-xs">
-                        <AlertCircle size={12} /> COBRAR
-                      </span>
+                      <div className="flex items-center gap-1 text-red-700 text-xs font-bold flex-wrap">
+                        <AlertCircle size={12} className="shrink-0" />
+                        <span>{formatFluxo(i.fluxo_pagamento, i.forma_pagamento)}</span>
+                        {i.qtd_parcelas && i.qtd_parcelas > 1 && (
+                          <span>· {i.qtd_parcelas}x</span>
+                        )}
+                      </div>
                     ) : (
                       <span className="text-gray-400 text-xs">—</span>
                     )}

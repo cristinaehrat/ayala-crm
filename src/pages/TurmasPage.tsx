@@ -86,7 +86,7 @@ export default function TurmasPage() {
 
         {/* Inscritos panel */}
         {selectedId && selectedTurma && (
-          <div className="flex flex-col w-full md:w-96 lg:w-[480px] border-l border-white/10 bg-navy overflow-hidden">
+          <div className="flex flex-col w-full md:w-[480px] lg:w-[600px] border-l border-white/10 bg-navy overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
               <div>
                 <h2 className="font-display font-bold text-white text-sm">
