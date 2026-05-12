@@ -68,6 +68,25 @@ export interface Inscrito {
   valor_parcela: number | null
   url_comprovante: string | null
   cobrar_em_aula: boolean | null
+  cpf: string | null
+  empresa_id: string | null
+}
+
+export interface Empresa {
+  id: string
+  created_at: string | null
+  nome_fantasia: string | null
+  razao_social: string | null
+  cnpj: string | null
+  inscricao_estadual: string | null
+  endereco: string | null
+  bairro: string | null
+  cep: string | null
+  cidade: string | null
+  estado: string | null
+  email: string | null
+  nome_responsavel: string | null
+  whatsapp_responsavel: string | null
 }
 
 export interface CatalogoTreinamento {

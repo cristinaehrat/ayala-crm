@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import Modal from '@/components/ui/Modal'
-import { useUpdateInscrito, useCreateInscrito } from '@/hooks/useInscritos'
+import { useUpdateInscrito, useCreateInscrito, useDeleteInscrito } from '@/hooks/useInscritos'
+import { useSearchEmpresas, useCreateEmpresa, useUpdateEmpresa } from '@/hooks/useEmpresasCadastradas'
 import { useLead } from '@/hooks/useLeads'
 import { supabase } from '@/lib/supabase'
-import type { Inscrito, Lead } from '@/lib/types'
+import type { Inscrito, Lead, Empresa } from '@/lib/types'
 import { toast } from 'sonner'
-import { Upload, Loader2, Search, X } from 'lucide-react'
+import { Upload, Loader2, Search, X, Trash2 } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -39,6 +40,7 @@ const STATUS_OPTS = [
 type Form = {
   nome: string
   empresa_oficina: string
+  cpf: string
   valor_total: string
   valor_entrada: string
   saldo_a_receber: string
@@ -51,12 +53,27 @@ type Form = {
   pagante_documento: string
   pagante_email_nf: string
   observacoes_negociacao: string
+  // PJ fields
+  empresa_id: string
+  pj_nome_fantasia: string
+  pj_razao_social: string
+  pj_cnpj: string
+  pj_inscricao_estadual: string
+  pj_endereco: string
+  pj_bairro: string
+  pj_cep: string
+  pj_cidade: string
+  pj_estado: string
+  pj_email: string
+  pj_nome_responsavel: string
+  pj_whatsapp_responsavel: string
 }
 
 function fromInscrito(i: Inscrito | null): Form {
   return {
     nome:                  i?.nome ?? '',
     empresa_oficina:       i?.empresa_oficina ?? '',
+    cpf:                   i?.cpf ?? '',
     valor_total:           String(i?.valor_total ?? ''),
     valor_entrada:         String(i?.valor_entrada ?? ''),
     saldo_a_receber:       String(i?.saldo_a_receber ?? ''),
@@ -69,6 +86,19 @@ function fromInscrito(i: Inscrito | null): Form {
     pagante_documento:     i?.pagante_documento ?? '',
     pagante_email_nf:      i?.pagante_email_nf ?? '',
     observacoes_negociacao: i?.observacoes_negociacao ?? '',
+    empresa_id:            i?.empresa_id ?? '',
+    pj_nome_fantasia:      '',
+    pj_razao_social:       '',
+    pj_cnpj:               '',
+    pj_inscricao_estadual: '',
+    pj_endereco:           '',
+    pj_bairro:             '',
+    pj_cep:                '',
+    pj_cidade:             '',
+    pj_estado:             '',
+    pj_email:              '',
+    pj_nome_responsavel:   '',
+    pj_whatsapp_responsavel: '',
   }
 }
 
@@ -88,6 +118,40 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
+function EmpresaSearch({ onSelect }: { onSelect: (e: Empresa) => void }) {
+  const [q, setQ] = useState('')
+  const { data: results = [] } = useSearchEmpresas(q)
+
+  return (
+    <div className="space-y-2">
+      <div className="relative">
+        <Search size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-muted pointer-events-none" />
+        <input
+          className="input-field pl-8 text-xs"
+          placeholder="Buscar empresa por CNPJ ou razão social..."
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+        />
+      </div>
+      {results.length > 0 && (
+        <div className="border border-white/10 rounded-lg overflow-hidden">
+          {results.map((e) => (
+            <button
+              key={e.id}
+              type="button"
+              onClick={() => { onSelect(e); setQ('') }}
+              className="w-full text-left px-3 py-2 hover:bg-white/10 border-b border-white/5 last:border-0 cursor-pointer transition-colors"
+            >
+              <p className="text-xs font-display font-semibold text-white">{e.razao_social ?? e.nome_fantasia ?? '—'}</p>
+              <p className="text-xs text-muted">{e.cnpj ?? ''} {e.cidade ? `· ${e.cidade}` : ''}</p>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId }: Props) {
   const [form, setForm] = useState<Form>(() => fromInscrito(inscrito))
   const [fluxoSelecionados, setFluxoSelecionados] = useState<string[]>([])
@@ -96,12 +160,17 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
   const [searchQuery, setSearchQuery] = useState('')
   const [searchResults, setSearchResults] = useState<Lead[]>([])
   const [searching, setSearching] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const updateInscrito = useUpdateInscrito()
   const createInscrito = useCreateInscrito()
+  const deleteInscrito = useDeleteInscrito()
+  const createEmpresa = useCreateEmpresa()
+  const updateEmpresa = useUpdateEmpresa()
   const isEdit = !!inscrito
 
   const { data: preloadedLead } = useLead(leadId ?? null)
+  const { data: leadData } = useLead(isEdit ? (inscrito?.id_lead ?? null) : null)
 
   useEffect(() => {
     if (!open) return
@@ -110,7 +179,22 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
     setSelectedLead(null)
     setSearchQuery('')
     setSearchResults([])
+    setConfirmDelete(false)
   }, [open, inscrito])
+
+  // Carregar dados PJ da empresa vinculada ao abrir edição
+  useEffect(() => {
+    if (!open || !inscrito?.empresa_id) return
+    supabase
+      .from('empresas_cadastradas')
+      .select('*')
+      .eq('id', inscrito.empresa_id)
+      .single()
+      .then(({ data }) => {
+        if (!data) return
+        fillEmpresaFields(data as Empresa)
+      })
+  }, [open, inscrito?.empresa_id])
 
   useEffect(() => {
     if (preloadedLead && !isEdit) {
@@ -172,6 +256,25 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
     setSearchResults([])
   }
 
+  function fillEmpresaFields(e: Empresa) {
+    setForm((f) => ({
+      ...f,
+      empresa_id:             e.id,
+      pj_nome_fantasia:       e.nome_fantasia ?? '',
+      pj_razao_social:        e.razao_social ?? '',
+      pj_cnpj:                e.cnpj ?? '',
+      pj_inscricao_estadual:  e.inscricao_estadual ?? '',
+      pj_endereco:            e.endereco ?? '',
+      pj_bairro:              e.bairro ?? '',
+      pj_cep:                 e.cep ?? '',
+      pj_cidade:              e.cidade ?? '',
+      pj_estado:              e.estado ?? '',
+      pj_email:               e.email ?? '',
+      pj_nome_responsavel:    e.nome_responsavel ?? '',
+      pj_whatsapp_responsavel: e.whatsapp_responsavel ?? '',
+    }))
+  }
+
   async function handleUpload(file: File) {
     setUploading(true)
     try {
@@ -194,6 +297,45 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
     }
   }
 
+  async function handleDelete() {
+    if (!inscrito) return
+    try {
+      await deleteInscrito.mutateAsync(inscrito.id_inscricao)
+      toast.success('Inscrição cancelada')
+      onClose()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao cancelar inscrição')
+    }
+  }
+
+  async function resolveEmpresaId(): Promise<string | null> {
+    const hasPjData = form.pj_razao_social || form.pj_cnpj
+    if (!hasPjData) return form.empresa_id || null
+
+    const pjPayload: Omit<Empresa, 'id' | 'created_at'> = {
+      nome_fantasia:        form.pj_nome_fantasia || null,
+      razao_social:         form.pj_razao_social || null,
+      cnpj:                 form.pj_cnpj || null,
+      inscricao_estadual:   form.pj_inscricao_estadual || null,
+      endereco:             form.pj_endereco || null,
+      bairro:               form.pj_bairro || null,
+      cep:                  form.pj_cep || null,
+      cidade:               form.pj_cidade || null,
+      estado:               form.pj_estado || null,
+      email:                form.pj_email || null,
+      nome_responsavel:     form.pj_nome_responsavel || null,
+      whatsapp_responsavel: form.pj_whatsapp_responsavel || null,
+    }
+
+    if (form.empresa_id) {
+      await updateEmpresa.mutateAsync({ id: form.empresa_id, data: pjPayload })
+      return form.empresa_id
+    } else {
+      const created = await createEmpresa.mutateAsync(pjPayload)
+      return created.id
+    }
+  }
+
   async function handleSave() {
     if (!form.nome.trim()) {
       toast.error('Selecione um lead ou informe o nome')
@@ -202,43 +344,51 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
 
     const fluxoCSV = fluxoSelecionados.join(',') || null
 
-    if (isEdit) {
-      await updateInscrito.mutateAsync({
-        id_inscricao: inscrito!.id_inscricao,
-        data: {
-          nome:                  form.nome || null,
-          empresa_oficina:       form.empresa_oficina || null,
-          valor_total:           n(form.valor_total),
-          valor_entrada:         n(form.valor_entrada),
-          saldo_a_receber:       n(form.saldo_a_receber),
-          status_financeiro:     form.status_financeiro || null,
-          fluxo_pagamento:       fluxoCSV,
-          custodia_entrada:      (form.custodia_entrada || null) as Inscrito['custodia_entrada'],
-          comprovante_validado:  form.comprovante_validado,
-          cobrar_em_aula:        form.cobrar_em_aula,
-          url_comprovante:       form.url_comprovante || null,
-          pagante_nome_nf:       form.pagante_nome_nf || null,
-          pagante_documento:     form.pagante_documento || null,
-          pagante_email_nf:      form.pagante_email_nf || null,
-          observacoes_negociacao: form.observacoes_negociacao || null,
-        },
-      })
-      toast.success('Inscrito atualizado')
-    } else {
-      await createInscrito.mutateAsync({
-        id_turma:        turmaId,
-        id_lead:         selectedLead?.id,
-        nome:            form.nome,
-        empresa_oficina: form.empresa_oficina || undefined,
-        valor_total:     n(form.valor_total) ?? undefined,
-        status_financeiro: form.status_financeiro || undefined,
-      })
-      toast.success('Inscrito adicionado')
+    try {
+      const empresaId = await resolveEmpresaId()
+
+      if (isEdit) {
+        await updateInscrito.mutateAsync({
+          id_inscricao: inscrito!.id_inscricao,
+          data: {
+            nome:                  form.nome || null,
+            empresa_oficina:       form.empresa_oficina || null,
+            cpf:                   form.cpf || null,
+            valor_total:           n(form.valor_total),
+            valor_entrada:         n(form.valor_entrada),
+            saldo_a_receber:       n(form.saldo_a_receber),
+            status_financeiro:     form.status_financeiro || null,
+            fluxo_pagamento:       fluxoCSV,
+            custodia_entrada:      (form.custodia_entrada || null) as Inscrito['custodia_entrada'],
+            comprovante_validado:  form.comprovante_validado,
+            cobrar_em_aula:        form.cobrar_em_aula,
+            url_comprovante:       form.url_comprovante || null,
+            pagante_nome_nf:       form.pagante_nome_nf || null,
+            pagante_documento:     form.pagante_documento || null,
+            pagante_email_nf:      form.pagante_email_nf || null,
+            observacoes_negociacao: form.observacoes_negociacao || null,
+            empresa_id:            empresaId,
+          },
+        })
+        toast.success('Inscrito atualizado')
+      } else {
+        await createInscrito.mutateAsync({
+          id_turma:        turmaId,
+          id_lead:         selectedLead?.id,
+          nome:            form.nome,
+          empresa_oficina: form.empresa_oficina || undefined,
+          valor_total:     n(form.valor_total) ?? undefined,
+          status_financeiro: form.status_financeiro || undefined,
+        })
+        toast.success('Inscrito adicionado')
+      }
+      onClose()
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar')
     }
-    onClose()
   }
 
-  const saving = updateInscrito.isPending || createInscrito.isPending
+  const saving = updateInscrito.isPending || createInscrito.isPending || createEmpresa.isPending || updateEmpresa.isPending
   const showLeadSearch = !isEdit && !selectedLead
 
   return (
@@ -278,9 +428,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                     onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
-                {searching && (
-                  <p className="text-xs text-muted text-center py-2">Buscando...</p>
-                )}
+                {searching && <p className="text-xs text-muted text-center py-2">Buscando...</p>}
                 {searchResults.length > 0 && (
                   <div className="border border-white/10 rounded-lg overflow-hidden">
                     {searchResults.map((lead) => (
@@ -304,7 +452,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
           </section>
         )}
 
-        {/* Formulário — exibido após seleção (criação) ou sempre (edição) */}
+        {/* Formulário */}
         {(isEdit || !showLeadSearch) && (
           <>
             {/* Identificação */}
@@ -313,6 +461,24 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                 <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Identificação</p>
                 <Field label="Nome *">
                   <input className="input-field" value={form.nome} onChange={(e) => set('nome', e.target.value)} />
+                </Field>
+                {leadData?.telefone && (
+                  <Field label="WhatsApp">
+                    <input
+                      className="input-field opacity-60 cursor-not-allowed"
+                      value={leadData.telefone}
+                      readOnly
+                      title="Telefone registrado no lead"
+                    />
+                  </Field>
+                )}
+                <Field label="CPF do Participante">
+                  <input
+                    className="input-field"
+                    placeholder="000.000.000-00"
+                    value={form.cpf}
+                    onChange={(e) => set('cpf', e.target.value)}
+                  />
                 </Field>
                 <Field label="Empresa / Oficina">
                   <input className="input-field" value={form.empresa_oficina} onChange={(e) => set('empresa_oficina', e.target.value)} />
@@ -367,46 +533,26 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                   {CUSTODIA_OPTS.map((o) => <option key={o.value} value={o.value}>{o.label}</option>)}
                 </select>
               </Field>
-
               <div className="flex flex-col gap-2">
                 <div className="flex items-center gap-2 h-9 px-3 bg-white/5 border border-white/20 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="comprovante_validado"
-                    checked={form.comprovante_validado}
-                    onChange={(e) => set('comprovante_validado', e.target.checked)}
-                    className="w-4 h-4 accent-orange cursor-pointer"
-                  />
+                  <input type="checkbox" id="comprovante_validado" checked={form.comprovante_validado} onChange={(e) => set('comprovante_validado', e.target.checked)} className="w-4 h-4 accent-orange cursor-pointer" />
                   <label htmlFor="comprovante_validado" className="text-sm text-white cursor-pointer">Comprovante validado</label>
                 </div>
                 <div className="flex items-center gap-2 h-9 px-3 bg-white/5 border border-white/20 rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="cobrar_em_aula"
-                    checked={form.cobrar_em_aula}
-                    onChange={(e) => set('cobrar_em_aula', e.target.checked)}
-                    className="w-4 h-4 accent-orange cursor-pointer"
-                  />
+                  <input type="checkbox" id="cobrar_em_aula" checked={form.cobrar_em_aula} onChange={(e) => set('cobrar_em_aula', e.target.checked)} className="w-4 h-4 accent-orange cursor-pointer" />
                   <label htmlFor="cobrar_em_aula" className="text-sm text-orange font-display font-semibold cursor-pointer">Cobrar em Aula</label>
                 </div>
               </div>
-
               <Field label="Comprovante PIX">
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={(e) => { const f = e.target.files?.[0]; if (f) handleUpload(f) }} />
                 <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    disabled={uploading}
-                    className="flex items-center gap-2 btn-secondary text-xs px-3 py-2 flex-1 justify-center"
-                  >
+                  <button type="button" onClick={() => fileRef.current?.click()} disabled={uploading} className="flex items-center gap-2 btn-secondary text-xs px-3 py-2 flex-1 justify-center">
                     {uploading ? <Loader2 size={14} className="animate-spin" /> : <Upload size={14} />}
                     {uploading ? 'Enviando...' : 'Anexar comprovante'}
                   </button>
                 </div>
                 {form.url_comprovante && (
-                  <a href={form.url_comprovante} target="_blank" rel="noreferrer"
-                    className="block text-xs text-orange underline mt-1 truncate">
+                  <a href={form.url_comprovante} target="_blank" rel="noreferrer" className="block text-xs text-orange underline mt-1 truncate">
                     Ver comprovante anexado
                   </a>
                 )}
@@ -416,6 +562,8 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
             {/* Nota Fiscal */}
             <section className="space-y-3">
               <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Nota Fiscal</p>
+
+              {/* PF */}
               <Field label="Nome Pagante">
                 <input className="input-field" value={form.pagante_nome_nf} onChange={(e) => set('pagante_nome_nf', e.target.value)} />
               </Field>
@@ -427,33 +575,116 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                   <input type="email" className="input-field" value={form.pagante_email_nf} onChange={(e) => set('pagante_email_nf', e.target.value)} />
                 </Field>
               </div>
+
+              {/* PJ */}
+              <div className="border-t border-white/10 pt-3 space-y-3">
+                <p className="text-xs font-display font-semibold text-white/60 uppercase tracking-wide">Dados PJ (Pessoa Jurídica)</p>
+                <EmpresaSearch onSelect={fillEmpresaFields} />
+                {form.empresa_id && (
+                  <p className="text-xs text-green-400">Empresa vinculada · dados serão atualizados ao salvar</p>
+                )}
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Nome Fantasia">
+                    <input className="input-field text-xs" value={form.pj_nome_fantasia} onChange={(e) => set('pj_nome_fantasia', e.target.value)} />
+                  </Field>
+                  <Field label="Razão Social">
+                    <input className="input-field text-xs" value={form.pj_razao_social} onChange={(e) => set('pj_razao_social', e.target.value)} />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="CNPJ">
+                    <input className="input-field text-xs" placeholder="00.000.000/0000-00" value={form.pj_cnpj} onChange={(e) => set('pj_cnpj', e.target.value)} />
+                  </Field>
+                  <Field label="Inscrição Estadual">
+                    <input className="input-field text-xs" value={form.pj_inscricao_estadual} onChange={(e) => set('pj_inscricao_estadual', e.target.value)} />
+                  </Field>
+                </div>
+                <Field label="Endereço">
+                  <input className="input-field text-xs" value={form.pj_endereco} onChange={(e) => set('pj_endereco', e.target.value)} />
+                </Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Bairro">
+                    <input className="input-field text-xs" value={form.pj_bairro} onChange={(e) => set('pj_bairro', e.target.value)} />
+                  </Field>
+                  <Field label="CEP">
+                    <input className="input-field text-xs" placeholder="00000-000" value={form.pj_cep} onChange={(e) => set('pj_cep', e.target.value)} />
+                  </Field>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Cidade">
+                    <input className="input-field text-xs" value={form.pj_cidade} onChange={(e) => set('pj_cidade', e.target.value)} />
+                  </Field>
+                  <Field label="Estado">
+                    <input className="input-field text-xs" placeholder="UF" value={form.pj_estado} onChange={(e) => set('pj_estado', e.target.value)} />
+                  </Field>
+                </div>
+                <Field label="E-mail Empresa">
+                  <input type="email" className="input-field text-xs" value={form.pj_email} onChange={(e) => set('pj_email', e.target.value)} />
+                </Field>
+                <div className="grid grid-cols-2 gap-2">
+                  <Field label="Nome Responsável">
+                    <input className="input-field text-xs" value={form.pj_nome_responsavel} onChange={(e) => set('pj_nome_responsavel', e.target.value)} />
+                  </Field>
+                  <Field label="WhatsApp Responsável">
+                    <input className="input-field text-xs" value={form.pj_whatsapp_responsavel} onChange={(e) => set('pj_whatsapp_responsavel', e.target.value)} />
+                  </Field>
+                </div>
+              </div>
             </section>
 
             {/* Observações */}
             <section className="space-y-3">
               <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Observações</p>
-              <textarea
-                rows={3}
-                className="input-field resize-none"
-                value={form.observacoes_negociacao}
-                onChange={(e) => set('observacoes_negociacao', e.target.value)}
-              />
+              <textarea rows={3} className="input-field resize-none" value={form.observacoes_negociacao} onChange={(e) => set('observacoes_negociacao', e.target.value)} />
             </section>
           </>
         )}
 
         {/* Actions */}
-        <div className="flex gap-3 pt-2">
-          <button
-            onClick={handleSave}
-            disabled={saving || (!isEdit && !selectedLead)}
-            className="btn-primary flex-1 py-2.5"
-          >
-            {saving ? 'Salvando...' : 'Salvar'}
-          </button>
-          <button onClick={onClose} className="btn-secondary px-5">
-            Cancelar
-          </button>
+        <div className="space-y-3 pt-2">
+          <div className="flex gap-3">
+            <button onClick={handleSave} disabled={saving || (!isEdit && !selectedLead)} className="btn-primary flex-1 py-2.5">
+              {saving ? 'Salvando...' : 'Salvar'}
+            </button>
+            <button onClick={onClose} className="btn-secondary px-5">
+              Cancelar
+            </button>
+          </div>
+
+          {isEdit && !confirmDelete && (
+            <button
+              type="button"
+              onClick={() => setConfirmDelete(true)}
+              className="w-full flex items-center justify-center gap-2 text-xs text-red-400 hover:text-red-300 border border-red-500/30 hover:border-red-400/50 rounded-lg py-2.5 transition-colors cursor-pointer"
+            >
+              <Trash2 size={13} /> Cancelar Inscrição
+            </button>
+          )}
+
+          {isEdit && confirmDelete && (
+            <div className="border border-red-500/40 rounded-lg p-3 space-y-2 bg-red-950/20">
+              <p className="text-xs text-red-300 text-center">
+                Confirmar cancelamento de inscrição de <strong>{inscrito?.nome}</strong>? Esta ação não pode ser desfeita.
+              </p>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  onClick={handleDelete}
+                  disabled={deleteInscrito.isPending}
+                  className="flex-1 text-xs bg-red-600 hover:bg-red-700 text-white rounded-lg py-2 font-semibold transition-colors cursor-pointer"
+                >
+                  {deleteInscrito.isPending ? 'Cancelando...' : 'Sim, cancelar inscrição'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmDelete(false)}
+                  className="flex-1 text-xs btn-secondary py-2"
+                >
+                  Manter inscrito
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </Modal>

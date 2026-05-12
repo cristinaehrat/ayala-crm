@@ -58,3 +58,21 @@ export function useCreateInscrito() {
     },
   })
 }
+
+export function useDeleteInscrito() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id_inscricao: string) => {
+      const { error } = await supabase
+        .from('inscritos')
+        .delete()
+        .eq('id_inscricao', id_inscricao)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['inscritos'] })
+      qc.invalidateQueries({ queryKey: ['financeiro'] })
+      qc.invalidateQueries({ queryKey: ['relatorios'] })
+    },
+  })
+}

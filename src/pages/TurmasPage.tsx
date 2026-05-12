@@ -6,8 +6,9 @@ import TurmaCard from '@/components/turmas/TurmaCard'
 import InscritoRow from '@/components/turmas/InscritoRow'
 import InscritoModal from '@/components/turmas/InscritoModal'
 import TurmaRelatorio from '@/components/turmas/TurmaRelatorio'
+import TurmaListaChamada from '@/components/turmas/TurmaListaChamada'
 import type { Inscrito } from '@/lib/types'
-import { X, Users, Plus, GraduationCap, Printer } from 'lucide-react'
+import { X, Users, Plus, GraduationCap, FileText, ClipboardList } from 'lucide-react'
 
 export default function TurmasPage() {
   const [searchParams] = useSearchParams()
@@ -21,6 +22,7 @@ export default function TurmasPage() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingInscrito, setEditingInscrito] = useState<Inscrito | null>(null)
   const [printMode, setPrintMode] = useState(false)
+  const [chamadaMode, setChamadaMode] = useState(false)
 
   useEffect(() => {
     if (turmaFromUrl) setSelectedId(turmaFromUrl)
@@ -84,7 +86,7 @@ export default function TurmasPage() {
 
         {/* Inscritos panel */}
         {selectedId && selectedTurma && (
-          <div className="flex flex-col w-full md:w-80 lg:w-96 border-l border-white/10 bg-navy overflow-hidden">
+          <div className="flex flex-col w-full md:w-96 lg:w-[480px] border-l border-white/10 bg-navy overflow-hidden">
             <div className="flex items-center justify-between px-4 py-3 border-b border-white/10 shrink-0">
               <div>
                 <h2 className="font-display font-bold text-white text-sm">
@@ -107,9 +109,18 @@ export default function TurmasPage() {
                 <button
                   onClick={() => setPrintMode(true)}
                   className="text-muted hover:text-white cursor-pointer"
-                  aria-label="Relatório PDF"
+                  aria-label="Relatório Financeiro PDF"
+                  title="Relatório Financeiro"
                 >
-                  <Printer size={16} />
+                  <FileText size={16} />
+                </button>
+                <button
+                  onClick={() => setChamadaMode(true)}
+                  className="text-muted hover:text-white cursor-pointer"
+                  aria-label="Lista de Chamada PDF"
+                  title="Lista de Chamada (professor)"
+                >
+                  <ClipboardList size={16} />
                 </button>
                 <button
                   onClick={() => setSelectedId(null)}
@@ -153,6 +164,14 @@ export default function TurmasPage() {
           turma={selectedTurma}
           inscritos={inscritos}
           onClose={() => setPrintMode(false)}
+        />
+      )}
+
+      {chamadaMode && selectedTurma && (
+        <TurmaListaChamada
+          turma={selectedTurma}
+          inscritos={inscritos}
+          onClose={() => setChamadaMode(false)}
         />
       )}
     </>
