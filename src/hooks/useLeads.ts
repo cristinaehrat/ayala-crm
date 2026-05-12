@@ -37,17 +37,19 @@ export function useLeads(filter: LeadFilter = 'todos') {
       let query = supabase
         .from('leads_v2')
         .select('*')
-        .order('ultimo_contato', { ascending: false, nullsFirst: false })
-        .order('data_entrada', { ascending: false, nullsFirst: false })
-        .limit(200)
 
       if (filter.startsWith('uf:')) {
-        query = query.ilike('uf', filter.slice(3))
+        query = query.ilike('uf', filter.slice(3).trim())
       } else if (filter.startsWith('cidade:')) {
-        query = query.ilike('cidade', filter.slice(7))
+        query = query.ilike('cidade', filter.slice(7).trim())
       } else {
         query = FILTER_MAP[filter as FixedFilter](query)
       }
+
+      query = query
+        .order('ultimo_contato', { ascending: false, nullsFirst: false })
+        .order('data_entrada', { ascending: false, nullsFirst: false })
+        .limit(200)
 
       const { data, error } = await query
       if (error) throw error
@@ -64,6 +66,8 @@ export function useDistinctUFs() {
         .from('leads_v2')
         .select('uf')
         .not('uf', 'is', null)
+        .neq('uf', '')
+        .limit(5000)
       if (error) throw error
       const all = (data ?? [])
         .map((r: { uf: string | null }) => r.uf?.trim().toUpperCase())
@@ -83,12 +87,12 @@ export function useDistinctCidades() {
         .select('cidade')
         .not('cidade', 'is', null)
         .neq('cidade', '')
-        .order('cidade')
+        .limit(5000)
       if (error) throw error
       const all = (data ?? [])
         .map((r: { cidade: string | null }) => r.cidade?.trim())
         .filter((v): v is string => !!v)
-      return [...new Set(all)]
+      return [...new Set(all)].sort()
     },
     staleTime: 5 * 60 * 1000,
   })
