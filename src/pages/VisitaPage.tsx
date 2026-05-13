@@ -275,7 +275,7 @@ export default function VisitaPage() {
                     className={`flex-1 rounded-lg text-sm font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
                       form.marcas.includes(m)
                         ? 'border-orange bg-orange/10 text-orange'
-                        : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
+                        : 'border-slate-300 bg-slate-50 text-navy hover:border-orange/50 hover:bg-orange/5'
                     }`}
                   >
                     {m}
@@ -294,7 +294,7 @@ export default function VisitaPage() {
                     className={`flex-1 rounded-lg text-sm font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
                       form.perfil === p.value
                         ? 'border-orange bg-orange/10 text-orange'
-                        : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
+                        : 'border-slate-300 bg-slate-50 text-navy hover:border-orange/50 hover:bg-orange/5'
                     }`}
                   >
                     {p.label}
@@ -313,7 +313,7 @@ export default function VisitaPage() {
                     className={`flex-1 rounded-lg text-xs font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
                       form.potencial === p.value
                         ? 'border-orange bg-orange/10 text-orange'
-                        : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
+                        : 'border-slate-300 bg-slate-50 text-navy hover:border-orange/50 hover:bg-orange/5'
                     }`}
                   >
                     {p.label}
