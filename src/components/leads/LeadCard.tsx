@@ -37,7 +37,7 @@ export default function LeadCard({ lead, active, onClick }: Props) {
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1">
-            <p className="font-display font-semibold text-sm text-white truncate">
+            <p className="font-display font-semibold text-sm text-navy truncate">
               {lead.nome ?? lead.telefone}
             </p>
             <span className="text-muted text-xs shrink-0">
@@ -70,7 +70,7 @@ export default function LeadCard({ lead, active, onClick }: Props) {
               </span>
             )}
             {lead.origem === 'visita' && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold text-muted bg-white/10 shrink-0">
+              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold text-muted bg-slate-100 shrink-0">
                 Visita
               </span>
             )}

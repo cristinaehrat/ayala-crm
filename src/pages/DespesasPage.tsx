@@ -112,7 +112,7 @@ export default function DespesasPage() {
         {/* Header */}
         <div className="px-4 pt-4 pb-2 shrink-0">
           <div className="flex items-center justify-between mb-3">
-            <h1 className="font-display font-bold text-white text-lg">Despesas</h1>
+            <h1 className="font-display font-bold text-navy text-lg">Despesas</h1>
             <button onClick={openSheet} className="btn-primary flex items-center gap-2 px-4">
               <Plus size={16} /> Nova Despesa
             </button>
@@ -127,7 +127,7 @@ export default function DespesasPage() {
                 className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-display font-semibold border transition-colors cursor-pointer ${
                   filtro === f
                     ? 'bg-orange border-orange text-white'
-                    : 'bg-transparent border-white/20 text-muted hover:text-white hover:border-orange/40'
+                    : 'bg-transparent border-slate-300 text-muted hover:text-navy hover:border-orange/50'
                 }`}
               >
                 {f === 'todos' ? 'Todos' : f === 'atual' ? 'Este Mês' : 'Mês Anterior'}
@@ -141,11 +141,11 @@ export default function DespesasPage() {
           <div className="grid grid-cols-3 gap-3 px-4 py-2 shrink-0">
             <div className="section-card p-3 text-center">
               <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1">Faturamento</p>
-              <p className="font-display font-bold text-green-400 text-sm">{brl(faturamento)}</p>
+              <p className="font-display font-bold text-green-600 text-sm">{brl(faturamento)}</p>
             </div>
             <div className="section-card p-3 text-center">
               <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1">Despesas</p>
-              <p className="font-display font-bold text-red-400 text-sm">{brl(total)}</p>
+              <p className="font-display font-bold text-red-600 text-sm">{brl(total)}</p>
             </div>
             <div className="section-card p-3 text-center">
               <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1">Resultado</p>
@@ -174,7 +174,7 @@ export default function DespesasPage() {
             return (
               <div
                 key={d.id}
-                className="flex items-start justify-between py-3 border-b border-white/10 last:border-0"
+                className="flex items-start justify-between py-3 border-b border-slate-200 last:border-0"
               >
                 <div className="flex items-start gap-3 min-w-0 flex-1">
                   <span className="text-xs text-muted font-display shrink-0 mt-0.5 w-10">{formatDate(d.data)}</span>
@@ -184,7 +184,7 @@ export default function DespesasPage() {
                         {cat.emoji} {cat.label}
                       </span>
                     )}
-                    {d.descricao && <p className="text-sm text-white">{d.descricao}</p>}
+                    {d.descricao && <p className="text-sm text-navy">{d.descricao}</p>}
                     {d.viagem_referencia && <p className="text-xs text-muted mt-0.5">{d.viagem_referencia}</p>}
                   </div>
                 </div>

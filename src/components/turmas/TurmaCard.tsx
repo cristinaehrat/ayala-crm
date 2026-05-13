@@ -20,16 +20,22 @@ export default function TurmaCard({ turma, onClick, active }: Props) {
     pct >= 70 ? 'bg-orange' :
     'bg-green-500'
 
+  const brandBorderColor =
+    turma.marca === 'volvo'  ? '#1E40AF' :
+    turma.marca === 'daf'    ? '#15803D' :
+    turma.marca === 'scania' ? '#F97316' : '#CBD5E1'
+
   return (
     <div
       onClick={onClick}
-      className={`section-card p-4 cursor-pointer hover:border-orange/40 transition-colors ${
+      className={`section-card p-4 cursor-pointer hover:border-orange/40 hover:shadow-md transition-all ${
         active ? 'border-orange' : ''
       }`}
+      style={{ borderLeftColor: brandBorderColor, borderLeftWidth: '4px' }}
     >
       <div className="flex items-start justify-between gap-2 mb-3">
         <div>
-          <h3 className="font-display font-bold text-white text-sm leading-tight">
+          <h3 className="font-display font-bold text-navy text-sm leading-tight">
             {turma.nome_treinamento ?? '—'}
           </h3>
           {marca && (
@@ -44,8 +50,8 @@ export default function TurmaCard({ turma, onClick, active }: Props) {
         <span
           className={`text-xs font-display font-bold px-2 py-0.5 rounded uppercase tracking-wide ${
             turma.status === 'aberta'
-              ? 'bg-green-900/50 text-green-400'
-              : 'bg-white/10 text-muted'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-slate-100 text-slate-500'
           }`}
         >
           {turma.status ?? '—'}
@@ -73,11 +79,11 @@ export default function TurmaCard({ turma, onClick, active }: Props) {
             <Users size={11} />
             <span>{ocupadas}/{total} vagas</span>
           </div>
-          <span className={`font-display font-bold ${disponiveis === 0 ? 'text-red-400' : 'text-green-400'}`}>
+          <span className={`font-display font-bold ${disponiveis === 0 ? 'text-red-600' : 'text-green-600'}`}>
             {disponiveis === 0 ? 'Lotada' : `${disponiveis} restantes`}
           </span>
         </div>
-        <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+        <div className="h-1.5 bg-slate-200 rounded-full overflow-hidden">
           <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
         </div>
       </div>

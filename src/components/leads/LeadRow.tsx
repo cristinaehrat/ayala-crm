@@ -23,7 +23,7 @@ export function LeadRowHeader() {
     <div
       className={cn(
         'hidden md:grid items-center px-4 py-2',
-        'border-b border-white/10 sticky top-0 bg-navy z-10',
+        'border-b border-border-subtle sticky top-0 bg-app z-10',
         'text-[10px] font-display font-bold text-muted uppercase tracking-widest',
         COL,
       )}
@@ -48,14 +48,14 @@ export default function LeadRow({ lead, onClick }: Props) {
       onClick={onClick}
       className={cn(
         'hidden md:grid items-center px-4 py-3',
-        'border-b border-white/10 last:border-0',
-        'hover:bg-white/5 cursor-pointer transition-colors',
+        'border-b border-border-subtle last:border-0',
+        'hover:bg-slate-50 cursor-pointer transition-colors',
         COL,
       )}
     >
       {/* Nome / Empresa */}
       <div className="min-w-0 pr-3">
-        <p className="font-display font-semibold text-sm text-white truncate">
+        <p className="font-display font-semibold text-sm text-navy truncate">
           {lead.nome ?? lead.telefone}
         </p>
         {lead.empresa_oficina && (

@@ -23,25 +23,25 @@ export default function DashboardPage() {
   return (
     <div className="h-full md:ml-56 flex flex-col overflow-hidden">
       <div className="px-4 pt-4 pb-2 shrink-0">
-        <h1 className="font-display font-bold text-white text-lg">Dashboard</h1>
+        <h1 className="font-display font-bold text-navy text-lg">Dashboard</h1>
       </div>
 
       <div className="flex-1 overflow-y-auto p-4 space-y-5">
         {/* Ação imediata */}
         <div className="grid grid-cols-2 gap-3">
           <Link to="/leads?filter=visualizou_preco">
-            <div className={`section-card p-4 transition-colors hover:border-blue-400/60 hover:bg-white/10 cursor-pointer ${visPreco > 0 ? 'border-blue-400/40' : ''}`}>
-              <div className="mb-2 text-blue-400"><Eye size={18} /></div>
-              <p className={`font-display font-bold text-2xl ${visPreco > 0 ? 'text-blue-400' : 'text-white'}`}>
+            <div className={`section-card p-4 transition-all hover:border-blue-400/60 hover:shadow-md cursor-pointer ${visPreco > 0 ? 'border-blue-400/40' : ''}`}>
+              <div className="mb-2 text-blue-500"><Eye size={18} /></div>
+              <p className={`font-display font-bold text-2xl ${visPreco > 0 ? 'text-blue-600' : 'text-navy'}`}>
                 {leadsLoading ? '—' : visPreco}
               </p>
               <p className="text-xs text-muted font-display font-semibold mt-0.5">Visualizou Preço</p>
             </div>
           </Link>
           <Link to="/leads?filter=ag_ismenia">
-            <div className={`section-card p-4 transition-colors hover:border-orange/60 hover:bg-white/10 cursor-pointer ${agIsmenia > 0 ? 'border-yellow-400/30' : ''}`}>
-              <div className="mb-2 text-yellow-400"><Clock size={18} /></div>
-              <p className={`font-display font-bold text-2xl ${agIsmenia > 0 ? 'text-yellow-400' : 'text-white'}`}>
+            <div className={`section-card p-4 transition-all hover:border-orange/60 hover:shadow-md cursor-pointer ${agIsmenia > 0 ? 'border-yellow-400/30' : ''}`}>
+              <div className="mb-2 text-yellow-500"><Clock size={18} /></div>
+              <p className={`font-display font-bold text-2xl ${agIsmenia > 0 ? 'text-yellow-600' : 'text-navy'}`}>
                 {leadsLoading ? '—' : agIsmenia}
               </p>
               <p className="text-xs text-muted font-display font-semibold mt-0.5">Ag. Ismênia</p>
@@ -52,8 +52,8 @@ export default function DashboardPage() {
         {/* Vagas Críticas */}
         {!turmasLoading && turmasCriticas.length > 0 && (
           <div className="section-card p-4">
-            <h2 className="font-display font-bold text-white text-sm mb-3 uppercase tracking-wide flex items-center gap-2">
-              <AlertTriangle size={15} className="text-red-400" />
+            <h2 className="font-display font-bold text-navy text-sm mb-3 uppercase tracking-wide flex items-center gap-2">
+              <AlertTriangle size={15} className="text-red-500" />
               Vagas Críticas
             </h2>
             <div className="space-y-2">
@@ -70,7 +70,7 @@ export default function DashboardPage() {
                         {marca.label}
                       </span>
                     )}
-                    <p className="text-xs font-display font-semibold text-white flex-1 truncate">
+                    <p className="text-xs font-display font-semibold text-navy flex-1 truncate">
                       {t.nome_treinamento}
                     </p>
                     <div className="shrink-0 flex items-center gap-1.5">
@@ -80,7 +80,7 @@ export default function DashboardPage() {
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500" />
                         </span>
                       )}
-                      <span className={`text-xs font-display font-bold ${esgotada ? 'text-red-400' : 'text-yellow-400'}`}>
+                      <span className={`text-xs font-display font-bold ${esgotada ? 'text-red-600' : 'text-yellow-600'}`}>
                         {t.vagas_disponiveis ?? 0} vaga{(t.vagas_disponiveis ?? 0) !== 1 ? 's' : ''}
                       </span>
                     </div>
@@ -94,7 +94,7 @@ export default function DashboardPage() {
         {/* Faturamento por Turma */}
         {financeiro && turmasAbertas.length > 0 && (
           <div className="section-card p-4">
-            <h2 className="font-display font-bold text-white text-sm mb-3 uppercase tracking-wide flex items-center gap-2">
+            <h2 className="font-display font-bold text-navy text-sm mb-3 uppercase tracking-wide flex items-center gap-2">
               <DollarSign size={15} className="text-orange" />
               Faturamento — Turmas Abertas
             </h2>
@@ -107,7 +107,7 @@ export default function DashboardPage() {
                     <div
                       key={turma.id}
                       onClick={() => navigate(`/turmas?turma=${turma.id}`)}
-                      className="flex items-center gap-3 cursor-pointer hover:bg-white/5 rounded-lg px-2 -mx-2 py-1 -my-1 transition-colors"
+                      className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 rounded-lg px-2 -mx-2 py-1 -my-1 transition-colors"
                     >
                       {marca && (
                         <span
@@ -118,7 +118,7 @@ export default function DashboardPage() {
                         </span>
                       )}
                       <div className="flex-1 min-w-0">
-                        <p className="text-xs font-display font-semibold text-white truncate">
+                        <p className="text-xs font-display font-semibold text-navy truncate">
                           {turma.nome_treinamento}
                         </p>
                         <p className="text-xs text-muted">{turma.vagas_disponiveis ?? 0} vagas disponíveis</p>
@@ -137,7 +137,7 @@ export default function DashboardPage() {
         {/* Ocupação das turmas */}
         {!turmasLoading && turmasAbertas.length > 0 && (
           <div className="section-card p-4">
-            <h2 className="font-display font-bold text-white text-sm mb-1 uppercase tracking-wide flex items-center gap-2">
+            <h2 className="font-display font-bold text-navy text-sm mb-1 uppercase tracking-wide flex items-center gap-2">
               <BarChart2 size={15} className="text-orange" />
               Ocupação das Turmas
             </h2>
@@ -161,14 +161,14 @@ export default function DashboardPage() {
                           {marca.label}
                         </span>
                       )}
-                      <p className="text-xs font-display font-semibold text-white truncate flex-1">
+                      <p className="text-xs font-display font-semibold text-navy truncate flex-1">
                         {t.nome_treinamento}
                       </p>
-                      <span className="text-xs font-display font-bold text-white shrink-0">
+                      <span className="text-xs font-display font-bold text-navy shrink-0">
                         {pct}%
                       </span>
                     </div>
-                    <div className="h-3 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-3 bg-slate-200 rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-500"
                         style={{ width: `${pct}%`, backgroundColor: barColor }}

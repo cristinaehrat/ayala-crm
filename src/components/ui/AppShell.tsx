@@ -25,7 +25,7 @@ export default function AppShell() {
   }
 
   return (
-    <div className="flex flex-col h-screen bg-navy overflow-hidden">
+    <div className="flex flex-col h-screen bg-app overflow-hidden">
       {/* Header */}
       <header className="flex items-center justify-between px-4 py-3 bg-footer border-b border-white/10 shrink-0">
         <div className="flex items-center">

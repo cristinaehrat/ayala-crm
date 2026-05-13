@@ -47,15 +47,15 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
       {...attributes}
       {...listeners}
       onClick={handleClick}
-      className="bg-navy2/50 border border-white/10 rounded-lg p-3 cursor-grab active:cursor-grabbing
-                 hover:border-orange/30 transition-colors"
+      className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing
+                 hover:border-orange/30 hover:shadow-md transition-all"
     >
       <div className="flex items-center gap-2 mb-1.5">
         <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center shrink-0">
           <span className="text-white font-display font-bold text-xs">{initials(lead.nome)}</span>
         </div>
         <div className="min-w-0">
-          <p className="font-display font-semibold text-xs text-white truncate">
+          <p className="font-display font-semibold text-xs text-navy truncate">
             {lead.nome ?? lead.telefone}
           </p>
           <p className="text-muted text-xs truncate">{lead.empresa_oficina ?? lead.cidade}</p>
@@ -75,7 +75,7 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
           </span>
         )}
         {lead.canal_origem && (
-          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-white/10 text-muted">
+          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-xs bg-slate-100 text-muted">
             {lead.canal_origem}
           </span>
         )}
@@ -88,12 +88,12 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
 
       {onMoverLead && (
         <div
-          className="flex md:hidden justify-center mt-2 pt-2 border-t border-white/10"
+          className="flex md:hidden justify-center mt-2 pt-2 border-t border-slate-200"
           onPointerDown={(e) => e.stopPropagation()}
         >
           <button
             onClick={(e) => { e.stopPropagation(); onMoverLead(lead.id) }}
-            className="flex items-center gap-1.5 text-xs text-muted hover:text-white transition-colors cursor-pointer"
+            className="flex items-center gap-1.5 text-xs text-muted hover:text-navy transition-colors cursor-pointer"
             aria-label="Mover lead"
           >
             <ArrowRightLeft size={13} /> Mover Lead

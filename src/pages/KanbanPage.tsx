@@ -92,7 +92,7 @@ export default function KanbanPage() {
   return (
     <div className="h-full md:ml-56 flex flex-col overflow-hidden">
       <div className="px-4 pt-4 pb-2 shrink-0">
-        <h1 className="font-display font-bold text-white text-lg">Funil Comercial</h1>
+        <h1 className="font-display font-bold text-navy text-lg">Funil Comercial</h1>
       </div>
 
       <LeadFilters active={filter} onChange={setFilter} />
@@ -115,7 +115,7 @@ export default function KanbanPage() {
               className={`shrink-0 px-3 py-1 rounded-full text-xs font-display font-semibold transition-colors cursor-pointer border ${
                 activeCol === i
                   ? 'bg-orange text-white border-orange'
-                  : 'bg-transparent text-muted border-white/20 hover:border-orange/40 hover:text-white'
+                  : 'bg-transparent text-muted border-slate-300 hover:border-orange/50 hover:text-navy'
               }`}
             >
               {label}

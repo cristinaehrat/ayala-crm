@@ -151,9 +151,9 @@ export default function VisitaPage() {
         </div>
 
         {saved && (
-          <div className="flex items-center gap-2 bg-green-900/40 border border-green-700/40 rounded-xl p-3 mb-4">
-            <CheckCircle size={16} className="text-green-400 shrink-0" />
-            <p className="text-green-400 text-sm font-display font-semibold">Visita registrada!</p>
+          <div className="flex items-center gap-2 bg-green-100 border border-green-300 rounded-xl p-3 mb-4">
+            <CheckCircle size={16} className="text-green-600 shrink-0" />
+            <p className="text-green-700 text-sm font-display font-semibold">Visita registrada!</p>
           </div>
         )}
 
@@ -274,7 +274,7 @@ export default function VisitaPage() {
                     onClick={() => toggleMarca(m)}
                     className={`flex-1 rounded-lg text-sm font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
                       form.marcas.includes(m)
-                        ? 'border-orange bg-navy2 text-white'
+                        ? 'border-orange bg-orange/10 text-orange'
                         : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
                     }`}
                   >
@@ -293,7 +293,7 @@ export default function VisitaPage() {
                     onClick={() => set('perfil', form.perfil === p.value ? '' : p.value)}
                     className={`flex-1 rounded-lg text-sm font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
                       form.perfil === p.value
-                        ? 'border-orange bg-navy2 text-white'
+                        ? 'border-orange bg-orange/10 text-orange'
                         : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
                     }`}
                   >
@@ -312,7 +312,7 @@ export default function VisitaPage() {
                     onClick={() => set('potencial', form.potencial === p.value ? '' : p.value)}
                     className={`flex-1 rounded-lg text-xs font-display font-bold transition-colors cursor-pointer border min-h-[48px] ${
                       form.potencial === p.value
-                        ? 'border-orange bg-navy2 text-white'
+                        ? 'border-orange bg-orange/10 text-orange'
                         : 'border-white/20 bg-transparent text-muted hover:border-orange/50 hover:text-white'
                     }`}
                   >

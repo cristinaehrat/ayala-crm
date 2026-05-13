@@ -53,11 +53,11 @@ export default function TurmasPage() {
       <div className="h-full md:ml-56 flex">
         {/* Turmas grid */}
         <div className={`flex flex-col overflow-y-auto p-4 ${selectedId ? 'hidden md:flex md:flex-1' : 'flex-1'}`}>
-          <h1 className="font-display font-bold text-white text-lg mb-4">Turmas</h1>
+          <h1 className="font-display font-bold text-navy text-lg mb-4">Turmas</h1>
           {inscreverLeadId && (
             <div className="flex items-center gap-2 bg-orange/10 border border-orange/30 rounded-xl px-4 py-3 mb-4">
               <GraduationCap size={16} className="text-orange shrink-0" />
-              <p className="text-sm text-white font-display font-semibold">
+              <p className="text-sm text-navy font-display font-semibold">
                 Selecione uma turma para inscrever este lead
               </p>
             </div>

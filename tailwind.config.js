@@ -11,6 +11,9 @@ export default {
         muted:   '#94A3B8',
         'gray-light': '#F1F5F9',
         footer:  '#08111F',
+        surface: '#FFFFFF',
+        app:     '#F0F4F8',
+        'border-subtle': '#E2E8F0',
       },
       fontFamily: {
         sans:    ['Inter', 'sans-serif'],

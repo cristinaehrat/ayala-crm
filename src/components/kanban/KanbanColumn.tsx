@@ -19,13 +19,13 @@ export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMo
   return (
     <div
       className={`flex flex-col w-full md:w-64 shrink-0 rounded-xl border transition-colors
-        ${isOver ? 'border-orange/50 bg-orange/5' : 'border-white/10 bg-white/3'}`}
+        ${isOver ? 'border-orange/50 bg-orange/5' : 'border-slate-200 bg-slate-50/80'}`}
     >
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-white/10">
-        <span className="font-display font-bold text-xs text-white uppercase tracking-wide">
+      <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-200">
+        <span className="font-display font-bold text-xs text-navy uppercase tracking-wide">
           {label}
         </span>
-        <span className="text-xs text-muted bg-white/10 px-2 py-0.5 rounded-full font-display font-semibold">
+        <span className="text-xs text-muted bg-slate-200 px-2 py-0.5 rounded-full font-display font-semibold">
           {leads.length}
         </span>
       </div>

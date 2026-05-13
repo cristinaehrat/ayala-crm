@@ -45,7 +45,7 @@ export default function FinanceiroPage() {
 
   return (
     <div className="h-full overflow-y-auto md:ml-56 p-4 space-y-4">
-      <h1 className="font-display font-bold text-white text-lg print:hidden">Financeiro</h1>
+      <h1 className="font-display font-bold text-navy text-lg print:hidden">Financeiro</h1>
 
       {parceiros.map((p) => {
         const badge = MARCA_BADGES[p.marca]
@@ -76,7 +76,7 @@ export default function FinanceiroPage() {
 
             {/* Accordion header */}
             <div
-              className="px-5 py-4 flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-white/5 transition-colors print:hidden"
+              className="px-5 py-4 flex items-center justify-between gap-2 cursor-pointer select-none hover:bg-slate-50 transition-colors print:hidden"
               onClick={() => toggleParceiro(p.marca)}
             >
               <div className="flex items-center gap-3">
@@ -89,7 +89,7 @@ export default function FinanceiroPage() {
                   </span>
                 )}
                 <div>
-                  <h3 className="font-display font-bold text-white text-sm">{p.parceiro}</h3>
+                  <h3 className="font-display font-bold text-navy text-sm">{p.parceiro}</h3>
                   <p className="text-xs text-muted">
                     {p.turmas.length} turma{p.turmas.length !== 1 ? 's' : ''} · {totalInscritos} aluno{totalInscritos !== 1 ? 's' : ''}
                   </p>
@@ -98,7 +98,7 @@ export default function FinanceiroPage() {
               <div className="flex items-center gap-3">
                 <button
                   onClick={(e) => { e.stopPropagation(); handlePrintMarca(p.marca) }}
-                  className="flex items-center gap-1.5 text-xs text-muted hover:text-white cursor-pointer px-2 py-1 border border-white/20 rounded-lg hover:border-white/40 transition-colors"
+                  className="flex items-center gap-1.5 text-xs text-muted hover:text-navy cursor-pointer px-2 py-1 border border-slate-300 rounded-lg hover:border-slate-400 transition-colors"
                 >
                   <Printer size={12} />
                   <span>PDF</span>
@@ -115,7 +115,7 @@ export default function FinanceiroPage() {
 
               {/* Turmas Abertas */}
               {abertas.length > 0 && (
-                <div className="border-t border-white/10">
+                <div className="border-t border-slate-200">
                   <p className="px-5 pt-3 pb-1 text-xs font-display font-semibold text-orange uppercase tracking-wide print:hidden">
                     Abertas
                   </p>
@@ -126,20 +126,20 @@ export default function FinanceiroPage() {
                         <div
                           key={t.turma_id}
                           className={cn(
-                            'bg-white/5 border border-white/10 rounded-xl p-4 space-y-3',
+                            'bg-slate-50 border border-slate-200 rounded-xl p-4 space-y-3',
                             isPrintHiddenThisTurma ? 'print:hidden' : '',
                           )}
                         >
                           <div className="flex items-start justify-between gap-2">
                             <div>
-                              <p className="font-display font-bold text-white text-sm leading-tight">{t.nome_turma ?? '—'}</p>
+                              <p className="font-display font-bold text-navy text-sm leading-tight">{t.nome_turma ?? '—'}</p>
                               <p className="text-xs text-muted mt-0.5">
                                 {[t.cidade, formatDate(t.data_inicio)].filter(Boolean).join(' · ')}
                               </p>
                             </div>
                             <button
                               onClick={() => handlePrintTurma(t.turma_id, p.marca)}
-                              className="flex items-center gap-1 text-xs text-muted hover:text-white cursor-pointer px-2 py-1 border border-white/20 rounded hover:border-white/40 transition-colors shrink-0 print:hidden"
+                              className="flex items-center gap-1 text-xs text-muted hover:text-navy cursor-pointer px-2 py-1 border border-slate-300 rounded hover:border-slate-400 transition-colors shrink-0 print:hidden"
                             >
                               <Printer size={11} />
                               PDF
@@ -149,17 +149,17 @@ export default function FinanceiroPage() {
                           <div className="grid grid-cols-2 gap-2 text-xs">
                             <div>
                               <p className="text-muted">Inscritos</p>
-                              <p className="font-display font-bold text-white">{t.qtd_inscritos}</p>
+                              <p className="font-display font-bold text-navy">{t.qtd_inscritos}</p>
                             </div>
                             <div>
                               <p className="text-muted">Receita Total</p>
-                              <p className="font-display font-bold text-white">{brl(t.receita_total)}</p>
+                              <p className="font-display font-bold text-navy">{brl(t.receita_total)}</p>
                             </div>
                             {isVolvo && (
                               <>
                                 <div>
                                   <p className="text-muted">Entradas Ayala</p>
-                                  <p className="font-display font-bold text-green-400">{brl(t.entradas_ayala)}</p>
+                                  <p className="font-display font-bold text-green-600">{brl(t.entradas_ayala)}</p>
                                 </div>
                                 <div>
                                   <p className="text-muted">Acordo (30%)</p>
@@ -170,13 +170,13 @@ export default function FinanceiroPage() {
                             {isDAF && (
                               <div>
                                 <p className="text-muted">Entradas ({t.qtd_inscritos} × R$300)</p>
-                                <p className="font-display font-bold text-green-400">{brl(t.entradas_ayala)}</p>
+                                <p className="font-display font-bold text-green-600">{brl(t.entradas_ayala)}</p>
                               </div>
                             )}
                           </div>
 
                           {(isDAF || isScania) && (
-                            <div className="pt-1 border-t border-white/10">
+                            <div className="pt-1 border-t border-slate-200">
                               <CampoManualEditor
                                 turmaId={t.turma_id}
                                 field={isDAF ? 'valor_recebido_isa_monteiro' : 'valor_recebido_isa_mg'}
@@ -194,11 +194,11 @@ export default function FinanceiroPage() {
 
               {/* Histórico — Encerradas */}
               {encerradas.length > 0 && (
-                <div className="border-t border-white/10">
+                <div className="border-t border-slate-200">
                   <p className="px-5 pt-3 pb-1 text-xs font-display font-semibold text-muted uppercase tracking-wide print:hidden">
                     Histórico
                   </p>
-                  <div className="divide-y divide-white/5">
+                  <div className="divide-y divide-slate-200">
                     {encerradas.map((t) => {
                       const isPrintHiddenThisTurma = isPrintHiddenTurma && printTurmaId !== t.turma_id
                       return (
@@ -210,7 +210,7 @@ export default function FinanceiroPage() {
                           )}
                         >
                           <div className="min-w-0 flex-1">
-                            <p className="font-display font-semibold text-white text-xs leading-tight truncate">{t.nome_turma ?? '—'}</p>
+                            <p className="font-display font-semibold text-navy text-xs leading-tight truncate">{t.nome_turma ?? '—'}</p>
                             <p className="text-xs text-muted mt-0.5">
                               {[t.cidade, formatDate(t.data_inicio)].filter(Boolean).join(' · ')}
                             </p>
@@ -227,13 +227,13 @@ export default function FinanceiroPage() {
                           </div>
                           <div className="flex items-center gap-4 shrink-0 text-xs">
                             <span className="text-muted">{t.qtd_inscritos} al.</span>
-                            <span className="text-white font-display font-semibold">{brl(t.receita_total)}</span>
+                            <span className="text-navy font-display font-semibold">{brl(t.receita_total)}</span>
                             {isVolvo && (
                               <span className="text-orange font-display font-bold">{brl(t.receita_total * 0.3)}</span>
                             )}
                             <button
                               onClick={() => handlePrintTurma(t.turma_id, p.marca)}
-                              className="text-muted hover:text-white cursor-pointer transition-colors print:hidden"
+                              className="text-muted hover:text-navy cursor-pointer transition-colors print:hidden"
                               aria-label="Exportar PDF"
                             >
                               <Printer size={13} />
@@ -247,7 +247,7 @@ export default function FinanceiroPage() {
               )}
 
               {p.turmas.length === 0 && (
-                <p className="text-center py-6 text-muted text-sm border-t border-white/10">
+                <p className="text-center py-6 text-muted text-sm border-t border-slate-200">
                   Nenhuma turma encontrada
                 </p>
               )}
