@@ -162,7 +162,7 @@ function ListaEspera() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-slate-200">
                 {['Nome', 'Telefone', 'Cidade / UF', 'Marca', 'Turma Interesse', 'Entrada'].map((h) => (
                   <th key={h} className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">
                     {h}
@@ -174,13 +174,13 @@ function ListaEspera() {
               {filtered.map((l) => {
                 const badge = l.marca_interesse ? MARCA_BADGES[l.marca_interesse] : null
                 return (
-                  <tr key={l.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                  <tr key={l.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="px-4 py-3">
-                      <p className="font-display font-semibold text-white text-xs">{l.nome ?? '—'}</p>
+                      <p className="font-display font-semibold text-navy text-xs">{l.nome ?? '—'}</p>
                       <p className="text-muted text-xs">{l.empresa_oficina ?? ''}</p>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted font-mono">{l.telefone ?? '—'}</td>
-                    <td className="px-4 py-3 text-xs text-white">
+                    <td className="px-4 py-3 text-xs text-navy">
                       {[l.cidade, l.uf].filter(Boolean).join(' / ') || '—'}
                     </td>
                     <td className="px-4 py-3">
@@ -199,13 +199,13 @@ function ListaEspera() {
           </table>
         </div>
 
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y divide-slate-100">
           {filtered.map((l) => {
             const badge = l.marca_interesse ? MARCA_BADGES[l.marca_interesse] : null
             return (
               <div key={l.id} className="p-4 space-y-1">
                 <div className="flex items-center justify-between gap-2">
-                  <p className="font-display font-bold text-white text-sm">{l.nome ?? '—'}</p>
+                  <p className="font-display font-bold text-navy text-sm">{l.nome ?? '—'}</p>
                   {badge && (
                     <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold text-white shrink-0" style={{ backgroundColor: badge.bg }}>
                       {badge.label}
@@ -328,7 +328,7 @@ function ListaChamada() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-slate-200">
                 {['Nome', 'Telefone', 'Turma', 'Data', 'Status Fin.', 'Forma Pgto', 'Saldo', ''].map((h) => (
                   <th key={h} className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">
                     {h}
@@ -342,12 +342,12 @@ function ListaChamada() {
                 return (
                   <tr
                     key={i.id_inscricao}
-                    className={`border-b border-white/5 transition-colors ${cobrar ? 'bg-red-950/30 hover:bg-red-950/50' : 'hover:bg-white/5'}`}
+                    className={`border-b border-slate-100 transition-colors ${cobrar ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-slate-50'}`}
                   >
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-1.5">
                         {cobrar && <AlertCircle size={13} className="text-red-400 shrink-0" />}
-                        <p className={`font-display font-semibold text-xs ${cobrar ? 'text-red-300' : 'text-white'}`}>
+                        <p className={`font-display font-semibold text-xs ${cobrar ? 'text-red-600' : 'text-navy'}`}>
                           {i.nome ?? '—'}
                         </p>
                       </div>
@@ -356,12 +356,12 @@ function ListaChamada() {
                     <td className="px-4 py-3 text-xs text-muted font-mono">
                       {i.telefone_lead ? formatPhone(i.telefone_lead) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-white">{i.nome_treinamento_turma ?? '—'}</td>
+                    <td className="px-4 py-3 text-xs text-navy">{i.nome_treinamento_turma ?? '—'}</td>
                     <td className="px-4 py-3 text-xs text-muted">{formatDate(i.data_inicio_turma)}</td>
                     <td className="px-4 py-3 text-xs">
                       <span className={`font-display font-bold ${
-                        i.status_financeiro === 'pago' ? 'text-green-400' :
-                        i.status_financeiro === 'inadimplente' ? 'text-red-400' : 'text-yellow-400'
+                        i.status_financeiro === 'pago' ? 'text-green-600' :
+                        i.status_financeiro === 'inadimplente' ? 'text-red-600' : 'text-yellow-600'
                       }`}>{i.status_financeiro ?? '—'}</span>
                     </td>
                     <td className="px-4 py-3 text-xs text-muted">
@@ -372,7 +372,7 @@ function ListaChamada() {
                     </td>
                     <td className="px-4 py-3 text-xs">
                       {cobrar && (
-                        <span className="bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded text-[10px] font-display font-bold uppercase tracking-wide">
+                        <span className="bg-red-100 text-red-600 border border-red-300 px-2 py-0.5 rounded text-[10px] font-display font-bold uppercase tracking-wide">
                           Cobrar
                         </span>
                       )}
@@ -384,20 +384,20 @@ function ListaChamada() {
           </table>
         </div>
 
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y divide-slate-100">
           {filtered.map((i) => {
             const cobrar = i.cobrar_em_aula === true
             return (
-              <div key={i.id_inscricao} className={`p-4 space-y-1 ${cobrar ? 'bg-red-950/30' : ''}`}>
+              <div key={i.id_inscricao} className={`p-4 space-y-1 ${cobrar ? 'bg-red-50' : ''}`}>
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1.5">
                     {cobrar && <AlertCircle size={13} className="text-red-400 shrink-0" />}
-                    <p className={`font-display font-bold text-sm ${cobrar ? 'text-red-300' : 'text-white'}`}>
+                    <p className={`font-display font-bold text-sm ${cobrar ? 'text-red-600' : 'text-navy'}`}>
                       {i.nome ?? '—'}
                     </p>
                   </div>
                   {cobrar && (
-                    <span className="bg-red-600/20 text-red-400 border border-red-500/30 px-2 py-0.5 rounded text-[10px] font-display font-bold uppercase">
+                    <span className="bg-red-100 text-red-600 border border-red-300 px-2 py-0.5 rounded text-[10px] font-display font-bold uppercase">
                       Cobrar
                     </span>
                   )}
@@ -406,8 +406,8 @@ function ListaChamada() {
                 <p className="text-xs text-muted">{i.nome_treinamento_turma ?? '—'} · {formatDate(i.data_inicio_turma)}</p>
                 <div className="flex items-center gap-3 text-xs">
                   <span className={`font-display font-bold ${
-                    i.status_financeiro === 'pago' ? 'text-green-400' :
-                    i.status_financeiro === 'inadimplente' ? 'text-red-400' : 'text-yellow-400'
+                    i.status_financeiro === 'pago' ? 'text-green-600' :
+                    i.status_financeiro === 'inadimplente' ? 'text-red-600' : 'text-yellow-600'
                   }`}>{i.status_financeiro ?? '—'}</span>
                   {(i.saldo_a_receber ?? 0) > 0 && (
                     <span className="text-orange font-bold">{brl(i.saldo_a_receber!)}</span>
@@ -492,11 +492,11 @@ function MapaEstrategico() {
 
       {Object.entries(porMes).map(([mes, entries]) => (
         <div key={mes} className="section-card overflow-hidden">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-white/10 bg-white/3">
-            <span className="font-display font-bold text-white text-sm uppercase tracking-wide">{mes}</span>
-            <span className="text-xs text-muted">{entries.length} marca{entries.length > 1 ? 's' : ''}</span>
+          <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
+            <span className="font-display font-bold text-navy text-sm uppercase tracking-wide">{mes}</span>
+            <span className="text-xs text-slate-600">{entries.length} marca{entries.length > 1 ? 's' : ''}</span>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-white/5">
+          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200">
             {entries.map((entry) => {
               const badge = MARCA_BADGES[entry.marca]
               return (
@@ -515,13 +515,13 @@ function MapaEstrategico() {
                     )}
                   </div>
                   <div>
-                    <p className="text-xs text-muted uppercase tracking-wide font-display font-semibold">Cidade-base</p>
-                    <p className="font-display font-bold text-white text-sm">{entry.cidade_base}</p>
+                    <p className="text-xs text-slate-600 uppercase tracking-wide font-display font-semibold">Cidade-base</p>
+                    <p className="font-display font-bold text-navy text-sm">{entry.cidade_base}</p>
                   </div>
                   {entry.cidades_visitacao && (
                     <div>
-                      <p className="text-xs text-muted uppercase tracking-wide font-display font-semibold">Visitação</p>
-                      <p className="text-xs text-white/80">{entry.cidades_visitacao}</p>
+                      <p className="text-xs text-slate-600 uppercase tracking-wide font-display font-semibold">Visitação</p>
+                      <p className="text-xs text-slate-700">{entry.cidades_visitacao}</p>
                     </div>
                   )}
                   {entry.objetivo && (
@@ -626,7 +626,7 @@ function EmpresasCadastradas() {
         <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
-              <tr className="border-b border-white/10">
+              <tr className="border-b border-slate-200">
                 {['Razão Social / Fantasia', 'CNPJ', 'Cidade / Estado', 'Responsável', 'WhatsApp'].map((h) => (
                   <th key={h} className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">
                     {h}
@@ -636,14 +636,14 @@ function EmpresasCadastradas() {
             </thead>
             <tbody>
               {filtered.map((e) => (
-                <tr key={e.id} className="border-b border-white/5 hover:bg-white/5 transition-colors">
+                <tr key={e.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                   <td className="px-4 py-3">
-                    <p className="font-display font-semibold text-white text-xs">{e.razao_social ?? e.nome_fantasia ?? '—'}</p>
+                    <p className="font-display font-semibold text-navy text-xs">{e.razao_social ?? e.nome_fantasia ?? '—'}</p>
                     {e.nome_fantasia && e.razao_social && <p className="text-muted text-xs">{e.nome_fantasia}</p>}
                   </td>
                   <td className="px-4 py-3 text-xs text-muted font-mono">{e.cnpj ?? '—'}</td>
-                  <td className="px-4 py-3 text-xs text-white">{[e.cidade, e.estado].filter(Boolean).join(' / ') || '—'}</td>
-                  <td className="px-4 py-3 text-xs text-white">{e.nome_responsavel ?? '—'}</td>
+                  <td className="px-4 py-3 text-xs text-navy">{[e.cidade, e.estado].filter(Boolean).join(' / ') || '—'}</td>
+                  <td className="px-4 py-3 text-xs text-navy">{e.nome_responsavel ?? '—'}</td>
                   <td className="px-4 py-3 text-xs text-muted font-mono">{e.whatsapp_responsavel ?? '—'}</td>
                 </tr>
               ))}
@@ -651,14 +651,14 @@ function EmpresasCadastradas() {
           </table>
         </div>
 
-        <div className="md:hidden divide-y divide-white/5">
+        <div className="md:hidden divide-y divide-slate-100">
           {filtered.map((e) => (
             <div key={e.id} className="p-4 space-y-1">
-              <p className="font-display font-bold text-white text-sm">{e.razao_social ?? e.nome_fantasia ?? '—'}</p>
+              <p className="font-display font-bold text-navy text-sm">{e.razao_social ?? e.nome_fantasia ?? '—'}</p>
               {e.nome_fantasia && e.razao_social && <p className="text-xs text-muted">{e.nome_fantasia}</p>}
               <p className="text-xs text-muted font-mono">{e.cnpj ?? '—'}</p>
               <p className="text-xs text-muted">{[e.cidade, e.estado].filter(Boolean).join(' / ') || '—'}</p>
-              {e.nome_responsavel && <p className="text-xs text-white">{e.nome_responsavel}</p>}
+              {e.nome_responsavel && <p className="text-xs text-navy">{e.nome_responsavel}</p>}
             </div>
           ))}
           {filtered.length === 0 && !isLoading && (
@@ -677,10 +677,10 @@ export default function RelatoriosPage() {
   return (
     <div className="h-full md:ml-56 flex flex-col overflow-hidden">
       <div className="px-4 pt-4 pb-0 shrink-0">
-        <h1 className="font-display font-bold text-white text-lg">Relatórios</h1>
+        <h1 className="font-display font-bold text-navy text-lg">Relatórios</h1>
       </div>
 
-      <div className="flex gap-2 px-4 py-3 shrink-0 border-b border-white/10 overflow-x-auto scrollbar-none print:hidden">
+      <div className="flex gap-2 px-4 py-3 shrink-0 border-b border-slate-200 overflow-x-auto scrollbar-none print:hidden">
         {TABS.map(({ id, label }) => (
           <button
             key={id}
@@ -688,7 +688,7 @@ export default function RelatoriosPage() {
             className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-display font-semibold transition-colors cursor-pointer border ${
               tab === id
                 ? 'bg-orange border-orange text-white'
-                : 'bg-transparent border-white/20 text-muted hover:text-white'
+                : 'bg-transparent border-slate-300 text-muted hover:text-navy'
             }`}
           >
             {label}

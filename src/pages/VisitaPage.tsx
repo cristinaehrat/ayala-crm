@@ -138,7 +138,7 @@ export default function VisitaPage() {
       <div className="max-w-lg mx-auto px-4 py-6">
         <div className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="font-display font-bold text-white text-lg">Registrar Visita</h1>
+            <h1 className="font-display font-bold text-navy text-lg">Registrar Visita</h1>
             <p className="text-muted text-xs mt-0.5">
               {isOnline ? 'Online — envio imediato' : 'Offline — salvo localmente'}
             </p>
@@ -183,7 +183,7 @@ export default function VisitaPage() {
               </select>
             </Field>
 
-            <div className="flex items-center gap-3 mt-3 h-12 px-3 bg-white/5 border border-white/20 rounded-lg">
+            <div className="flex items-center gap-3 mt-3 h-12 px-3 bg-white border border-slate-300 rounded-lg">
               <input
                 type="checkbox"
                 id="multimarcas"
@@ -191,7 +191,7 @@ export default function VisitaPage() {
                 onChange={(e) => set('multimarcas', e.target.checked)}
                 className="w-4 h-4 accent-orange cursor-pointer"
               />
-              <label htmlFor="multimarcas" className="text-sm font-display font-semibold text-white cursor-pointer">
+              <label htmlFor="multimarcas" className="text-sm font-display font-semibold text-navy cursor-pointer">
                 Multimarcas
               </label>
             </div>
@@ -392,7 +392,7 @@ export default function VisitaPage() {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="section-card p-4">
-      <h3 className="font-display font-bold text-xs text-muted uppercase tracking-wide mb-3">{title}</h3>
+      <h3 className="font-display font-bold text-xs text-slate-600 uppercase tracking-wide mb-3">{title}</h3>
       {children}
     </div>
   )
