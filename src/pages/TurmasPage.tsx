@@ -2,9 +2,11 @@ import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useTurmas } from '@/hooks/useTurmas'
 import { useInscritos } from '@/hooks/useInscritos'
+import { useTurmaLeads } from '@/hooks/useTurmaLeads'
 import TurmaCard from '@/components/turmas/TurmaCard'
 import InscritoRow from '@/components/turmas/InscritoRow'
 import InscritoModal from '@/components/turmas/InscritoModal'
+import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import TurmaRelatorio from '@/components/turmas/TurmaRelatorio'
 import TurmaListaChamada from '@/components/turmas/TurmaListaChamada'
 import type { Inscrito } from '@/lib/types'
@@ -18,17 +20,20 @@ export default function TurmasPage() {
   const { data: turmas = [], isLoading } = useTurmas()
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const { data: inscritos = [] } = useInscritos(selectedId)
+  const { data: turmaLeads = [] } = useTurmaLeads(selectedId)
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingInscrito, setEditingInscrito] = useState<Inscrito | null>(null)
   const [printMode, setPrintMode] = useState(false)
   const [chamadaMode, setChamadaMode] = useState(false)
+  const [selectedLeadId, setSelectedLeadId] = useState<string | null>(null)
 
   useEffect(() => {
     if (turmaFromUrl) setSelectedId(turmaFromUrl)
   }, [turmaFromUrl])
 
   const selectedTurma = turmas.find((t) => t.id === selectedId)
+  const canInscrever = selectedTurma?.status === 'aberta'
 
   function openCreate() {
     setEditingInscrito(null)
@@ -74,7 +79,7 @@ export default function TurmasPage() {
                 onClick={() => {
                   const wasSelected = selectedId === turma.id
                   setSelectedId(wasSelected ? null : turma.id)
-                  if (!wasSelected && inscreverLeadId) {
+                  if (!wasSelected && inscreverLeadId && turma.status === 'aberta') {
                     setEditingInscrito(null)
                     setModalOpen(true)
                   }
@@ -100,7 +105,8 @@ export default function TurmasPage() {
               <div className="flex items-center gap-2">
                 <button
                   onClick={openCreate}
-                  className="flex items-center gap-1 text-xs btn-primary px-2.5 py-1.5"
+                  disabled={!canInscrever}
+                  className="flex items-center gap-1 text-xs btn-primary px-2.5 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed"
                   aria-label="Vincular lead à turma"
                 >
                   <Plus size={14} />
@@ -145,6 +151,34 @@ export default function TurmasPage() {
                 ))
               )}
             </div>
+
+            <div className="border-t border-white/10 px-4 py-3">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="font-display font-bold text-white text-sm">Leads vinculados</h3>
+                <span className="text-xs text-muted">{turmaLeads.length}</span>
+              </div>
+              {turmaLeads.length === 0 ? (
+                <p className="text-xs text-muted">Nenhum lead vinculado a esta turma.</p>
+              ) : (
+                <div className="space-y-2">
+                  {turmaLeads.map((lead) => (
+                    <button
+                      key={lead.id}
+                      type="button"
+                      onClick={() => setSelectedLeadId(lead.id)}
+                      className="w-full text-left rounded-lg border border-white/10 px-3 py-2 hover:bg-white/5 transition-colors"
+                    >
+                      <p className="text-xs font-display font-semibold text-white truncate">
+                        {lead.nome ?? lead.telefone}
+                      </p>
+                      <p className="text-[11px] text-muted truncate">
+                        {lead.empresa_oficina ?? '—'}
+                      </p>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
@@ -174,6 +208,11 @@ export default function TurmasPage() {
           onClose={() => setChamadaMode(false)}
         />
       )}
+
+      <LeadDetailModal
+        leadId={selectedLeadId}
+        onClose={() => setSelectedLeadId(null)}
+      />
     </>
   )
 }

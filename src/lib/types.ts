@@ -27,6 +27,8 @@ export interface Lead {
   ultimo_contato: string | null
 }
 
+export type TurmaStatus = 'aberta' | 'espera' | 'encerrada'
+
 export interface Turma {
   id: string
   marca: string | null
@@ -36,7 +38,7 @@ export interface Turma {
   cidade: string | null
   vagas_total: number | null
   vagas_disponiveis: number | null
-  status: string | null
+  status: TurmaStatus | null
   despesas_operacionais_total: number | null
   valor_recebido_isa_monteiro: number | null
   valor_recebido_isa_mg: number | null

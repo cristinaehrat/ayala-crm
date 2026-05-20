@@ -37,6 +37,12 @@ function formatFluxo(csv: string | null) {
   return csv.split(',').filter(Boolean).map((v) => FLUXO_LABEL[v] ?? v).join(', ')
 }
 
+const TURMA_STATUS_LABEL: Record<string, string> = {
+  aberta: 'Turma aberta',
+  espera: 'Turma em espera',
+  encerrada: 'Turma encerrada',
+}
+
 export default function TurmaRelatorio({ turma, inscritos, onClose }: Props) {
   useEffect(() => {
     window.print()
@@ -88,8 +94,16 @@ export default function TurmaRelatorio({ turma, inscritos, onClose }: Props) {
                 )}
                 {turma.cidade && <span>📍 {turma.cidade}</span>}
                 {turma.data_inicio && <span>📅 {formatDate(turma.data_inicio)}{turma.data_fim ? ` a ${formatDate(turma.data_fim)}` : ''}</span>}
-                <span className={`font-semibold ${turma.status === 'aberta' ? 'text-green-600' : 'text-gray-500'}`}>
-                  {turma.status === 'aberta' ? 'Turma aberta' : 'Turma encerrada'}
+                <span
+                  className={`font-semibold ${
+                    turma.status === 'aberta'
+                      ? 'text-green-600'
+                      : turma.status === 'encerrada'
+                        ? 'text-red-600'
+                        : 'text-amber-600'
+                  }`}
+                >
+                  {turma.status ? TURMA_STATUS_LABEL[turma.status] ?? turma.status : '—'}
                 </span>
               </div>
             </div>

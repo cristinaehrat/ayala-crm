@@ -54,8 +54,11 @@ export default function FinanceiroPage() {
         const isDAF = p.marca === 'daf'
         const isScania = p.marca === 'scania'
         const abertas = p.turmas.filter((t) => t.status === 'aberta')
-        const encerradas = p.turmas.filter((t) => t.status !== 'aberta')
-        const totalInscritos = p.turmas.reduce((s, t) => s + t.qtd_inscritos, 0)
+        const emEspera = p.turmas.filter((t) => t.status === 'espera')
+        const encerradas = p.turmas.filter((t) => t.status === 'encerrada')
+        const totalInscritos = abertas.reduce((s, t) => s + t.qtd_inscritos, 0)
+          + emEspera.reduce((s, t) => s + t.qtd_inscritos, 0)
+          + encerradas.reduce((s, t) => s + t.qtd_inscritos, 0)
 
         const isPrintHiddenMarca = printMarca !== null && printMarca !== p.marca
         const isPrintHiddenTurma = printTurmaId !== null
