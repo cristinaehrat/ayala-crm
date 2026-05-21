@@ -31,6 +31,17 @@ export function useCreateDespesa() {
   })
 }
 
+export function useUpdateDespesa() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ id, data }: { id: string; data: Partial<Omit<Despesa, 'id' | 'created_at'>> }) => {
+      const { error } = await supabase.from('despesas_ayala').update(data).eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['despesas'] }),
+  })
+}
+
 export function useDeleteDespesa() {
   const qc = useQueryClient()
   return useMutation({

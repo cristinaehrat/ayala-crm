@@ -123,6 +123,8 @@ export interface Despesa {
   categoria: string
   descricao: string | null
   valor: number
+  forma_pagamento: 'pix' | 'dinheiro' | 'cartao' | null
+  qtd_parcelas: number | null
   viagem_referencia: string | null
   turma_id: string | null
   criado_por: string | null

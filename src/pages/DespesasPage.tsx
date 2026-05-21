@@ -1,6 +1,6 @@
 import { useState } from 'react'
-import { Plus, Trash2, Receipt } from 'lucide-react'
-import { useDespesas, useCreateDespesa, useDeleteDespesa } from '@/hooks/useDespesas'
+import { Pencil, Plus, Receipt, Trash2 } from 'lucide-react'
+import { useDespesas, useCreateDespesa, useDeleteDespesa, useUpdateDespesa } from '@/hooks/useDespesas'
 import { useFaturamentoMes } from '@/hooks/useFinanceiro'
 import { useTurmas } from '@/hooks/useTurmas'
 import { toast } from 'sonner'
@@ -14,10 +14,25 @@ const CATEGORIAS = [
   { value: 'alimentacao', label: 'Alimentação',   emoji: '🍽️', bg: 'bg-green-700' },
   { value: 'marketing',   label: 'Marketing',     emoji: '📣', bg: 'bg-purple-700' },
   { value: 'material',    label: 'Material',      emoji: '📦', bg: 'bg-gray-600' },
+  { value: 'manutencao_carro', label: 'Manutenção carro', emoji: '🔧', bg: 'bg-slate-700' },
+  { value: 'airbnb',      label: 'Airbnb',        emoji: '🏠', bg: 'bg-blue-700' },
   { value: 'outros',      label: 'Outros',        emoji: '📎', bg: 'bg-white/20' },
 ] as const
 
 type CategoriaValue = typeof CATEGORIAS[number]['value']
+type FormaPagamento = NonNullable<Despesa['forma_pagamento']>
+
+const FORMAS_PAGAMENTO: { value: FormaPagamento; label: string }[] = [
+  { value: 'pix',      label: 'PIX' },
+  { value: 'dinheiro', label: 'Dinheiro' },
+  { value: 'cartao',   label: 'Cartão' },
+]
+
+const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = {
+  pix: 'PIX',
+  dinheiro: 'Dinheiro',
+  cartao: 'Cartão',
+}
 
 const CATEGORIA_MAP = Object.fromEntries(CATEGORIAS.map((c) => [c.value, c])) as Record<
   CategoriaValue,
@@ -41,6 +56,8 @@ type SheetForm = {
   categoria: CategoriaValue | ''
   descricao: string
   valor: string
+  forma_pagamento: FormaPagamento | ''
+  qtd_parcelas: string
   viagem_referencia: string
   turma_id: string
 }
@@ -50,6 +67,8 @@ const EMPTY_FORM: SheetForm = {
   categoria: '',
   descricao: '',
   valor: '',
+  forma_pagamento: '',
+  qtd_parcelas: '',
   viagem_referencia: '',
   turma_id: '',
 }
@@ -63,12 +82,14 @@ export default function DespesasPage() {
   const [filtro, setFiltro] = useState<FiltroMes>('atual')
   const [sheetOpen, setSheetOpen] = useState(false)
   const [sheetForm, setSheetForm] = useState<SheetForm>(EMPTY_FORM)
+  const [editingDespesa, setEditingDespesa] = useState<Despesa | null>(null)
 
   const mes = getMesParam(filtro)
   const { data: despesas = [], isLoading } = useDespesas(mes)
   const { data: faturamento = 0 } = useFaturamentoMes(mes)
   const { data: turmas = [] } = useTurmas()
   const createDespesa = useCreateDespesa()
+  const updateDespesa = useUpdateDespesa()
   const deleteDespesa = useDeleteDespesa()
 
   const total = despesas.reduce((acc, d) => acc + Number(d.valor), 0)
@@ -80,25 +101,59 @@ export default function DespesasPage() {
 
   function openSheet() {
     setSheetForm({ ...EMPTY_FORM, data: new Date().toISOString().slice(0, 10) })
+    setEditingDespesa(null)
     setSheetOpen(true)
+  }
+
+  function openEditSheet(despesa: Despesa) {
+    setSheetForm({
+      data: despesa.data,
+      categoria: CATEGORIAS.some((c) => c.value === despesa.categoria) ? (despesa.categoria as CategoriaValue) : '',
+      descricao: despesa.descricao ?? '',
+      valor: String(despesa.valor ?? ''),
+      forma_pagamento: despesa.forma_pagamento ?? '',
+      qtd_parcelas: despesa.qtd_parcelas ? String(despesa.qtd_parcelas) : '',
+      viagem_referencia: despesa.viagem_referencia ?? '',
+      turma_id: despesa.turma_id ?? '',
+    })
+    setEditingDespesa(despesa)
+    setSheetOpen(true)
+  }
+
+  function closeSheet() {
+    setSheetOpen(false)
+    setEditingDespesa(null)
   }
 
   async function handleSave() {
     if (!sheetForm.categoria) { toast.error('Selecione uma categoria'); return }
     if (!sheetForm.valor || isNaN(parseFloat(sheetForm.valor))) { toast.error('Informe o valor'); return }
+    const qtdParcelas = sheetForm.qtd_parcelas ? parseInt(sheetForm.qtd_parcelas, 10) : null
+    if (qtdParcelas !== null && (isNaN(qtdParcelas) || qtdParcelas < 1 || qtdParcelas > 12)) {
+      toast.error('Informe parcelas entre 1 e 12')
+      return
+    }
 
-    await createDespesa.mutateAsync({
+    const payload: Omit<Despesa, 'id' | 'created_at'> = {
       data: sheetForm.data,
       categoria: sheetForm.categoria,
       descricao: sheetForm.descricao || null,
       valor: parseFloat(sheetForm.valor.replace(',', '.')),
+      forma_pagamento: sheetForm.forma_pagamento || null,
+      qtd_parcelas: qtdParcelas,
       viagem_referencia: sheetForm.viagem_referencia || null,
       turma_id: sheetForm.turma_id || null,
       criado_por: null,
-    } as Omit<Despesa, 'id' | 'created_at'>)
+    }
 
-    toast.success('Despesa registrada')
-    setSheetOpen(false)
+    if (editingDespesa) {
+      await updateDespesa.mutateAsync({ id: editingDespesa.id, data: payload })
+      toast.success('Despesa atualizada')
+    } else {
+      await createDespesa.mutateAsync(payload)
+      toast.success('Despesa registrada')
+    }
+    closeSheet()
   }
 
   async function handleDelete(id: string) {
@@ -171,6 +226,7 @@ export default function DespesasPage() {
           )}
           {despesas.map((d) => {
             const cat = CATEGORIA_MAP[d.categoria as CategoriaValue]
+            const formaPagamento = d.forma_pagamento ? FORMA_PAGAMENTO_LABEL[d.forma_pagamento] : null
             return (
               <div
                 key={d.id}
@@ -186,12 +242,25 @@ export default function DespesasPage() {
                     )}
                     {d.descricao && <p className="text-sm text-navy">{d.descricao}</p>}
                     {d.viagem_referencia && <p className="text-xs text-muted mt-0.5">{d.viagem_referencia}</p>}
+                    {(formaPagamento || d.qtd_parcelas) && (
+                      <p className="text-xs text-muted mt-0.5">
+                        {formaPagamento}
+                        {d.qtd_parcelas ? `${formaPagamento ? ' · ' : ''}${d.qtd_parcelas}x` : ''}
+                      </p>
+                    )}
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
                   <p className="text-sm font-display font-bold text-orange">
                     R$ {Number(d.valor).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </p>
+                  <button
+                    onClick={() => openEditSheet(d)}
+                    className="text-muted hover:text-orange transition-colors p-1 cursor-pointer"
+                    aria-label="Editar despesa"
+                  >
+                    <Pencil size={15} />
+                  </button>
                   <button
                     onClick={() => handleDelete(d.id)}
                     disabled={deleteDespesa.isPending}
@@ -210,9 +279,11 @@ export default function DespesasPage() {
       {/* Bottom sheet nova despesa */}
       {sheetOpen && (
         <>
-          <div className="fixed inset-0 bg-black/60 z-40" onClick={() => setSheetOpen(false)} aria-hidden="true" />
+          <div className="fixed inset-0 bg-black/60 z-40" onClick={closeSheet} aria-hidden="true" />
           <div className="fixed bottom-0 left-0 right-0 bg-footer border-t border-white/10 rounded-t-2xl z-50 p-4 max-h-[90vh] overflow-y-auto">
-            <p className="font-display font-bold text-white text-base mb-4">Nova Despesa</p>
+            <p className="font-display font-bold text-white text-base mb-4">
+              {editingDespesa ? 'Editar Despesa' : 'Nova Despesa'}
+            </p>
 
             <div className="space-y-4">
               {/* Data */}
@@ -270,6 +341,40 @@ export default function DespesasPage() {
                 />
               </div>
 
+              {/* Pagamento */}
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-2">Forma de Pagamento</label>
+                <div className="flex flex-wrap gap-2">
+                  {FORMAS_PAGAMENTO.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSF('forma_pagamento', value)}
+                      className={`px-3 py-2 rounded-lg text-xs font-display font-bold transition-colors cursor-pointer border ${
+                        sheetForm.forma_pagamento === value
+                          ? 'bg-orange border-orange text-white'
+                          : 'bg-transparent border-white/20 text-muted hover:border-orange/50 hover:text-white'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-1">Quantidade de Parcelas</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={12}
+                  className="input-field"
+                  placeholder="1"
+                  value={sheetForm.qtd_parcelas}
+                  onChange={(e) => setSF('qtd_parcelas', e.target.value)}
+                />
+              </div>
+
               {/* Viagem / Referência */}
               <div>
                 <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-1">Viagem / Referência</label>
@@ -300,10 +405,10 @@ export default function DespesasPage() {
 
               <button
                 onClick={handleSave}
-                disabled={createDespesa.isPending}
+                disabled={createDespesa.isPending || updateDespesa.isPending}
                 className="btn-primary w-full"
               >
-                {createDespesa.isPending ? 'Salvando...' : 'Salvar'}
+                {createDespesa.isPending || updateDespesa.isPending ? 'Salvando...' : 'Salvar'}
               </button>
             </div>
           </div>

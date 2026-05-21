@@ -21,3 +21,37 @@
   --   ADD COLUMN IF NOT EXISTS forma_pagamento   text,
   --   ADD COLUMN IF NOT EXISTS qtd_parcelas      integer DEFAULT 1,
   --   ADD COLUMN IF NOT EXISTS valor_parcela     numeric(10,2);
+
+  -- === BLOCO D: pagamento em despesas ===
+  ALTER TABLE public.despesas_ayala
+    ADD COLUMN IF NOT EXISTS forma_pagamento text,
+    ADD COLUMN IF NOT EXISTS qtd_parcelas integer;
+
+  ALTER TABLE public.despesas_ayala
+    DROP CONSTRAINT IF EXISTS despesas_ayala_forma_pagamento_check,
+    ADD CONSTRAINT despesas_ayala_forma_pagamento_check
+      CHECK (
+        forma_pagamento IS NULL
+        OR forma_pagamento IN ('pix', 'dinheiro', 'cartao')
+      );
+
+  ALTER TABLE public.despesas_ayala
+    DROP CONSTRAINT IF EXISTS despesas_ayala_qtd_parcelas_check,
+    ADD CONSTRAINT despesas_ayala_qtd_parcelas_check
+      CHECK (qtd_parcelas IS NULL OR qtd_parcelas BETWEEN 1 AND 12);
+
+  ALTER TABLE public.despesas_ayala
+    DROP CONSTRAINT IF EXISTS despesas_ayala_categoria_check,
+    ADD CONSTRAINT despesas_ayala_categoria_check
+      CHECK (
+        categoria IN (
+          'combustivel',
+          'hotel',
+          'alimentacao',
+          'marketing',
+          'material',
+          'manutencao_carro',
+          'airbnb',
+          'outros'
+        )
+      );
