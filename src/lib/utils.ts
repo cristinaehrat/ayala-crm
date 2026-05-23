@@ -75,6 +75,12 @@ export const MARCA_BADGES: Record<string, { bg: string; label: string }> = {
   scania: { bg: '#D97706', label: 'Scania' },
 }
 
+export const INTERESSE_TAGS: { value: string; label: string; bg: string }[] = [
+  { value: 'int_volvo',  label: 'Volvo',  bg: '#1A3A6B' },
+  { value: 'int_scania', label: 'Scania', bg: '#D97706' },
+  { value: 'int_daf',    label: 'DAF',    bg: '#166534' },
+]
+
 export const POTENCIAL_BADGES: Record<string, { label: string; bg: string }> = {
   quente: { label: '🔥 Quente', bg: '#DC2626' },
   morno:  { label: 'Morno',    bg: '#F97316' },

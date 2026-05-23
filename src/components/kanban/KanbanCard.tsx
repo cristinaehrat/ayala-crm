@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { ArrowRightLeft } from 'lucide-react'
-import { initials, formatPhone, MARCA_BADGES, POTENCIAL_BADGES, findRotaMes } from '@/lib/utils'
+import { initials, formatPhone, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import type { Lead } from '@/lib/types'
 import { useRef } from 'react'
@@ -88,6 +88,19 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
             {lead.canal_origem}
           </span>
         )}
+        {(lead.interesses ?? []).map((interesse) => {
+          const tag = INTERESSE_TAGS.find((t) => t.value === interesse)
+          if (!tag) return null
+          return (
+            <span
+              key={tag.value}
+              className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold text-white"
+              style={{ backgroundColor: tag.bg }}
+            >
+              {tag.label}
+            </span>
+          )
+        })}
         {rotaMes && (
           <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold text-white bg-orange/80">
             📍 {rotaMes}

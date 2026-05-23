@@ -149,6 +149,19 @@ export function useUpdateLead() {
   })
 }
 
+export function useDeleteLead() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('leads_v2').delete().eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['leads'] })
+    },
+  })
+}
+
 export function useCreateLead() {
   const qc = useQueryClient()
   return useMutation({

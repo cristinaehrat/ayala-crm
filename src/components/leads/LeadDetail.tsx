@@ -1,9 +1,9 @@
 import {
   Phone, MessageCircle, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
-  ArrowRightLeft, GraduationCap,
+  ArrowRightLeft, GraduationCap, Trash2,
 } from 'lucide-react'
-import { useLead, useUpdateLead } from '@/hooks/useLeads'
-import { ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, formatPhone, initials, relativeTime } from '@/lib/utils'
+import { useLead, useUpdateLead, useDeleteLead } from '@/hooks/useLeads'
+import { ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
@@ -31,6 +31,7 @@ type EditForm = {
   proximo_passo: string
   canal_origem: string
   observacoes: string
+  interesses: string[]
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -47,15 +48,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 export default function LeadDetail({ leadId, onClose }: Props) {
   const { data: lead, isLoading } = useLead(leadId)
   const updateLead = useUpdateLead()
+  const deleteLead = useDeleteLead()
   const navigate = useNavigate()
   const [editMode, setEditMode] = useState(false)
   const [moveSheetOpen, setMoveSheetOpen] = useState(false)
+  const [confirmDelete, setConfirmDelete] = useState(false)
   const [nota, setNota] = useState('')
   const [savingNota, setSavingNota] = useState(false)
   const [form, setForm] = useState<EditForm>({
     nome: '', empresa_oficina: '', cidade: '', uf: '', perfil: '',
     status: '', marca_interesse: '', potencial: '', proximo_passo: '',
-    canal_origem: '', observacoes: '',
+    canal_origem: '', observacoes: '', interesses: [],
   })
 
   useEffect(() => {
@@ -72,6 +75,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         proximo_passo:   lead.proximo_passo ?? '',
         canal_origem:    lead.canal_origem ?? '',
         observacoes:     lead.observacoes ?? '',
+        interesses:      lead.interesses ?? [],
       })
     }
   }, [lead])
@@ -92,6 +96,22 @@ export default function LeadDetail({ leadId, onClose }: Props) {
 
   function set(field: keyof EditForm, value: string) {
     setForm((f) => ({ ...f, [field]: value }))
+  }
+
+  function toggleInteresse(value: string) {
+    setForm((f) => ({
+      ...f,
+      interesses: f.interesses.includes(value)
+        ? f.interesses.filter((i) => i !== value)
+        : [...f.interesses, value],
+    }))
+  }
+
+  async function handleDelete() {
+    if (!confirmDelete) { setConfirmDelete(true); return }
+    await deleteLead.mutateAsync(lead!.id)
+    toast.success('Lead removido')
+    onClose()
   }
 
   async function handleSaveNota() {
@@ -126,6 +146,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         proximo_passo:   form.proximo_passo || null,
         canal_origem:    form.canal_origem || null,
         observacoes:     form.observacoes || null,
+        interesses:      form.interesses.length > 0 ? form.interesses : null,
       },
     })
     toast.success('Lead atualizado')
@@ -206,6 +227,24 @@ export default function LeadDetail({ leadId, onClose }: Props) {
             <Field label="Canal Origem">
               <input className="input-field" value={form.canal_origem} onChange={(e) => set('canal_origem', e.target.value)} />
             </Field>
+            <Field label="Interesses">
+              <div className="flex gap-2 flex-wrap mt-1">
+                {INTERESSE_TAGS.map((tag) => (
+                  <button
+                    key={tag.value}
+                    type="button"
+                    onClick={() => toggleInteresse(tag.value)}
+                    className="px-3 py-1.5 rounded text-xs font-display font-bold text-white transition-opacity cursor-pointer"
+                    style={{
+                      backgroundColor: tag.bg,
+                      opacity: form.interesses.includes(tag.value) ? 1 : 0.35,
+                    }}
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
           </section>
 
           <section className="space-y-3">
@@ -272,6 +311,20 @@ export default function LeadDetail({ leadId, onClose }: Props) {
           >
             <Edit2 size={12} />
             Editar
+          </button>
+          <button
+            onClick={handleDelete}
+            disabled={deleteLead.isPending}
+            className={`flex items-center gap-1 text-xs px-2.5 py-1.5 rounded font-display font-semibold transition-colors cursor-pointer disabled:opacity-50 ${
+              confirmDelete
+                ? 'bg-red-600 text-white hover:bg-red-700'
+                : 'btn-secondary text-red-400 hover:text-red-300'
+            }`}
+            aria-label="Excluir lead"
+            onBlur={() => setConfirmDelete(false)}
+          >
+            <Trash2 size={12} />
+            {confirmDelete ? 'Confirmar' : 'Excluir'}
           </button>
           <button onClick={onClose} className="text-muted hover:text-white cursor-pointer p-1">
             <X size={18} />

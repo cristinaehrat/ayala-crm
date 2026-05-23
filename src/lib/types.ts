@@ -23,6 +23,7 @@ export interface Lead {
   instagram_handle: string | null
   catalogo_id: string | null
   turma_selecionada: string | null
+  interesses: string[] | null
   data_entrada: string | null
   ultimo_contato: string | null
 }
@@ -124,6 +125,7 @@ export interface Despesa {
   descricao: string | null
   valor: number
   forma_pagamento: 'pix' | 'dinheiro' | 'cartao' | null
+  conta_bancaria: 'nu_pf' | 'inter_pf' | 'sicoob_pf' | 'outros' | null
   qtd_parcelas: number | null
   viagem_referencia: string | null
   turma_id: string | null

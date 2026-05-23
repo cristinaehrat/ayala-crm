@@ -21,6 +21,7 @@ const CATEGORIAS = [
 
 type CategoriaValue = typeof CATEGORIAS[number]['value']
 type FormaPagamento = NonNullable<Despesa['forma_pagamento']>
+type ContaBancaria = NonNullable<Despesa['conta_bancaria']>
 
 const FORMAS_PAGAMENTO: { value: FormaPagamento; label: string }[] = [
   { value: 'pix',      label: 'PIX' },
@@ -32,6 +33,20 @@ const FORMA_PAGAMENTO_LABEL: Record<FormaPagamento, string> = {
   pix: 'PIX',
   dinheiro: 'Dinheiro',
   cartao: 'Cartão',
+}
+
+const CONTAS_BANCARIAS: { value: ContaBancaria; label: string }[] = [
+  { value: 'nu_pf',     label: 'Nubank PF' },
+  { value: 'inter_pf',  label: 'Inter PF' },
+  { value: 'sicoob_pf', label: 'Sicoob PF' },
+  { value: 'outros',    label: 'Outros' },
+]
+
+const CONTA_LABEL: Record<ContaBancaria, string> = {
+  nu_pf:     'Nubank PF',
+  inter_pf:  'Inter PF',
+  sicoob_pf: 'Sicoob PF',
+  outros:    'Outros',
 }
 
 const CATEGORIA_MAP = Object.fromEntries(CATEGORIAS.map((c) => [c.value, c])) as Record<
@@ -57,6 +72,7 @@ type SheetForm = {
   descricao: string
   valor: string
   forma_pagamento: FormaPagamento | ''
+  conta_bancaria: ContaBancaria | ''
   qtd_parcelas: string
   viagem_referencia: string
   turma_id: string
@@ -68,6 +84,7 @@ const EMPTY_FORM: SheetForm = {
   descricao: '',
   valor: '',
   forma_pagamento: '',
+  conta_bancaria: '',
   qtd_parcelas: '',
   viagem_referencia: '',
   turma_id: '',
@@ -112,6 +129,7 @@ export default function DespesasPage() {
       descricao: despesa.descricao ?? '',
       valor: String(despesa.valor ?? ''),
       forma_pagamento: despesa.forma_pagamento ?? '',
+      conta_bancaria: despesa.conta_bancaria ?? '',
       qtd_parcelas: despesa.qtd_parcelas ? String(despesa.qtd_parcelas) : '',
       viagem_referencia: despesa.viagem_referencia ?? '',
       turma_id: despesa.turma_id ?? '',
@@ -140,6 +158,7 @@ export default function DespesasPage() {
       descricao: sheetForm.descricao || null,
       valor: parseFloat(sheetForm.valor.replace(',', '.')),
       forma_pagamento: sheetForm.forma_pagamento || null,
+      conta_bancaria: sheetForm.conta_bancaria || null,
       qtd_parcelas: qtdParcelas,
       viagem_referencia: sheetForm.viagem_referencia || null,
       turma_id: sheetForm.turma_id || null,
@@ -227,6 +246,7 @@ export default function DespesasPage() {
           {despesas.map((d) => {
             const cat = CATEGORIA_MAP[d.categoria as CategoriaValue]
             const formaPagamento = d.forma_pagamento ? FORMA_PAGAMENTO_LABEL[d.forma_pagamento] : null
+            const contaLabel = d.conta_bancaria ? CONTA_LABEL[d.conta_bancaria] : null
             return (
               <div
                 key={d.id}
@@ -242,10 +262,13 @@ export default function DespesasPage() {
                     )}
                     {d.descricao && <p className="text-sm text-navy">{d.descricao}</p>}
                     {d.viagem_referencia && <p className="text-xs text-muted mt-0.5">{d.viagem_referencia}</p>}
-                    {(formaPagamento || d.qtd_parcelas) && (
+                    {(formaPagamento || d.qtd_parcelas || contaLabel) && (
                       <p className="text-xs text-muted mt-0.5">
-                        {formaPagamento}
-                        {d.qtd_parcelas ? `${formaPagamento ? ' · ' : ''}${d.qtd_parcelas}x` : ''}
+                        {[
+                          formaPagamento,
+                          d.qtd_parcelas ? `${d.qtd_parcelas}x` : null,
+                          contaLabel,
+                        ].filter(Boolean).join(' · ')}
                       </p>
                     )}
                   </div>
@@ -352,6 +375,27 @@ export default function DespesasPage() {
                       onClick={() => setSF('forma_pagamento', value)}
                       className={`px-3 py-2 rounded-lg text-xs font-display font-bold transition-colors cursor-pointer border ${
                         sheetForm.forma_pagamento === value
+                          ? 'bg-orange border-orange text-white'
+                          : 'bg-transparent border-white/20 text-muted hover:border-orange/50 hover:text-white'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Conta Bancária */}
+              <div>
+                <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-2">Conta Debitada</label>
+                <div className="flex flex-wrap gap-2">
+                  {CONTAS_BANCARIAS.map(({ value, label }) => (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => setSF('conta_bancaria', sheetForm.conta_bancaria === value ? '' : value)}
+                      className={`px-3 py-2 rounded-lg text-xs font-display font-bold transition-colors cursor-pointer border ${
+                        sheetForm.conta_bancaria === value
                           ? 'bg-orange border-orange text-white'
                           : 'bg-transparent border-white/20 text-muted hover:border-orange/50 hover:text-white'
                       }`}

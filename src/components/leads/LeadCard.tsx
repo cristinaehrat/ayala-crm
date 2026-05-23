@@ -1,4 +1,4 @@
-import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, findRotaMes } from '@/lib/utils'
+import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import type { Lead } from '@/lib/types'
 
@@ -83,6 +83,20 @@ export default function LeadCard({ lead, active, onClick }: Props) {
                 Visita
               </span>
             )}
+            {/* Interesses */}
+            {(lead.interesses ?? []).map((interesse) => {
+              const tag = INTERESSE_TAGS.find((t) => t.value === interesse)
+              if (!tag) return null
+              return (
+                <span
+                  key={tag.value}
+                  className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold text-white shrink-0"
+                  style={{ backgroundColor: tag.bg }}
+                >
+                  {tag.label}
+                </span>
+              )
+            })}
             {/* Badge de Rota Estratégica */}
             {rotaMes && (
               <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold text-white bg-orange/80 shrink-0">
