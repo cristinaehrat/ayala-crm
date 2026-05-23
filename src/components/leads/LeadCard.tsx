@@ -1,4 +1,4 @@
-import { cn, initials, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, findRotaMes } from '@/lib/utils'
+import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, findRotaMes } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import type { Lead } from '@/lib/types'
 
@@ -14,6 +14,7 @@ export default function LeadCard({ lead, active, onClick }: Props) {
   const etiquetaCor   = lead.etiqueta_chatwoot ? ETIQUETA_CORES[lead.etiqueta_chatwoot] : null
   const etiquetaLabel = lead.etiqueta_chatwoot ? ETIQUETA_LABELS[lead.etiqueta_chatwoot] ?? lead.etiqueta_chatwoot : null
   const marca         = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
+  const potencial     = lead.potencial ? POTENCIAL_BADGES[lead.potencial] : null
   const rotaMes       = findRotaMes(lead.cidade, lead.marca_interesse, malha)
 
   return (
@@ -38,7 +39,7 @@ export default function LeadCard({ lead, active, onClick }: Props) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1">
             <p className="font-display font-semibold text-sm text-navy truncate">
-              {lead.nome ?? lead.telefone}
+              {lead.nome ?? formatPhone(lead.telefone)}
             </p>
             <span className="text-muted text-xs shrink-0">
               {relativeTime(lead.ultimo_contato ?? lead.data_entrada)}
@@ -67,6 +68,14 @@ export default function LeadCard({ lead, active, onClick }: Props) {
                 style={{ backgroundColor: `${marca.bg}99` }}
               >
                 {marca.label}
+              </span>
+            )}
+            {potencial && (
+              <span
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold text-white shrink-0"
+                style={{ backgroundColor: potencial.bg }}
+              >
+                {potencial.label}
               </span>
             )}
             {lead.origem === 'visita' && (

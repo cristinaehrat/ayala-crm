@@ -1,5 +1,5 @@
 import {
-  Phone, MessageCircle, ExternalLink, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
+  Phone, MessageCircle, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
   ArrowRightLeft, GraduationCap,
 } from 'lucide-react'
 import { useLead, useUpdateLead } from '@/hooks/useLeads'
@@ -192,7 +192,12 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                 </select>
               </Field>
               <Field label="Potencial">
-                <input className="input-field" placeholder="baixo, médio, alto" value={form.potencial} onChange={(e) => set('potencial', e.target.value)} />
+                <select className="input-field" value={form.potencial} onChange={(e) => set('potencial', e.target.value)}>
+                  <option value="">—</option>
+                  <option value="quente">🔥 Quente</option>
+                  <option value="morno">Morno</option>
+                  <option value="frio">❄ Frio</option>
+                </select>
               </Field>
             </div>
             <Field label="Próximo Passo">
@@ -283,7 +288,9 @@ export default function LeadDetail({ leadId, onClose }: Props) {
           <Phone size={15} /> Ligar
         </a>
         <a
-          href={`https://wa.me/${lead.telefone?.replace(/\D/g, '')}`}
+          href={lead.conversation_id
+            ? `${CHAT_BASE}/app/accounts/1/conversations/${lead.conversation_id}`
+            : `https://wa.me/${lead.telefone?.replace(/\D/g, '')}`}
           target="_blank"
           rel="noreferrer"
           className="flex-1 flex items-center justify-center gap-2 btn-primary text-center"
@@ -303,16 +310,6 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         >
           <GraduationCap size={15} />
         </button>
-        {lead.conversation_id && (
-          <a
-            href={`${CHAT_BASE}/app/accounts/1/conversations/${lead.conversation_id}`}
-            target="_blank"
-            rel="noreferrer"
-            className="btn-secondary flex items-center gap-1"
-          >
-            <ExternalLink size={15} />
-          </a>
-        )}
       </div>
 
       {/* Data grid */}

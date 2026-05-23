@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { ArrowRightLeft } from 'lucide-react'
-import { initials, MARCA_BADGES, findRotaMes } from '@/lib/utils'
+import { initials, formatPhone, MARCA_BADGES, POTENCIAL_BADGES, findRotaMes } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import type { Lead } from '@/lib/types'
 import { useRef } from 'react'
@@ -39,6 +39,7 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
   }
 
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
+  const potencial = lead.potencial ? POTENCIAL_BADGES[lead.potencial] : null
 
   return (
     <div
@@ -56,7 +57,7 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
         </div>
         <div className="min-w-0">
           <p className="font-display font-semibold text-xs text-navy truncate">
-            {lead.nome ?? lead.telefone}
+            {lead.nome ?? formatPhone(lead.telefone)}
           </p>
           <p className="text-muted text-xs truncate">{lead.empresa_oficina ?? lead.cidade}</p>
         </div>
@@ -72,6 +73,14 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
             style={{ backgroundColor: marca.bg }}
           >
             {marca.label}
+          </span>
+        )}
+        {potencial && (
+          <span
+            className="inline-flex items-center px-1.5 py-0.5 rounded text-xs font-display font-bold text-white"
+            style={{ backgroundColor: potencial.bg }}
+          >
+            {potencial.label}
           </span>
         )}
         {lead.canal_origem && (

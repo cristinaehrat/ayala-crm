@@ -75,6 +75,12 @@ export const MARCA_BADGES: Record<string, { bg: string; label: string }> = {
   scania: { bg: '#D97706', label: 'Scania' },
 }
 
+export const POTENCIAL_BADGES: Record<string, { label: string; bg: string }> = {
+  quente: { label: '🔥 Quente', bg: '#DC2626' },
+  morno:  { label: 'Morno',    bg: '#F97316' },
+  frio:   { label: '❄ Frio',   bg: '#64748B' },
+}
+
 export function formatDate(d: string | null | undefined): string {
   if (!d) return '—'
   try {

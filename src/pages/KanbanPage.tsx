@@ -17,7 +17,7 @@ import type { Lead } from '@/lib/types'
 import KanbanColumn from '@/components/kanban/KanbanColumn'
 import KanbanCard from '@/components/kanban/KanbanCard'
 import MoverLeadSheet from '@/components/MoverLeadSheet'
-import LeadDetail from '@/components/leads/LeadDetail'
+import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
 function getColumnLeads(leads: Lead[], colId: string): Lead[] {
@@ -190,9 +190,7 @@ export default function KanbanPage() {
         />
       )}
 
-      {openLeadId && (
-        <LeadDetail leadId={openLeadId} onClose={() => setOpenLeadId(null)} />
-      )}
+      <LeadDetailModal leadId={openLeadId} onClose={() => setOpenLeadId(null)} />
     </div>
   )
 }
