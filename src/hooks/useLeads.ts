@@ -23,9 +23,9 @@ const FILTER_MAP: Record<FixedFilter, (q: AnyQuery) => AnyQuery> = {
   todos:                (q) => q,
   ag_ismenia:           (q) => q.ilike('etiqueta_chatwoot', '%aguardando_ismenia%'),
   qualificados:         (q) => q.eq('status', 'qualificado'),
-  hot_lead:             (q) => q.eq('etiqueta_chatwoot', 'hot_lead'),
-  lista_espera:         (q) => q.eq('etiqueta_chatwoot', 'lista_espera'),
-  aguardando_pagamento: (q) => q.eq('etiqueta_chatwoot', 'aguardando_pagamento'),
+  hot_lead:             (q) => q.ilike('etiqueta_chatwoot', '%hot_lead%'),
+  lista_espera:         (q) => q.eq('status', 'lista_espera'),
+  aguardando_pagamento: (q) => q.eq('status', 'aguardando_pagamento'),
   inscrito:             (q) => q.eq('status', 'inscrito'),
   visualizou_preco:     (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
 }
