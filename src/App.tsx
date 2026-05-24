@@ -13,6 +13,7 @@ import FinanceiroPage from '@/pages/FinanceiroPage'
 import RelatoriosPage from '@/pages/RelatoriosPage'
 import DespesasPage from '@/pages/DespesasPage'
 import ProspectosPage from '@/pages/ProspectosPage'
+import CadastroPage from '@/pages/CadastroPage'
 import AppShell from '@/components/ui/AppShell'
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -46,6 +47,7 @@ export default function App() {
         }}
       />
       <Routes>
+        <Route path="/cadastro/:token" element={<CadastroPage />} />
         <Route path="/login" element={<LoginPage />} />
         <Route
           path="/"

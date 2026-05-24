@@ -317,7 +317,9 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
     const hasPjData = form.pj_razao_social || form.pj_cnpj
     if (!hasPjData) return form.empresa_id || null
 
-    const pjPayload: Omit<Empresa, 'id' | 'created_at'> = {
+    const pjPayload: Omit<Empresa, 'id' | 'created_at' | 'updated_at' | 'fill_token' | 'fill_status'> = {
+      tipo:                 'pj',
+      cpf:                  null,
       nome_fantasia:        form.pj_nome_fantasia || null,
       razao_social:         form.pj_razao_social || null,
       cnpj:                 form.pj_cnpj || null,

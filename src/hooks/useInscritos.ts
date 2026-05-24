@@ -59,6 +59,36 @@ export function useCreateInscrito() {
   })
 }
 
+export function useInscritoByToken(token: string | null) {
+  return useQuery<Inscrito | null>({
+    queryKey: ['inscritos', 'token', token],
+    enabled: !!token,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('inscritos')
+        .select('*')
+        .eq('fill_token', token!)
+        .single()
+      if (error) return null
+      return data as Inscrito
+    },
+  })
+}
+
+export function useUpdateInscritoByToken() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ token, data }: { token: string; data: Partial<Inscrito> }) => {
+      const { error } = await supabase
+        .from('inscritos')
+        .update({ ...data, fill_status: 'preenchido' })
+        .eq('fill_token', token)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['inscritos'] }),
+  })
+}
+
 export function useDeleteInscrito() {
   const qc = useQueryClient()
   return useMutation({

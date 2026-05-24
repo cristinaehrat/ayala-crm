@@ -16,6 +16,38 @@ export function useEmpresasCadastradas() {
   })
 }
 
+export function useEmpresaById(id: string | null) {
+  return useQuery<Empresa | null>({
+    queryKey: ['empresas_cadastradas', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('empresas_cadastradas')
+        .select('*')
+        .eq('id', id!)
+        .single()
+      if (error) return null
+      return data as Empresa
+    },
+  })
+}
+
+export function useEmpresaByToken(token: string | null) {
+  return useQuery<Empresa | null>({
+    queryKey: ['empresas_cadastradas', 'token', token],
+    enabled: !!token,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('empresas_cadastradas')
+        .select('*')
+        .eq('fill_token', token!)
+        .single()
+      if (error) return null
+      return data as Empresa
+    },
+  })
+}
+
 export function useSearchEmpresas(q: string) {
   return useQuery<Empresa[]>({
     queryKey: ['empresas_cadastradas', 'search', q],
@@ -35,7 +67,7 @@ export function useSearchEmpresas(q: string) {
 export function useCreateEmpresa() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (data: Omit<Empresa, 'id' | 'created_at'>) => {
+    mutationFn: async (data: Omit<Empresa, 'id' | 'created_at' | 'updated_at' | 'fill_token' | 'fill_status'>) => {
       const { data: created, error } = await supabase
         .from('empresas_cadastradas')
         .insert(data)
@@ -54,8 +86,40 @@ export function useUpdateEmpresa() {
     mutationFn: async ({ id, data }: { id: string; data: Partial<Empresa> }) => {
       const { error } = await supabase
         .from('empresas_cadastradas')
-        .update(data)
+        .update({ ...data, updated_at: new Date().toISOString() })
         .eq('id', id)
+      if (error) throw error
+    },
+    onSuccess: (_d, { id }) => {
+      qc.invalidateQueries({ queryKey: ['empresas_cadastradas'] })
+      qc.invalidateQueries({ queryKey: ['empresas_cadastradas', id] })
+    },
+  })
+}
+
+export function useLinkEmpresaToLead() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ leadId, empresaId }: { leadId: string; empresaId: string | null }) => {
+      const { error } = await supabase
+        .from('leads_v2')
+        .update({ empresa_id: empresaId })
+        .eq('id', leadId)
+      if (error) throw error
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['leads'] }),
+  })
+}
+
+// Atualiza empresa via token (formulário público, sem auth)
+export function useUpdateEmpresaByToken() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ token, data }: { token: string; data: Partial<Empresa> }) => {
+      const { error } = await supabase
+        .from('empresas_cadastradas')
+        .update({ ...data, fill_status: 'preenchido', updated_at: new Date().toISOString() })
+        .eq('fill_token', token)
       if (error) throw error
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['empresas_cadastradas'] }),

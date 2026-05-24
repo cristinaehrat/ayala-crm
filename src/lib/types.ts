@@ -1,5 +1,6 @@
 export interface Lead {
   id: string
+  empresa_id: string | null
   telefone: string
   nome: string | null
   cidade: string | null
@@ -77,14 +78,19 @@ export interface Inscrito {
   cobrar_em_aula: boolean | null
   cpf: string | null
   empresa_id: string | null
+  fill_token: string | null
+  fill_status: 'pendente' | 'preenchido' | null
 }
 
 export interface Empresa {
   id: string
   created_at: string | null
+  updated_at: string | null
+  tipo: 'pj' | 'pf'
   nome_fantasia: string | null
   razao_social: string | null
   cnpj: string | null
+  cpf: string | null
   inscricao_estadual: string | null
   endereco: string | null
   bairro: string | null
@@ -94,6 +100,8 @@ export interface Empresa {
   email: string | null
   nome_responsavel: string | null
   whatsapp_responsavel: string | null
+  fill_token: string | null
+  fill_status: 'pendente' | 'preenchido' | null
 }
 
 export interface CatalogoTreinamento {

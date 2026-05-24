@@ -2,6 +2,7 @@ import {
   Phone, MessageCircle, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
   ArrowRightLeft, GraduationCap, Trash2, AlertCircle, Wrench,
 } from 'lucide-react'
+import EmpresaSection from '@/components/empresas/EmpresaSection'
 import { useLead, useUpdateLead, useDeleteLead, useTurma } from '@/hooks/useLeads'
 import {
   ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime,
@@ -510,6 +511,18 @@ export default function LeadDetail({ leadId, onClose }: Props) {
               : lead.canal_origem)
             : null
         } />
+      </div>
+
+      {/* Empresa / Pagante */}
+      <div className="px-4 pb-4">
+        <p className="text-xs font-display font-bold text-orange uppercase tracking-wider mb-3">
+          Empresa / Pagante
+        </p>
+        <EmpresaSection
+          leadId={lead.id}
+          empresaId={lead.empresa_id}
+          leadNome={lead.empresa_oficina}
+        />
       </div>
 
       {/* Observações + Timeline */}
