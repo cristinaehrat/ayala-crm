@@ -12,6 +12,7 @@ import DashboardPage from '@/pages/DashboardPage'
 import FinanceiroPage from '@/pages/FinanceiroPage'
 import RelatoriosPage from '@/pages/RelatoriosPage'
 import DespesasPage from '@/pages/DespesasPage'
+import ProspectosPage from '@/pages/ProspectosPage'
 import AppShell from '@/components/ui/AppShell'
 
 function AuthGuard({ children }: { children: React.ReactNode }) {
@@ -61,6 +62,7 @@ export default function App() {
           <Route path="financeiro" element={<FinanceiroPage />} />
           <Route path="relatorios" element={<RelatoriosPage />} />
           <Route path="visita" element={<VisitaPage />} />
+          <Route path="prospectos" element={<ProspectosPage />} />
           <Route path="despesas" element={<DespesasPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
         </Route>

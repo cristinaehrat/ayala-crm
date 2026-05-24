@@ -26,6 +26,10 @@ export interface Lead {
   interesses: string[] | null
   data_entrada: string | null
   ultimo_contato: string | null
+  porte_oficina: string | null
+  qtd_interessados: string | null
+  total_interacoes: number | null
+  follow_up_enviado: boolean | null
 }
 
 export type TurmaStatus = 'aberta' | 'espera' | 'encerrada'

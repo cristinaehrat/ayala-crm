@@ -81,6 +81,45 @@ export const INTERESSE_TAGS: { value: string; label: string; bg: string }[] = [
   { value: 'int_daf',    label: 'DAF',    bg: '#166534' },
 ]
 
+export const UF_OPTIONS = [
+  'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA',
+  'MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN',
+  'RS','RO','RR','SC','SP','SE','TO',
+]
+
+export const STATUS_ALL_OPTIONS: { id: string; label: string }[] = [
+  { id: 'lead_novo',            label: 'Novo Lead' },
+  { id: 'qualificado',          label: 'Qualificado' },
+  { id: 'aguardando_ismenia',   label: 'Ag. Ismênia' },
+  { id: 'visualizou_preco',     label: 'Visualizou Preço' },
+  { id: 'reserva',              label: 'Reserva' },
+  { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
+  { id: 'inscrito',             label: 'Inscrito' },
+  { id: 'lista_espera',         label: 'Lista Espera' },
+  { id: 'sem_interesse',        label: 'Sem Interesse' },
+  { id: 'perdido',              label: 'Perdido' },
+]
+
+export const CANAL_ORIGEM_OPTIONS: { value: string; label: string }[] = [
+  { value: 'whatsapp',        label: 'WhatsApp' },
+  { value: 'instagram',       label: 'Instagram' },
+  { value: 'site',            label: 'Site' },
+  { value: 'indicacao',       label: 'Indicação' },
+  { value: 'visita',          label: 'Visita Presencial' },
+  { value: 'outro',           label: 'Outro' },
+]
+
+export const PORTE_OFICINA_OPTIONS: { value: string; label: string }[] = [
+  { value: 'pequena', label: 'Pequena (1–3)' },
+  { value: 'media',   label: 'Média (4–10)' },
+  { value: 'grande',  label: 'Grande (10+)' },
+]
+
+export const PERFIL_OPTIONS: { value: string; label: string }[] = [
+  { value: 'individual', label: 'Individual' },
+  { value: 'grupo_b2b',  label: 'Grupo B2B' },
+]
+
 export const POTENCIAL_BADGES: Record<string, { label: string; bg: string }> = {
   quente: { label: '🔥 Quente', bg: '#DC2626' },
   morno:  { label: 'Morno',    bg: '#F97316' },

@@ -2,9 +2,9 @@ import { useState } from 'react'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import { supabase } from '@/lib/supabase'
 import { db } from '@/lib/dexie'
-import { toE164 } from '@/lib/utils'
+import { toE164, UF_OPTIONS } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CheckCircle } from 'lucide-react'
+import { CheckCircle, Check } from 'lucide-react'
 
 const MARCAS = ['Volvo', 'DAF', 'Scania'] as const
 
@@ -30,11 +30,22 @@ const PERFIS = [
   { value: 'grupo_b2b',  label: 'Grupo B2B' },
 ] as const
 
-const UFS = ['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO']
+const PORTES = [
+  { value: 'pequena', label: 'Pequena (1–3)' },
+  { value: 'media',   label: 'Média (4–10)' },
+  { value: 'grande',  label: 'Grande (10+)' },
+] as const
+
+const PARCEIROS = [
+  { value: 'treinatec',  label: 'Treinatec Brasil' },
+  { value: 'monteiro',   label: 'Monteiro Eletro Diesel' },
+  { value: 'mg_solucoes', label: 'MG Soluções Automotivas' },
+] as const
 
 interface VisitaForm {
   empresa_oficina: string
   tipo_oficina: string
+  porte_oficina: string
   multimarcas: boolean
   especializacao_oficina: string
   qtd_interessados: string
@@ -49,16 +60,19 @@ interface VisitaForm {
   proximo_passo: string
   data_retorno: string
   consultor: string
+  empresa_parceira: string
   observacoes: string
+  qualificado_lead: boolean
 }
 
 const EMPTY: VisitaForm = {
-  empresa_oficina: '', tipo_oficina: '', multimarcas: false,
+  empresa_oficina: '', tipo_oficina: '', porte_oficina: '', multimarcas: false,
   especializacao_oficina: '', qtd_interessados: '',
   nome: '', telefone: '', cidade: '', uf: '',
   marcas: [], perfil: '', potencial: '',
   resultado_visita: '', proximo_passo: '', data_retorno: '',
-  consultor: '', observacoes: '',
+  consultor: '', empresa_parceira: '', observacoes: '',
+  qualificado_lead: false,
 }
 
 export default function VisitaPage() {
@@ -85,25 +99,28 @@ export default function VisitaPage() {
     setLoading(true)
 
     const payload: Record<string, unknown> = {
-      empresa_oficina:           form.empresa_oficina.trim() || null,
+      empresa_oficina:              form.empresa_oficina.trim() || null,
       nome_responsavel_treinamento: form.nome.trim() || null,
-      whatsapp_responsavel:      toE164(form.telefone) || null,
-      cidade:                    form.cidade.trim() || null,
-      uf:                        form.uf || null,
-      tipo_oficina:              form.tipo_oficina || null,
-      marca_interesse:           form.marcas.length ? form.marcas.join(',').toLowerCase() : null,
-      potencial:                 form.potencial || null,
-      perfil:                    form.perfil || null,
-      multimarcas:               form.multimarcas,
-      especializacao_oficina:    form.especializacao_oficina.trim() || null,
-      qtd_interessados:          form.qtd_interessados || null,
-      resultado_visita:          form.resultado_visita.trim() || null,
-      proximo_passo:             form.proximo_passo.trim() || null,
-      data_retorno:              form.data_retorno || null,
-      consultor:                 form.consultor.trim() || null,
-      observacoes:               form.observacoes.trim() || null,
-      canal_origem:              'visita',
-      data_visita:               new Date().toISOString().split('T')[0],
+      whatsapp_responsavel:         toE164(form.telefone) || null,
+      cidade:                       form.cidade.trim() || null,
+      uf:                           form.uf || null,
+      tipo_oficina:                 form.tipo_oficina || null,
+      porte_oficina:                form.porte_oficina || null,
+      marca_interesse:              form.marcas.length ? form.marcas.join(',').toLowerCase() : null,
+      potencial:                    form.potencial || null,
+      perfil:                       form.perfil || null,
+      multimarcas:                  form.multimarcas,
+      especializacao_oficina:       form.especializacao_oficina.trim() || null,
+      qtd_interessados:             form.qtd_interessados || null,
+      resultado_visita:             form.resultado_visita.trim() || null,
+      proximo_passo:                form.proximo_passo.trim() || null,
+      data_retorno:                 form.data_retorno || null,
+      consultor:                    form.consultor.trim() || null,
+      empresa_parceira:             form.empresa_parceira || null,
+      observacoes:                  form.observacoes.trim() || null,
+      canal_origem:                 'visita',
+      data_visita:                  new Date().toISOString().split('T')[0],
+      qualificado_lead:             form.qualificado_lead,
     }
 
     try {
@@ -112,7 +129,10 @@ export default function VisitaPage() {
           .from('cadastro_prospectos')
           .upsert(payload, { onConflict: 'whatsapp_responsavel', ignoreDuplicates: false })
         if (error) throw error
-        toast.success('Visita registrada com sucesso!')
+        const msg = form.qualificado_lead
+          ? 'Visita registrada e lead qualificado!'
+          : 'Visita registrada com sucesso!'
+        toast.success(msg)
       } else {
         await db.pendentes.add({
           tempId: `visita_${Date.now()}`,
@@ -183,6 +203,25 @@ export default function VisitaPage() {
               </select>
             </Field>
 
+            <Field label="Porte da oficina" className="mt-3">
+              <div className="grid grid-cols-3 gap-2">
+                {PORTES.map((p) => (
+                  <button
+                    key={p.value}
+                    type="button"
+                    onClick={() => set('porte_oficina', form.porte_oficina === p.value ? '' : p.value)}
+                    className={`rounded-lg text-xs font-display font-bold py-2.5 px-2 transition-colors cursor-pointer border ${
+                      form.porte_oficina === p.value
+                        ? 'border-orange bg-orange/10 text-orange'
+                        : 'border-slate-300 bg-slate-50 text-navy hover:border-orange/50 hover:bg-orange/5'
+                    }`}
+                  >
+                    {p.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+
             <div className="flex items-center gap-3 mt-3 h-12 px-3 bg-white border border-slate-300 rounded-lg">
               <input
                 type="checkbox"
@@ -202,17 +241,6 @@ export default function VisitaPage() {
                 value={form.especializacao_oficina}
                 onChange={(e) => set('especializacao_oficina', e.target.value)}
                 placeholder="Ex: Especializado Mercedes"
-                className="input-field"
-              />
-            </Field>
-
-            <Field label="Qtd. interessados" className="mt-3">
-              <input
-                type="number"
-                value={form.qtd_interessados}
-                onChange={(e) => set('qtd_interessados', e.target.value)}
-                placeholder="0"
-                min="0"
                 className="input-field"
               />
             </Field>
@@ -257,7 +285,7 @@ export default function VisitaPage() {
                   className="input-field"
                 >
                   <option value="">UF</option>
-                  {UFS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
+                  {UF_OPTIONS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
                 </select>
               </Field>
             </div>
@@ -302,6 +330,19 @@ export default function VisitaPage() {
                 ))}
               </div>
             </Field>
+
+            {form.perfil === 'grupo_b2b' && (
+              <Field label="Qtd. de interessados" className="mt-3">
+                <input
+                  type="number"
+                  value={form.qtd_interessados}
+                  onChange={(e) => set('qtd_interessados', e.target.value)}
+                  placeholder="Ex: 3"
+                  min="1"
+                  className="input-field"
+                />
+              </Field>
+            )}
 
             <Field label="Potencial" className="mt-3">
               <div className="flex gap-2">
@@ -365,6 +406,19 @@ export default function VisitaPage() {
               />
             </Field>
 
+            <Field label="Parceiro responsável" className="mt-3">
+              <select
+                value={form.empresa_parceira}
+                onChange={(e) => set('empresa_parceira', e.target.value)}
+                className="input-field"
+              >
+                <option value="">— Selecione</option>
+                {PARCEIROS.map((p) => (
+                  <option key={p.value} value={p.value}>{p.label}</option>
+                ))}
+              </select>
+            </Field>
+
             <Field label="Observações" className="mt-3">
               <textarea
                 value={form.observacoes}
@@ -374,6 +428,35 @@ export default function VisitaPage() {
                 className="input-field resize-none"
               />
             </Field>
+          </Section>
+
+          {/* SEÇÃO 5 — QUALIFICAÇÃO */}
+          <Section title="Qualificação">
+            <button
+              type="button"
+              onClick={() => set('qualificado_lead', !form.qualificado_lead)}
+              className={`w-full flex items-center gap-3 p-4 rounded-xl border-2 transition-colors cursor-pointer ${
+                form.qualificado_lead
+                  ? 'border-orange bg-orange/10'
+                  : 'border-slate-300 bg-slate-50 hover:border-orange/50'
+              }`}
+            >
+              <div className={`w-5 h-5 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${
+                form.qualificado_lead ? 'border-orange bg-orange' : 'border-slate-400'
+              }`}>
+                {form.qualificado_lead && <Check size={12} className="text-white" />}
+              </div>
+              <div className="text-left">
+                <p className={`text-sm font-display font-bold ${form.qualificado_lead ? 'text-orange' : 'text-navy'}`}>
+                  Qualificar lead agora
+                </p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  {form.qualificado_lead
+                    ? 'Este prospecto será adicionado automaticamente à lista de leads'
+                    : 'Marque para promover este prospecto diretamente para o CRM de leads'}
+                </p>
+              </div>
+            </button>
           </Section>
 
           <button

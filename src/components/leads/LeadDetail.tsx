@@ -1,13 +1,15 @@
 import {
   Phone, MessageCircle, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
-  ArrowRightLeft, GraduationCap, Trash2,
+  ArrowRightLeft, GraduationCap, Trash2, AlertCircle, Wrench,
 } from 'lucide-react'
 import { useLead, useUpdateLead, useDeleteLead } from '@/hooks/useLeads'
-import { ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime } from '@/lib/utils'
+import {
+  ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime,
+  STATUS_ALL_OPTIONS, CANAL_ORIGEM_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, UF_OPTIONS,
+} from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'sonner'
-import { KANBAN_COLUMNS } from '@/lib/types'
 import { supabase } from '@/lib/supabase'
 import MoverLeadSheet from '@/components/MoverLeadSheet'
 
@@ -32,6 +34,9 @@ type EditForm = {
   canal_origem: string
   observacoes: string
   interesses: string[]
+  requer_atencao: boolean
+  porte_oficina: string
+  qtd_interessados: string
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -41,6 +46,37 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
         {label}
       </label>
       {children}
+    </div>
+  )
+}
+
+function ButtonGroup({
+  options,
+  value,
+  onChange,
+  cols,
+}: {
+  options: { value: string; label: string }[]
+  value: string
+  onChange: (v: string) => void
+  cols?: number
+}) {
+  return (
+    <div className={`grid gap-1.5`} style={{ gridTemplateColumns: `repeat(${cols ?? options.length}, 1fr)` }}>
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onChange(value === o.value ? '' : o.value)}
+          className={`rounded-lg text-xs font-display font-bold py-2.5 px-2 transition-colors cursor-pointer border ${
+            value === o.value
+              ? 'border-orange bg-orange/10 text-orange'
+              : 'border-white/10 bg-white/5 text-muted hover:border-orange/40 hover:text-white'
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
     </div>
   )
 }
@@ -59,23 +95,27 @@ export default function LeadDetail({ leadId, onClose }: Props) {
     nome: '', empresa_oficina: '', cidade: '', uf: '', perfil: '',
     status: '', marca_interesse: '', potencial: '', proximo_passo: '',
     canal_origem: '', observacoes: '', interesses: [],
+    requer_atencao: false, porte_oficina: '', qtd_interessados: '',
   })
 
   useEffect(() => {
     if (lead) {
       setForm({
-        nome:            lead.nome ?? '',
-        empresa_oficina: lead.empresa_oficina ?? '',
-        cidade:          lead.cidade ?? '',
-        uf:              lead.uf ?? '',
-        perfil:          lead.perfil ?? '',
-        status:          lead.status ?? '',
-        marca_interesse: lead.marca_interesse ?? '',
-        potencial:       lead.potencial ?? '',
-        proximo_passo:   lead.proximo_passo ?? '',
-        canal_origem:    lead.canal_origem ?? '',
-        observacoes:     lead.observacoes ?? '',
-        interesses:      lead.interesses ?? [],
+        nome:             lead.nome ?? '',
+        empresa_oficina:  lead.empresa_oficina ?? '',
+        cidade:           lead.cidade ?? '',
+        uf:               lead.uf ?? '',
+        perfil:           lead.perfil ?? '',
+        status:           lead.status ?? '',
+        marca_interesse:  lead.marca_interesse ?? '',
+        potencial:        lead.potencial ?? '',
+        proximo_passo:    lead.proximo_passo ?? '',
+        canal_origem:     lead.canal_origem ?? '',
+        observacoes:      lead.observacoes ?? '',
+        interesses:       lead.interesses ?? [],
+        requer_atencao:   lead.requer_atencao ?? false,
+        porte_oficina:    lead.porte_oficina ?? '',
+        qtd_interessados: lead.qtd_interessados ?? '',
       })
     }
   }, [lead])
@@ -94,7 +134,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   const etiquetaLabel = lead.etiqueta_chatwoot ? ETIQUETA_LABELS[lead.etiqueta_chatwoot] ?? lead.etiqueta_chatwoot : null
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
 
-  function set(field: keyof EditForm, value: string) {
+  function set<K extends keyof EditForm>(field: K, value: EditForm[K]) {
     setForm((f) => ({ ...f, [field]: value }))
   }
 
@@ -135,18 +175,21 @@ export default function LeadDetail({ leadId, onClose }: Props) {
     await updateLead.mutateAsync({
       id: lead!.id,
       data: {
-        nome:            form.nome || null,
-        empresa_oficina: form.empresa_oficina || null,
-        cidade:          form.cidade || null,
-        uf:              form.uf || null,
-        perfil:          form.perfil || null,
-        status:          form.status || null,
-        marca_interesse: form.marca_interesse || null,
-        potencial:       form.potencial || null,
-        proximo_passo:   form.proximo_passo || null,
-        canal_origem:    form.canal_origem || null,
-        observacoes:     form.observacoes || null,
-        interesses:      form.interesses.length > 0 ? form.interesses : null,
+        nome:             form.nome || null,
+        empresa_oficina:  form.empresa_oficina || null,
+        cidade:           form.cidade || null,
+        uf:               form.uf || null,
+        perfil:           form.perfil || null,
+        status:           form.status || null,
+        marca_interesse:  form.marca_interesse || null,
+        potencial:        form.potencial || null,
+        proximo_passo:    form.proximo_passo || null,
+        canal_origem:     form.canal_origem || null,
+        observacoes:      form.observacoes || null,
+        interesses:       form.interesses.length > 0 ? form.interesses : null,
+        requer_atencao:   form.requer_atencao,
+        porte_oficina:    form.porte_oficina || null,
+        qtd_interessados: form.qtd_interessados || null,
       },
     })
     toast.success('Lead atualizado')
@@ -174,7 +217,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
           </div>
         </div>
 
-        <div className="p-4 space-y-4 overflow-y-auto">
+        <div className="p-4 space-y-5 overflow-y-auto">
+          {/* Identificação */}
           <section className="space-y-3">
             <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Identificação</p>
             <Field label="Nome">
@@ -190,26 +234,68 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                 </Field>
               </div>
               <Field label="UF">
-                <input className="input-field" maxLength={2} value={form.uf} onChange={(e) => set('uf', e.target.value.toUpperCase())} />
+                <select className="input-field" value={form.uf} onChange={(e) => set('uf', e.target.value)}>
+                  <option value="">—</option>
+                  {UF_OPTIONS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
+                </select>
               </Field>
             </div>
-            <Field label="Perfil">
-              <input className="input-field" placeholder="mecânico, gestor de frota..." value={form.perfil} onChange={(e) => set('perfil', e.target.value)} />
+            <Field label="Porte da Oficina">
+              <ButtonGroup options={PORTE_OFICINA_OPTIONS} value={form.porte_oficina} onChange={(v) => set('porte_oficina', v)} />
             </Field>
           </section>
 
+          {/* Qualificação */}
+          <section className="space-y-3">
+            <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Qualificação</p>
+            <Field label="Tipo do Lead">
+              <ButtonGroup options={PERFIL_OPTIONS} value={form.perfil} onChange={(v) => set('perfil', v)} />
+            </Field>
+            {form.perfil === 'grupo_b2b' && (
+              <Field label="Qtd. de interessados">
+                <input
+                  type="number"
+                  min="1"
+                  className="input-field"
+                  value={form.qtd_interessados}
+                  onChange={(e) => set('qtd_interessados', e.target.value)}
+                  placeholder="Ex: 3"
+                />
+              </Field>
+            )}
+            <Field label="Interesses">
+              <div className="flex gap-2 flex-wrap mt-1">
+                {INTERESSE_TAGS.map((tag) => (
+                  <button
+                    key={tag.value}
+                    type="button"
+                    onClick={() => toggleInteresse(tag.value)}
+                    className="px-3 py-1.5 rounded text-xs font-display font-bold text-white transition-opacity cursor-pointer"
+                    style={{
+                      backgroundColor: tag.bg,
+                      opacity: form.interesses.includes(tag.value) ? 1 : 0.3,
+                    }}
+                  >
+                    {tag.label}
+                  </button>
+                ))}
+              </div>
+            </Field>
+          </section>
+
+          {/* Comercial */}
           <section className="space-y-3">
             <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Comercial</p>
             <Field label="Status">
               <select className="input-field" value={form.status} onChange={(e) => set('status', e.target.value)}>
                 <option value="">—</option>
-                {KANBAN_COLUMNS.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
+                {STATUS_ALL_OPTIONS.map((s) => <option key={s.id} value={s.id}>{s.label}</option>)}
               </select>
             </Field>
             <div className="grid grid-cols-2 gap-2">
               <Field label="Marca">
                 <select className="input-field" value={form.marca_interesse} onChange={(e) => set('marca_interesse', e.target.value)}>
-                  {MARCAS.map((m) => <option key={m} value={m}>{m || '—'}</option>)}
+                  {MARCAS.map((m) => <option key={m} value={m.toLowerCase()}>{m || '—'}</option>)}
                 </select>
               </Field>
               <Field label="Potencial">
@@ -221,32 +307,37 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                 </select>
               </Field>
             </div>
+            <Field label="Canal de Origem">
+              <select className="input-field" value={form.canal_origem} onChange={(e) => set('canal_origem', e.target.value)}>
+                <option value="">—</option>
+                {CANAL_ORIGEM_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
+              </select>
+            </Field>
             <Field label="Próximo Passo">
               <input className="input-field" value={form.proximo_passo} onChange={(e) => set('proximo_passo', e.target.value)} />
             </Field>
-            <Field label="Canal Origem">
-              <input className="input-field" value={form.canal_origem} onChange={(e) => set('canal_origem', e.target.value)} />
-            </Field>
-            <Field label="Interesses">
-              <div className="flex gap-2 flex-wrap mt-1">
-                {INTERESSE_TAGS.map((tag) => (
-                  <button
-                    key={tag.value}
-                    type="button"
-                    onClick={() => toggleInteresse(tag.value)}
-                    className="px-3 py-1.5 rounded text-xs font-display font-bold text-white transition-opacity cursor-pointer"
-                    style={{
-                      backgroundColor: tag.bg,
-                      opacity: form.interesses.includes(tag.value) ? 1 : 0.35,
-                    }}
-                  >
-                    {tag.label}
-                  </button>
-                ))}
+            {/* Requer Atenção */}
+            <div
+              onClick={() => set('requer_atencao', !form.requer_atencao)}
+              className={`flex items-center gap-3 p-3 rounded-lg border cursor-pointer transition-colors ${
+                form.requer_atencao
+                  ? 'border-orange/60 bg-orange/10'
+                  : 'border-white/10 bg-white/5 hover:border-white/20'
+              }`}
+            >
+              <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 ${
+                form.requer_atencao ? 'border-orange bg-orange' : 'border-muted'
+              }`}>
+                {form.requer_atencao && <Check size={10} className="text-white" />}
               </div>
-            </Field>
+              <div>
+                <p className="text-xs font-display font-bold text-white">Requer atenção da Ismênia</p>
+                <p className="text-xs text-muted mt-0.5">Sinaliza para acompanhamento prioritário</p>
+              </div>
+            </div>
           </section>
 
+          {/* Observações */}
           <section className="space-y-3">
             <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Observações</p>
             <textarea
@@ -275,8 +366,13 @@ export default function LeadDetail({ leadId, onClose }: Props) {
       {/* Header */}
       <div className="flex items-start justify-between p-4 border-b border-white/10 shrink-0">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-navy2 flex items-center justify-center shrink-0">
-            <span className="font-display font-bold text-base text-white">{initials(lead.nome)}</span>
+          <div className="relative">
+            <div className="w-12 h-12 rounded-full bg-navy2 flex items-center justify-center shrink-0">
+              <span className="font-display font-bold text-base text-white">{initials(lead.nome)}</span>
+            </div>
+            {lead.requer_atencao && (
+              <span className="absolute -top-1 -right-1 w-3.5 h-3.5 bg-orange rounded-full border-2 border-navy animate-pulse" />
+            )}
           </div>
           <div>
             <h2 className="font-display font-bold text-white text-base leading-tight">
@@ -300,6 +396,17 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                   {marca.label}
                 </span>
               )}
+              {lead.requer_atencao && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-display font-bold text-orange border border-orange/40 bg-orange/10">
+                  <AlertCircle size={10} />
+                  Atenção
+                </span>
+              )}
+              {lead.total_interacoes != null && lead.total_interacoes > 0 && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-semibold text-muted border border-white/10">
+                  {lead.total_interacoes} msg
+                </span>
+              )}
             </div>
           </div>
         </div>
@@ -307,7 +414,6 @@ export default function LeadDetail({ leadId, onClose }: Props) {
           <button
             onClick={() => setEditMode(true)}
             className="flex items-center gap-1 text-xs btn-secondary px-2.5 py-1.5"
-            aria-label="Editar lead"
           >
             <Edit2 size={12} />
             Editar
@@ -320,7 +426,6 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                 ? 'bg-red-600 text-white hover:bg-red-700'
                 : 'btn-secondary text-red-400 hover:text-red-300'
             }`}
-            aria-label="Excluir lead"
             onBlur={() => setConfirmDelete(false)}
           >
             <Trash2 size={12} />
@@ -370,18 +475,34 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         <InfoRow icon={<Phone size={14} />} label="Telefone" value={formatPhone(lead.telefone)} />
         <InfoRow icon={<MapPin size={14} />} label="Cidade" value={lead.cidade && lead.uf ? `${lead.cidade} / ${lead.uf}` : lead.cidade} />
         <InfoRow icon={<Building2 size={14} />} label="Oficina" value={lead.empresa_oficina} />
-        <InfoRow icon={<User size={14} />} label="Perfil" value={lead.perfil} />
+        <InfoRow icon={<Wrench size={14} />} label="Tipo de Oficina" value={lead.tipo_oficina} />
+        <InfoRow icon={<User size={14} />} label="Tipo de Lead" value={
+          lead.perfil === 'individual' ? 'Individual'
+          : lead.perfil === 'grupo_b2b' ? `Grupo B2B${lead.qtd_interessados ? ` — ${lead.qtd_interessados} pessoas` : ''}`
+          : lead.perfil ?? null
+        } />
+        <InfoRow label="Porte da Oficina" value={
+          PORTE_OFICINA_OPTIONS.find((p) => p.value === lead.porte_oficina)?.label ?? lead.porte_oficina
+        } />
         <InfoRow icon={<Calendar size={14} />} label="Entrada" value={relativeTime(lead.data_entrada)} />
         {lead.origem === 'visita' && (
           <>
             <InfoRow icon={<Calendar size={14} />} label="Data visita" value={lead.data_visita} />
             <InfoRow icon={<User size={14} />} label="Consultor" value={lead.consultor} />
-            <InfoRow icon={<Building2 size={14} />} label="Tipo oficina" value={lead.tipo_oficina} />
           </>
         )}
         <InfoRow label="Potencial" value={lead.potencial} />
         <InfoRow label="Próximo passo" value={lead.proximo_passo} />
-        <InfoRow label="Canal origem" value={lead.canal_origem} />
+        <InfoRow label="Canal origem" value={
+          lead.canal_origem
+            ? (lead.canal_origem === 'whatsapp' ? 'WhatsApp'
+              : lead.canal_origem === 'instagram' ? 'Instagram'
+              : lead.canal_origem === 'site' ? 'Site'
+              : lead.canal_origem === 'indicacao' ? 'Indicação'
+              : lead.canal_origem === 'visita' ? 'Visita Presencial'
+              : lead.canal_origem)
+            : null
+        } />
       </div>
 
       {/* Observações + Timeline */}
@@ -411,7 +532,6 @@ export default function LeadDetail({ leadId, onClose }: Props) {
             onClick={handleSaveNota}
             disabled={!nota.trim() || savingNota}
             className="btn-primary px-3 py-2 flex items-center gap-1 self-end"
-            aria-label="Salvar anotação"
           >
             <Send size={14} />
           </button>
