@@ -2,7 +2,7 @@ import {
   Phone, MessageCircle, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
   ArrowRightLeft, GraduationCap, Trash2, AlertCircle, Wrench,
 } from 'lucide-react'
-import { useLead, useUpdateLead, useDeleteLead } from '@/hooks/useLeads'
+import { useLead, useUpdateLead, useDeleteLead, useTurma } from '@/hooks/useLeads'
 import {
   ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime,
   STATUS_ALL_OPTIONS, CANAL_ORIGEM_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, UF_OPTIONS,
@@ -130,6 +130,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
 
   if (!lead) return null
 
+  const { data: turma } = useTurma(lead.turma_selecionada)
   const etiquetaCor = lead.etiqueta_chatwoot ? ETIQUETA_CORES[lead.etiqueta_chatwoot] : null
   const etiquetaLabel = lead.etiqueta_chatwoot ? ETIQUETA_LABELS[lead.etiqueta_chatwoot] ?? lead.etiqueta_chatwoot : null
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
@@ -493,6 +494,12 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         )}
         <InfoRow label="Potencial" value={lead.potencial} />
         <InfoRow label="Próximo passo" value={lead.proximo_passo} />
+        {turma && (
+          <InfoRow icon={<GraduationCap size={14} />} label="Turma selecionada" value={
+            [turma.nome_treinamento, turma.cidade, turma.data_inicio ? new Date(turma.data_inicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : null]
+              .filter(Boolean).join(' · ')
+          } />
+        )}
         <InfoRow label="Canal origem" value={
           lead.canal_origem
             ? (lead.canal_origem === 'whatsapp' ? 'WhatsApp'

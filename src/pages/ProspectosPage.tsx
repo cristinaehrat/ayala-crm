@@ -40,9 +40,16 @@ const pillBase = 'px-2.5 py-1 rounded-full text-xs font-display font-semibold tr
 const pillActive = 'bg-orange text-white border-orange'
 const pillInactive = 'bg-transparent text-muted border-slate-300 hover:border-orange/50 hover:text-navy'
 
+const POTENCIAL_FILTERS = [
+  { value: 'alto',  label: '🔥 Alto' },
+  { value: 'medio', label: 'Médio' },
+  { value: 'baixo', label: '❄ Baixo' },
+]
+
 export default function ProspectosPage() {
   const [filter, setFilter] = useState<ProspectoFilter>('todos')
   const [ufFilter, setUfFilter] = useState<string>('')
+  const [potencialFilter, setPotencialFilter] = useState<string>('')
   const [search, setSearch] = useState('')
   const [ufOpen, setUfOpen] = useState(false)
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -52,17 +59,19 @@ export default function ProspectosPage() {
   const qualificar = useQualificarProspecto()
   const registrarTentativa = useRegistrarTentativa()
 
-  const filtered = search.trim()
-    ? prospectos.filter((p) => {
-        const q = search.toLowerCase()
-        return (
-          p.empresa_oficina?.toLowerCase().includes(q) ||
-          p.nome_responsavel_treinamento?.toLowerCase().includes(q) ||
-          p.whatsapp_responsavel?.includes(q) ||
-          p.cidade?.toLowerCase().includes(q)
-        )
-      })
-    : prospectos
+  const filtered = prospectos.filter((p) => {
+    if (potencialFilter && p.potencial !== potencialFilter) return false
+    if (search.trim()) {
+      const q = search.toLowerCase()
+      return (
+        p.empresa_oficina?.toLowerCase().includes(q) ||
+        p.nome_responsavel_treinamento?.toLowerCase().includes(q) ||
+        p.whatsapp_responsavel?.includes(q) ||
+        p.cidade?.toLowerCase().includes(q)
+      )
+    }
+    return true
+  })
 
   async function handleQualificar(p: Prospecto, e: React.MouseEvent) {
     e.stopPropagation()
@@ -129,6 +138,17 @@ export default function ProspectosPage() {
             {label}
           </button>
         ))}
+        {/* Potencial pills */}
+        {POTENCIAL_FILTERS.map(({ value, label }) => (
+          <button
+            key={value}
+            onClick={() => setPotencialFilter(potencialFilter === value ? '' : value)}
+            className={cn(pillBase, potencialFilter === value ? pillActive : pillInactive)}
+          >
+            {label}
+          </button>
+        ))}
+
         {/* UF dropdown */}
         <div className="relative shrink-0">
           <button

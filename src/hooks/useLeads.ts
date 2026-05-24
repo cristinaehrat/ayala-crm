@@ -162,6 +162,24 @@ export function useDeleteLead() {
   })
 }
 
+export function useTurma(id: string | null | undefined) {
+  return useQuery<{ nome_treinamento: string | null; data_inicio: string | null; cidade: string | null } | null>({
+    queryKey: ['turma', id],
+    enabled: !!id,
+    queryFn: async () => {
+      if (!id) return null
+      const { data, error } = await supabase
+        .from('turmas')
+        .select('nome_treinamento, data_inicio, cidade')
+        .eq('id', id)
+        .single()
+      if (error) return null
+      return data
+    },
+    staleTime: 10 * 60 * 1000,
+  })
+}
+
 export function useCreateLead() {
   const qc = useQueryClient()
   return useMutation({
