@@ -99,6 +99,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
     requer_atencao: false, porte_oficina: '', qtd_interessados: '',
   })
 
+  const { data: turma } = useTurma(lead?.turma_selecionada ?? null)
+
   useEffect(() => {
     if (lead) {
       setForm({
@@ -130,8 +132,6 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   }
 
   if (!lead) return null
-
-  const { data: turma } = useTurma(lead.turma_selecionada)
   const etiquetaCor = lead.etiqueta_chatwoot ? ETIQUETA_CORES[lead.etiqueta_chatwoot] : null
   const etiquetaLabel = lead.etiqueta_chatwoot ? ETIQUETA_LABELS[lead.etiqueta_chatwoot] ?? lead.etiqueta_chatwoot : null
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
