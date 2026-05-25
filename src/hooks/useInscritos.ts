@@ -38,19 +38,16 @@ export function useUpdateInscrito() {
 export function useCreateInscrito() {
   const qc = useQueryClient()
   return useMutation({
-    mutationFn: async (data: {
+    mutationFn: async (data: Partial<Inscrito> & {
       id_turma: string
-      id_lead?: string
       nome: string
-      empresa_oficina?: string
-      valor_total?: number
-      status_financeiro?: string
     }) => {
-      const { error } = await supabase.from('inscritos').insert({
+      const { data: created, error } = await supabase.from('inscritos').insert({
         ...data,
         status_financeiro: data.status_financeiro ?? 'pendente',
-      })
+      }).select('*').single()
       if (error) throw error
+      return created as Inscrito
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['inscritos'] })

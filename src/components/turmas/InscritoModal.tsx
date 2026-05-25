@@ -158,6 +158,7 @@ function EmpresaSearch({ onSelect }: { onSelect: (e: Empresa) => void }) {
 }
 
 export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId }: Props) {
+  const [currentInscrito, setCurrentInscrito] = useState<Inscrito | null>(inscrito)
   const [form, setForm] = useState<Form>(() => fromInscrito(inscrito))
   const [fluxoSelecionados, setFluxoSelecionados] = useState<string[]>([])
   const [uploading, setUploading] = useState(false)
@@ -174,14 +175,16 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
   const deleteInscrito = useDeleteInscrito()
   const createEmpresa = useCreateEmpresa()
   const updateEmpresa = useUpdateEmpresa()
-  const isEdit = !!inscrito
+  const activeInscrito = currentInscrito ?? inscrito
+  const isEdit = !!activeInscrito
 
   const { data: preloadedLead } = useLead(leadId ?? null)
-  const { data: leadData } = useLead(isEdit ? (inscrito?.id_lead ?? null) : null)
-  const { data: linkedEmpresa } = useEmpresaById(form.empresa_id || inscrito?.empresa_id || null)
+  const { data: leadData } = useLead(isEdit ? (activeInscrito?.id_lead ?? null) : null)
+  const { data: linkedEmpresa } = useEmpresaById(form.empresa_id || activeInscrito?.empresa_id || null)
 
   useEffect(() => {
     if (!open) return
+    setCurrentInscrito(inscrito)
     setForm(fromInscrito(inscrito))
     setFluxoSelecionados(inscrito?.fluxo_pagamento?.split(',').filter(Boolean) ?? [])
     setSelectedLead(null)
@@ -192,17 +195,17 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
 
   // Carregar dados PJ da empresa vinculada ao abrir edição
   useEffect(() => {
-    if (!open || !inscrito?.empresa_id) return
+    if (!open || !activeInscrito?.empresa_id) return
     supabase
       .from('empresas_cadastradas')
       .select('*')
-      .eq('id', inscrito.empresa_id)
+      .eq('id', activeInscrito.empresa_id)
       .single()
       .then(({ data }) => {
         if (!data) return
         fillEmpresaFields(data as Empresa)
       })
-  }, [open, inscrito?.empresa_id])
+  }, [open, activeInscrito?.empresa_id])
 
   useEffect(() => {
     if (preloadedLead && !isEdit) {
@@ -359,8 +362,8 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
 
       if (isEdit) {
         await updateInscrito.mutateAsync({
-          id_inscricao: inscrito!.id_inscricao,
-          data: {
+            id_inscricao: activeInscrito!.id_inscricao,
+            data: {
             nome:                  form.nome || null,
             empresa_oficina:       form.empresa_oficina || null,
             cpf:                   form.cpf || null,
@@ -381,19 +384,40 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
             empresa_id:            empresaId,
           },
         })
-        toast.success('Inscrito atualizado')
+        setCurrentInscrito((prev) => prev ? { ...prev, empresa_id: empresaId } : prev)
+        if (empresaId) {
+          setForm((prev) => ({ ...prev, empresa_id: empresaId }))
+        }
+        toast.success('Inscrito atualizado. Os links permanecem disponíveis abaixo.')
       } else {
-        await createInscrito.mutateAsync({
+        const created = await createInscrito.mutateAsync({
           id_turma:        turmaId,
-          id_lead:         selectedLead?.id,
+          id_lead:         selectedLead?.id ?? null,
           nome:            form.nome,
-          empresa_oficina: form.empresa_oficina || undefined,
-          valor_total:     n(form.valor_total) ?? undefined,
-          status_financeiro: form.status_financeiro || undefined,
+          empresa_oficina: form.empresa_oficina || null,
+          cpf: form.cpf || null,
+          valor_total: n(form.valor_total),
+          valor_entrada: n(form.valor_entrada),
+          saldo_a_receber: n(form.saldo_a_receber),
+          status_financeiro: form.status_financeiro || 'pendente',
+          fluxo_pagamento: fluxoCSV,
+          qtd_parcelas: form.qtd_parcelas ? parseInt(form.qtd_parcelas, 10) : null,
+          custodia_entrada: (form.custodia_entrada || null) as Inscrito['custodia_entrada'],
+          comprovante_validado: form.comprovante_validado,
+          cobrar_em_aula: form.cobrar_em_aula,
+          url_comprovante: form.url_comprovante || null,
+          pagante_nome_nf: form.pagante_nome_nf || null,
+          pagante_documento: form.pagante_documento || null,
+          pagante_email_nf: form.pagante_email_nf || null,
+          observacoes_negociacao: form.observacoes_negociacao || null,
+          empresa_id: empresaId,
         })
-        toast.success('Inscrito adicionado')
+        setCurrentInscrito(created)
+        if (empresaId) {
+          setForm((prev) => ({ ...prev, empresa_id: empresaId }))
+        }
+        toast.success('Inscrito adicionado. Os links de formulário foram liberados.')
       }
-      onClose()
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao salvar')
     }
@@ -401,9 +425,9 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
 
   const saving = updateInscrito.isPending || createInscrito.isPending || createEmpresa.isPending || updateEmpresa.isPending
   const showLeadSearch = !isEdit && !selectedLead
-  const participantToken = inscrito?.fill_token ?? null
+  const participantToken = activeInscrito?.fill_token ?? null
   const participantPhone = (leadData?.telefone ?? selectedLead?.telefone ?? '').replace(/\D/g, '')
-  const participantName = leadData?.nome ?? selectedLead?.nome ?? inscrito?.nome ?? form.nome ?? null
+  const participantName = leadData?.nome ?? selectedLead?.nome ?? activeInscrito?.nome ?? form.nome ?? null
   const empresaToken = linkedEmpresa?.fill_token ?? null
   const empresaPhone = (linkedEmpresa?.whatsapp_responsavel ?? form.pj_whatsapp_responsavel ?? '').replace(/\D/g, '')
   const empresaResponsavel = linkedEmpresa?.nome_responsavel ?? form.pj_nome_responsavel ?? null
@@ -425,7 +449,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
   }
 
   return (
-    <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Inscrito' : 'Vincular Lead à Turma'}>
+      <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Inscrito' : 'Vincular Lead à Turma'}>
       <div className="space-y-5">
 
         {/* Seleção de lead (modo criação) */}
@@ -674,7 +698,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                     </>
                   ) : (
                     <p className="text-[11px] text-slate-500">
-                      Salve a inscrição primeiro para liberar o link público do participante.
+                  Salve a inscrição primeiro para liberar o link público do participante.
                     </p>
                   )}
                 </div>
@@ -717,7 +741,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                     </>
                   ) : (
                     <p className="text-[11px] text-slate-500">
-                      Vincule ou salve a empresa primeiro para liberar o link público PJ.
+                      Preencha ou vincule a empresa e salve a inscrição para liberar o link público PJ.
                     </p>
                   )}
                 </div>
