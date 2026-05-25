@@ -168,6 +168,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
   const [searching, setSearching] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [showEmpresaSuggestions, setShowEmpresaSuggestions] = useState(false)
+  const [ensuringEmpresaToken, setEnsuringEmpresaToken] = useState(false)
   const fileRef = useRef<HTMLInputElement>(null)
   const { data: empresaSuggestions = [] } = useSearchEmpresas(form.empresa_oficina)
   const updateInscrito = useUpdateInscrito()
@@ -206,6 +207,23 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
         fillEmpresaFields(data as Empresa)
       })
   }, [open, activeInscrito?.empresa_id])
+
+  useEffect(() => {
+    if (!open || !linkedEmpresa || linkedEmpresa.fill_token || ensuringEmpresaToken) return
+    setEnsuringEmpresaToken(true)
+    const fillToken = crypto.randomUUID()
+    updateEmpresa.mutateAsync({
+      id: linkedEmpresa.id,
+      data: {
+        fill_token: fillToken,
+        fill_status: linkedEmpresa.fill_status ?? 'pendente',
+      } as Partial<Empresa>,
+    }).catch(() => {
+      toast.error('Não foi possível preparar o link público da empresa.')
+    }).finally(() => {
+      setEnsuringEmpresaToken(false)
+    })
+  }, [open, linkedEmpresa, ensuringEmpresaToken, updateEmpresa])
 
   useEffect(() => {
     if (preloadedLead && !isEdit) {
@@ -739,6 +757,10 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                         </button>
                       </div>
                     </>
+                  ) : form.empresa_id || activeInscrito?.empresa_id ? (
+                    <p className="text-[11px] text-slate-500">
+                      Preparando link da empresa...
+                    </p>
                   ) : (
                     <p className="text-[11px] text-slate-500">
                       Preencha ou vincule a empresa e salve a inscrição para liberar o link público PJ.
