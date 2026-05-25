@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, UserCheck, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle } from 'lucide-react'
+import { Search, UserCheck, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info } from 'lucide-react'
 import { useProspectos, useQualificarProspecto, useRegistrarTentativa, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES } from '@/lib/utils'
@@ -52,7 +52,8 @@ export default function ProspectosPage() {
   const [potencialFilter, setPotencialFilter] = useState<string>('')
   const [search, setSearch] = useState('')
   const [ufOpen, setUfOpen] = useState(false)
-  const [selectedId, setSelectedId] = useState<string | null>(null)
+  const [expandedId, setExpandedId] = useState<string | null>(null)
+  const [detailId, setDetailId] = useState<string | null>(null)
 
   const { data: prospectos = [], isLoading } = useProspectos(filter, ufFilter || undefined)
   const { data: ufs = [] } = useDistinctUFs()
@@ -109,7 +110,7 @@ export default function ProspectosPage() {
     toast.success(`Registrado: ${STATUS_LABEL[action.status]}`)
   }
 
-  const selected = selectedId ? prospectos.find((p) => p.id_visita === selectedId) ?? null : null
+  const selected = detailId ? prospectos.find((p) => p.id_visita === detailId) ?? null : null
 
   return (
     <div className="flex flex-col h-full md:ml-56">
@@ -201,8 +202,9 @@ export default function ProspectosPage() {
           <ProspectoCard
             key={p.id_visita}
             prospecto={p}
-            onClick={() => setSelectedId(p.id_visita === selectedId ? null : p.id_visita)}
-            expanded={p.id_visita === selectedId}
+            onClick={() => setExpandedId(p.id_visita === expandedId ? null : p.id_visita)}
+            onOpenDetail={() => setDetailId(p.id_visita)}
+            expanded={p.id_visita === expandedId}
             onQualificar={(e) => handleQualificar(p, e)}
             onTentativa={(e) => handleTentativa(p, e)}
             qualificando={qualificar.isPending}
@@ -212,7 +214,7 @@ export default function ProspectosPage() {
 
       {/* Detail drawer (mobile bottom sheet style) */}
       {selected && (
-        <ProspectoDetail prospecto={selected} onClose={() => setSelectedId(null)} />
+        <ProspectoDetail prospecto={selected} onClose={() => setDetailId(null)} />
       )}
     </div>
   )
@@ -221,6 +223,7 @@ export default function ProspectosPage() {
 function ProspectoCard({
   prospecto: p,
   onClick,
+  onOpenDetail,
   expanded,
   onQualificar,
   onTentativa,
@@ -228,6 +231,7 @@ function ProspectoCard({
 }: {
   prospecto: Prospecto
   onClick: () => void
+  onOpenDetail: () => void
   expanded: boolean
   onQualificar: (e: React.MouseEvent) => void
   onTentativa: (e: React.MouseEvent) => void
@@ -332,6 +336,17 @@ function ProspectoCard({
                 WhatsApp
               </a>
             )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenDetail()
+              }}
+              className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+            >
+              <Info size={13} />
+              Ver detalhes
+            </button>
           </div>
         )}
       </div>
