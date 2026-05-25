@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
   perdido:              '#475569',
 }
 
-const COL = 'grid-cols-[minmax(240px,1.6fr)_118px_160px_84px_112px] xl:grid-cols-[minmax(280px,1.8fr)_140px_180px_90px_120px]'
+const COL = 'grid-cols-[minmax(260px,320px)_132px_190px_86px_118px] xl:grid-cols-[minmax(300px,360px)_144px_210px_92px_124px] gap-x-3 justify-start'
 
 export function LeadRowHeader() {
   return (

@@ -110,9 +110,9 @@ export default function KanbanPage() {
   const colLeadsCount = KANBAN_COLUMNS.map(({ id }) =>
     getColumnTotalCount(leads, id),
   )
-  const hotLeadQueue = allLeads.filter((lead) => hasLeadLabel(lead.etiqueta_chatwoot, 'hot_lead')).slice(0, 4)
-  const agIsmeniaQueue = allLeads.filter((lead) => hasLeadLabel(lead.etiqueta_chatwoot, 'aguardando_ismenia')).slice(0, 4)
-  const followUpQueue = allLeads.filter((lead) => needsLeadFollowUp(lead)).slice(0, 4)
+  const hotLeadQueue = allLeads.filter((lead) => hasLeadLabel(lead.etiqueta_chatwoot, 'hot_lead')).slice(0, 2)
+  const agIsmeniaQueue = allLeads.filter((lead) => hasLeadLabel(lead.etiqueta_chatwoot, 'aguardando_ismenia')).slice(0, 2)
+  const followUpQueue = allLeads.filter((lead) => needsLeadFollowUp(lead)).slice(0, 2)
   const priorityGroups = [
     {
       id: 'hot_lead',
@@ -157,7 +157,7 @@ export default function KanbanPage() {
 
       <LeadFilters active={filter} onChange={setFilter} />
 
-      <div className="px-4 pb-3 shrink-0">
+      <div className="px-4 pb-2 shrink-0">
         <div className="grid gap-3 md:grid-cols-2 2xl:grid-cols-3">
           {priorityGroups.map((group) => {
             const Icon = group.icon
@@ -165,27 +165,27 @@ export default function KanbanPage() {
               <button
                 key={group.id}
                 onClick={group.onClick}
-                className="rounded-2xl border border-slate-200 p-3 text-left transition-all hover:shadow-md hover:border-orange/30 bg-white"
+                className="rounded-2xl border border-slate-200 p-2.5 text-left transition-all hover:shadow-md hover:border-orange/30 bg-white"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="inline-flex items-center gap-2 rounded-full px-2.5 py-1 text-xs font-display font-bold uppercase tracking-wide" style={{ backgroundColor: group.surface, color: group.accent }}>
+                    <div className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-display font-bold uppercase tracking-wide" style={{ backgroundColor: group.surface, color: group.accent }}>
                       <Icon size={12} />
                       {group.label}
                     </div>
-                    <p className="text-xs text-slate-500 mt-2">{group.helper}</p>
+                    <p className="text-[11px] text-slate-500 mt-1.5">{group.helper}</p>
                   </div>
-                  <span className="shrink-0 text-lg font-display font-bold" style={{ color: group.accent }}>
+                  <span className="shrink-0 text-base font-display font-bold" style={{ color: group.accent }}>
                     {group.count}
                   </span>
                 </div>
 
-                <div className="mt-3 space-y-1.5">
+                <div className="mt-2 space-y-1.5">
                   {group.leads.length > 0 ? (
                     group.leads.map((lead) => (
                       <div
                         key={lead.id}
-                        className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-2"
+                        className="flex items-center justify-between gap-2 rounded-xl px-2.5 py-1.5"
                         style={{ backgroundColor: group.surface }}
                       >
                         <div className="min-w-0">
@@ -202,7 +202,7 @@ export default function KanbanPage() {
                       </div>
                     ))
                   ) : (
-                    <p className="text-xs text-slate-400 py-2">Sem leads nesta fila.</p>
+                    <p className="text-[11px] text-slate-400 py-1.5">Sem leads nesta fila.</p>
                   )}
                 </div>
               </button>
