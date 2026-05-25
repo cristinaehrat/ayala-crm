@@ -157,15 +157,20 @@ export type KanbanStatus =
   | 'sem_interesse'
   | 'perdido'
 
-export const KANBAN_COLUMNS: { id: KanbanStatus; label: string }[] = [
-  { id: 'lead_novo',            label: 'Novo Lead' },
-  { id: 'qualificado',          label: 'Qualificado' },
-  { id: 'aguardando_ismenia',   label: 'Ag. Ismênia' },
-  { id: 'visualizou_preco',     label: 'Visualizou Preço' },
-  { id: 'reserva',              label: 'Reserva' },
-  { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
-  { id: 'inscrito',             label: 'Inscrito' },
-  { id: 'lista_espera',         label: 'Lista Espera' },
-  { id: 'sem_interesse',        label: 'Sem Interesse' },
-  { id: 'perdido',              label: 'Perdido' },
+export const KANBAN_COLUMNS: Array<{
+  id: KanbanStatus
+  label: string
+  accent: string
+  surface: string
+}> = [
+  { id: 'lead_novo',            label: 'Novo Lead',         accent: '#1565C0', surface: '#DBEAFE' },
+  { id: 'qualificado',          label: 'Qualificado',       accent: '#2563EB', surface: '#E0E7FF' },
+  { id: 'aguardando_ismenia',   label: 'Ag. Ismênia',       accent: '#F97316', surface: '#FFEDD5' },
+  { id: 'visualizou_preco',     label: 'Visualizou Preço',  accent: '#B45309', surface: '#FEF3C7' },
+  { id: 'reserva',              label: 'Reserva',           accent: '#DC2626', surface: '#FEE2E2' },
+  { id: 'aguardando_pagamento', label: 'Ag. Pagamento',     accent: '#C2410C', surface: '#FFEDD5' },
+  { id: 'inscrito',             label: 'Inscrito',          accent: '#15803D', surface: '#DCFCE7' },
+  { id: 'lista_espera',         label: 'Lista Espera',      accent: '#EA580C', surface: '#FFEDD5' },
+  { id: 'sem_interesse',        label: 'Sem Interesse',     accent: '#64748B', surface: '#E2E8F0' },
+  { id: 'perdido',              label: 'Perdido',           accent: '#475569', surface: '#E2E8F0' },
 ]

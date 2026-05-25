@@ -10,8 +10,8 @@ import NewLeadModal from '@/components/leads/NewLeadModal'
 import { Search, Plus } from 'lucide-react'
 
 const VALID_FILTERS: LeadFilter[] = [
-  'todos','ag_ismenia','qualificados','hot_lead','lista_espera',
-  'aguardando_pagamento','visualizou_preco',
+  'todos','hot_lead','ag_ismenia','follow_up','qualificados',
+  'aguardando_pagamento','inscrito','visualizou_preco','lista_espera',
 ]
 
 export default function LeadsPage() {

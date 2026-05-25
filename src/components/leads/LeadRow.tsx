@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
   perdido:              '#475569',
 }
 
-const COL = 'grid-cols-[minmax(0,1fr)_140px_80px_80px] lg:grid-cols-[minmax(0,1fr)_130px_110px_140px_80px_80px]'
+const COL = 'grid-cols-[minmax(240px,1.6fr)_118px_160px_84px_112px] xl:grid-cols-[minmax(280px,1.8fr)_140px_180px_90px_120px]'
 
 export function LeadRowHeader() {
   return (
@@ -33,11 +33,10 @@ export function LeadRowHeader() {
       )}
     >
       <span>Nome / Empresa</span>
-      <span className="hidden lg:block">Telefone</span>
-      <span className="hidden lg:block">Canal</span>
+      <span>Telefone</span>
       <span>Status</span>
       <span>Marca</span>
-      <span className="text-right">Atividade</span>
+      <span>Últ. contato</span>
     </div>
   )
 }
@@ -74,19 +73,16 @@ export default function LeadRow({ lead, onClick }: Props) {
         <p className="font-display font-semibold text-sm text-navy truncate">
           {lead.nome ?? lead.telefone}
         </p>
-        {lead.empresa_oficina && (
-          <p className="text-xs text-slate-600 truncate mt-0.5">{lead.empresa_oficina}</p>
-        )}
+        <p className="text-xs text-slate-600 truncate mt-0.5">
+          {[lead.empresa_oficina, lead.cidade && lead.uf ? `${lead.cidade}/${lead.uf}` : lead.cidade ?? lead.uf]
+            .filter(Boolean)
+            .join(' · ') || 'Sem empresa'}
+        </p>
       </div>
 
-      {/* Telefone — lg+ */}
-      <p className="hidden lg:block text-xs text-slate-600 truncate pr-2">
+      {/* Telefone */}
+      <p className="text-xs text-slate-600 truncate pr-2">
         {formatPhone(lead.telefone) || '—'}
-      </p>
-
-      {/* Canal origem — lg+ */}
-      <p className="hidden lg:block text-xs text-slate-600 truncate pr-2">
-        {lead.canal_origem || '—'}
       </p>
 
       {/* Status */}
@@ -130,9 +126,14 @@ export default function LeadRow({ lead, onClick }: Props) {
       </div>
 
       {/* Última atividade */}
-      <p className="text-xs text-slate-600 text-right truncate">
-        {relativeTime(lead.ultimo_contato ?? lead.data_entrada)}
-      </p>
+      <div className="min-w-0">
+        <p className="text-xs text-slate-600 truncate">
+          {relativeTime(lead.ultimo_contato ?? lead.data_entrada)}
+        </p>
+        <p className="text-[11px] text-slate-400 truncate mt-0.5">
+          {lead.canal_origem || '—'}
+        </p>
+      </div>
     </div>
   )
 }

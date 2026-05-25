@@ -7,13 +7,29 @@ interface Props {
   id: string
   label: string
   leads: Lead[]
+  accent?: string
+  surface?: string
+  subtitle?: string
+  countLabel?: string
   colIdx?: number
   totalCols?: number
   onMoverLead?: (leadId: string) => void
   onOpenLead?: (leadId: string) => void
 }
 
-export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMoverLead, onOpenLead }: Props) {
+export default function KanbanColumn({
+  id,
+  label,
+  leads,
+  accent = '#0D1F3C',
+  surface = '#EFF6FF',
+  subtitle,
+  countLabel,
+  colIdx,
+  totalCols,
+  onMoverLead,
+  onOpenLead,
+}: Props) {
   const { setNodeRef, isOver } = useDroppable({ id })
 
   return (
@@ -21,13 +37,26 @@ export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMo
       className={`flex flex-col w-full md:w-64 xl:w-full shrink-0 rounded-xl border transition-colors min-h-0
         ${isOver ? 'border-orange/50 bg-orange/5' : 'border-slate-200 bg-slate-50/80'}`}
     >
-      <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-200">
-        <span className="font-display font-bold text-xs text-navy uppercase tracking-wide">
-          {label}
-        </span>
-        <span className="text-xs text-muted bg-slate-200 px-2 py-0.5 rounded-full font-display font-semibold">
-          {leads.length}
-        </span>
+      <div className="border-b border-slate-200 px-3 py-2.5" style={{ backgroundColor: surface }}>
+        <div className="flex items-center justify-between gap-2">
+          <div className="min-w-0">
+            <span
+              className="font-display font-bold text-xs uppercase tracking-wide"
+              style={{ color: accent }}
+            >
+              {label}
+            </span>
+            {subtitle ? (
+              <p className="text-[11px] text-slate-500 font-medium mt-0.5 truncate">{subtitle}</p>
+            ) : null}
+          </div>
+          <span
+            className="text-xs px-2 py-0.5 rounded-full font-display font-semibold shrink-0"
+            style={{ backgroundColor: '#FFFFFF', color: accent }}
+          >
+            {countLabel ?? leads.length}
+          </span>
+        </div>
       </div>
 
       <div ref={setNodeRef} className="flex-1 overflow-y-auto p-2 space-y-2 min-h-24">

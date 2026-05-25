@@ -6,12 +6,14 @@ import { ChevronDown } from 'lucide-react'
 
 const FILTERS: { id: LeadFilter; label: string }[] = [
   { id: 'todos',                label: 'Todos' },
-  { id: 'ag_ismenia',           label: 'Ag. Ismênia' },
   { id: 'hot_lead',             label: 'Hot Lead' },
+  { id: 'ag_ismenia',           label: 'Ag. Ismênia' },
+  { id: 'follow_up',            label: 'Follow-up' },
+  { id: 'qualificados',         label: 'Qualif. recentes' },
   { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
-  { id: 'qualificados',         label: 'Qualificados' },
+  { id: 'inscrito',             label: 'Inscritos' },
+  { id: 'visualizou_preco',     label: 'Viu Preço' },
   { id: 'lista_espera',         label: 'Lista Espera' },
-  { id: 'visualizou_preco',     label: 'Visualizou Preço' },
 ]
 
 interface Props {

@@ -1,13 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Lead } from '@/lib/types'
-import { isSuspiciousCity, normalizeCity } from '@/lib/utils'
+import { isSuspiciousCity, needsLeadFollowUp, normalizeCity } from '@/lib/utils'
 
 export type LeadFilter =
   | 'todos'
   | 'ag_ismenia'
   | 'qualificados'
   | 'hot_lead'
+  | 'follow_up'
   | 'lista_espera'
   | 'aguardando_pagamento'
   | 'inscrito'
@@ -25,6 +26,7 @@ const FILTER_MAP: Record<FixedFilter, (q: AnyQuery) => AnyQuery> = {
   ag_ismenia:           (q) => q.ilike('etiqueta_chatwoot', '%aguardando_ismenia%'),
   qualificados:         (q) => q.eq('status', 'qualificado'),
   hot_lead:             (q) => q.ilike('etiqueta_chatwoot', '%hot_lead%'),
+  follow_up:            (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
   lista_espera:         (q) => q.eq('status', 'lista_espera'),
   aguardando_pagamento: (q) => q.eq('status', 'aguardando_pagamento'),
   inscrito:             (q) => q.eq('status', 'inscrito'),
@@ -68,11 +70,15 @@ export function useLeads(filter: LeadFilter = 'todos') {
       query = query
         .order('ultimo_contato', { ascending: false, nullsFirst: false })
         .order('data_entrada', { ascending: false, nullsFirst: false })
-        .limit(200)
+        .limit(filter === 'follow_up' ? 500 : 200)
 
       const { data, error } = await query
       if (error) throw error
-      return (data ?? []) as Lead[]
+      const leads = (data ?? []) as Lead[]
+      if (filter === 'follow_up') {
+        return leads.filter((lead) => needsLeadFollowUp(lead)).slice(0, 200)
+      }
+      return leads
     },
   })
 }
