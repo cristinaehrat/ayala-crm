@@ -1,12 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
 import Modal from '@/components/ui/Modal'
 import { useUpdateInscrito, useCreateInscrito, useDeleteInscrito } from '@/hooks/useInscritos'
-import { useSearchEmpresas, useCreateEmpresa, useUpdateEmpresa } from '@/hooks/useEmpresasCadastradas'
+import { useSearchEmpresas, useCreateEmpresa, useUpdateEmpresa, useEmpresaById } from '@/hooks/useEmpresasCadastradas'
 import { useLead } from '@/hooks/useLeads'
 import { supabase } from '@/lib/supabase'
 import type { Inscrito, Lead, Empresa } from '@/lib/types'
 import { toast } from 'sonner'
-import { Upload, Loader2, Search, X, Trash2 } from 'lucide-react'
+import { Upload, Loader2, Search, X, Trash2, Copy, Send, Link2 } from 'lucide-react'
 
 interface Props {
   open: boolean
@@ -37,6 +37,8 @@ const STATUS_OPTS = [
   { value: 'pendente',     label: 'Pendente' },
   { value: 'inadimplente', label: 'Inadimplente' },
 ]
+
+const CRM_URL = 'https://crm.ayalaoficial.com.br'
 
 type Form = {
   nome: string
@@ -176,6 +178,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
 
   const { data: preloadedLead } = useLead(leadId ?? null)
   const { data: leadData } = useLead(isEdit ? (inscrito?.id_lead ?? null) : null)
+  const { data: linkedEmpresa } = useEmpresaById(form.empresa_id || inscrito?.empresa_id || null)
 
   useEffect(() => {
     if (!open) return
@@ -398,6 +401,28 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
 
   const saving = updateInscrito.isPending || createInscrito.isPending || createEmpresa.isPending || updateEmpresa.isPending
   const showLeadSearch = !isEdit && !selectedLead
+  const participantToken = inscrito?.fill_token ?? null
+  const participantPhone = (leadData?.telefone ?? selectedLead?.telefone ?? '').replace(/\D/g, '')
+  const participantName = leadData?.nome ?? selectedLead?.nome ?? inscrito?.nome ?? form.nome ?? null
+  const empresaToken = linkedEmpresa?.fill_token ?? null
+  const empresaPhone = (linkedEmpresa?.whatsapp_responsavel ?? form.pj_whatsapp_responsavel ?? '').replace(/\D/g, '')
+  const empresaResponsavel = linkedEmpresa?.nome_responsavel ?? form.pj_nome_responsavel ?? null
+
+  function buildPublicFormUrl(token: string) {
+    return `${CRM_URL}/cadastro/${token}`
+  }
+
+  function buildWhatsappLink(token: string, message: string, phoneDigits?: string) {
+    const encoded = encodeURIComponent(`${message}\n${buildPublicFormUrl(token)}`)
+    return phoneDigits
+      ? `https://wa.me/${phoneDigits}?text=${encoded}`
+      : `https://wa.me/?text=${encoded}`
+  }
+
+  function copyToClipboard(text: string, successMessage: string) {
+    navigator.clipboard.writeText(text)
+    toast.success(successMessage)
+  }
 
   return (
     <Modal open={open} onClose={onClose} title={isEdit ? 'Editar Inscrito' : 'Vincular Lead à Turma'}>
@@ -609,6 +634,94 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
             {/* Nota Fiscal */}
             <section className="space-y-3">
               <p className="text-xs font-display font-bold text-orange uppercase tracking-wider">Nota Fiscal</p>
+
+              <div className="grid gap-2 md:grid-cols-2">
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Link2 size={13} className="text-orange" />
+                    <p className="text-xs font-display font-bold text-white uppercase tracking-wide">Formulário do Participante</p>
+                  </div>
+                  {participantToken ? (
+                    <>
+                      <p className="text-[11px] text-slate-400">
+                        Envie para o aluno preencher nome, CPF e WhatsApp, com vínculo automático à inscrição.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(buildPublicFormUrl(participantToken), 'Link do participante copiado')}
+                          className="btn-secondary text-xs px-3 py-2 flex-1 flex items-center justify-center gap-1.5"
+                        >
+                          <Copy size={12} />
+                          Copiar link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.open(
+                            buildWhatsappLink(
+                              participantToken,
+                              `Olá${participantName ? `, ${participantName.split(' ')[0]}` : ''}! 😊\n\nPara confirmar sua inscrição no treinamento, preencha este formulário:`,
+                              participantPhone || undefined,
+                            ),
+                            '_blank',
+                          )}
+                          className="btn-primary text-xs px-3 py-2 flex-1 flex items-center justify-center gap-1.5"
+                        >
+                          <Send size={12} />
+                          Enviar WPP
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-[11px] text-slate-500">
+                      Salve a inscrição primeiro para liberar o link público do participante.
+                    </p>
+                  )}
+                </div>
+
+                <div className="rounded-xl border border-white/10 bg-white/5 p-3 space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Link2 size={13} className="text-orange" />
+                    <p className="text-xs font-display font-bold text-white uppercase tracking-wide">Formulário da Empresa</p>
+                  </div>
+                  {empresaToken ? (
+                    <>
+                      <p className="text-[11px] text-slate-400">
+                        Envie para a oficina preencher os dados PJ e manter o faturamento vinculado ao CRM.
+                      </p>
+                      <div className="flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copyToClipboard(buildPublicFormUrl(empresaToken), 'Link da empresa copiado')}
+                          className="btn-secondary text-xs px-3 py-2 flex-1 flex items-center justify-center gap-1.5"
+                        >
+                          <Copy size={12} />
+                          Copiar link
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => window.open(
+                            buildWhatsappLink(
+                              empresaToken,
+                              `Olá${empresaResponsavel ? `, ${empresaResponsavel.split(' ')[0]}` : ''}! 😊\n\nPara confirmar a inscrição no treinamento, precisamos dos dados da empresa. Preencha este formulário:`,
+                              empresaPhone || undefined,
+                            ),
+                            '_blank',
+                          )}
+                          className="btn-primary text-xs px-3 py-2 flex-1 flex items-center justify-center gap-1.5"
+                        >
+                          <Send size={12} />
+                          Enviar WPP
+                        </button>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-[11px] text-slate-500">
+                      Vincule ou salve a empresa primeiro para liberar o link público PJ.
+                    </p>
+                  )}
+                </div>
+              </div>
 
               {/* PF */}
               <Field label="Nome Pagante">

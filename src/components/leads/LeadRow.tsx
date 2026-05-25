@@ -20,7 +20,14 @@ const STATUS_COLORS: Record<string, string> = {
   perdido:              '#475569',
 }
 
-const COL = 'grid-cols-[minmax(250px,320px)_132px_188px_minmax(190px,1fr)_86px_118px] xl:grid-cols-[minmax(290px,360px)_144px_210px_minmax(220px,1fr)_92px_124px] gap-x-3 justify-start'
+const POTENCIAL_BADGES: Record<string, { label: string; className: string }> = {
+  alto: { label: 'Alto', className: 'bg-red-100 text-red-700' },
+  medio: { label: 'Médio', className: 'bg-orange-100 text-orange-700' },
+  baixo: { label: 'Baixo', className: 'bg-slate-200 text-slate-700' },
+  sem_interesse: { label: 'Sem interesse', className: 'bg-slate-300 text-slate-700' },
+}
+
+const COL = 'grid-cols-[minmax(240px,300px)_128px_92px_180px_minmax(180px,1fr)_84px_112px] xl:grid-cols-[minmax(280px,340px)_138px_100px_198px_minmax(220px,1fr)_92px_124px] gap-x-3 justify-start'
 
 export function LeadRowHeader() {
   return (
@@ -34,6 +41,7 @@ export function LeadRowHeader() {
     >
       <span>Nome / Empresa</span>
       <span>Telefone</span>
+      <span>Potencial</span>
       <span>Status</span>
       <span>Observações</span>
       <span>Marca</span>
@@ -85,6 +93,17 @@ export default function LeadRow({ lead, onClick }: Props) {
       <p className="text-xs text-slate-600 truncate pr-2">
         {formatPhone(lead.telefone) || '—'}
       </p>
+
+      {/* Potencial */}
+      <div className="pr-2">
+        {lead.potencial && POTENCIAL_BADGES[lead.potencial] ? (
+          <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold uppercase tracking-wide', POTENCIAL_BADGES[lead.potencial].className)}>
+            {POTENCIAL_BADGES[lead.potencial].label}
+          </span>
+        ) : (
+          <span className="text-xs text-slate-400">—</span>
+        )}
+      </div>
 
       {/* Status */}
       <div className="pr-2">

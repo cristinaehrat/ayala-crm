@@ -5,13 +5,17 @@ import { useEmpresaByToken, useUpdateEmpresaByToken } from '@/hooks/useEmpresasC
 import { useInscritoByToken, useUpdateInscritoByToken } from '@/hooks/useInscritos'
 import EmpresaForm from '@/components/empresas/EmpresaForm'
 import type { Empresa } from '@/lib/types'
+import { supabase } from '@/lib/supabase'
+import { toE164 } from '@/lib/utils'
 
 function ParticipanteForm({
   token,
   nomeInicial,
+  leadId,
 }: {
   token: string
   nomeInicial: string | null
+  leadId: string | null
 }) {
   const updateMutation = useUpdateInscritoByToken()
   const [form, setForm] = useState({ nome: nomeInicial ?? '', cpf: '', whatsapp: '' })
@@ -24,6 +28,14 @@ function ParticipanteForm({
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     await updateMutation.mutateAsync({ token, data: { nome: form.nome, cpf: form.cpf } })
+    if (leadId) {
+      const whatsapp = toE164(form.whatsapp) || form.whatsapp
+      const { error } = await supabase
+        .from('leads_v2')
+        .update({ telefone: whatsapp })
+        .eq('id', leadId)
+      if (error) throw error
+    }
     setDone(true)
   }
 
@@ -185,7 +197,7 @@ export default function CadastroPage() {
               Confirme seus dados para a inscrição no treinamento Ayala.
             </p>
           </div>
-          <ParticipanteForm token={token} nomeInicial={inscrito.nome} />
+          <ParticipanteForm token={token} nomeInicial={inscrito.nome} leadId={inscrito.id_lead} />
         </div>
       </Layout>
     )
