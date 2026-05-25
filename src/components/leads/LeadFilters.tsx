@@ -95,6 +95,12 @@ export default function LeadFilters({ active, onChange }: Props) {
         </button>
         {cidadeOpen && cidades.length > 0 && (
           <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-md z-50 max-h-48 overflow-y-auto min-w-[120px]">
+            <button
+              onClick={() => { onChange('todos'); setCidadeOpen(false) }}
+              className="block w-full text-left px-3 py-2 text-xs font-display font-semibold text-muted hover:bg-slate-100 transition-colors"
+            >
+              Todas
+            </button>
             {cidades.map((cidade) => (
               <button
                 key={cidade}

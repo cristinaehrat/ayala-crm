@@ -46,15 +46,77 @@ export function toE164(phone: string): string {
   return digits
 }
 
+const CITY_SMALL_WORDS = new Set(['da', 'das', 'de', 'do', 'dos', 'e'])
+
+const CITY_INVALID_PATTERNS = [
+  /btn_/i,
+  /bom dia/i,
+  /boa tarde/i,
+  /boa noite/i,
+  /^oi$/i,
+  /^ol[áa]$/i,
+  /mensagem/i,
+  /retornaremos/i,
+  /treinamento/i,
+  /cpf/i,
+  /cnpj/i,
+  /consultora/i,
+  /comprovante/i,
+  /pix:/i,
+]
+
+export function normalizeCity(value: string | null | undefined): string | null {
+  if (!value) return null
+
+  let city = value
+    .replace(/\s+/g, ' ')
+    .replace(/\s*\/\s*[A-Z]{2}$/u, '')
+    .replace(/\s*-\s*[A-Z]{2}$/u, '')
+    .replace(/\s+[A-Z]{2}$/u, '')
+    .replace(/\s*\(.*?\)\s*$/u, '')
+    .replace(/^regi[aã]o\s+/iu, '')
+    .trim()
+
+  if (!city) return null
+
+  city = city
+    .toLocaleLowerCase('pt-BR')
+    .split(' ')
+    .filter(Boolean)
+    .map((part, index) => {
+      if (index > 0 && CITY_SMALL_WORDS.has(part)) return part
+      return part.charAt(0).toLocaleUpperCase('pt-BR') + part.slice(1)
+    })
+    .join(' ')
+
+  return city || null
+}
+
+export function isSuspiciousCity(value: string | null | undefined): boolean {
+  const raw = value?.trim()
+  if (!raw) return false
+
+  if (raw.length > 40) return true
+  if (/\n|\r/.test(raw)) return true
+  if (/[0-9]/.test(raw)) return true
+  if (/[*:]/.test(raw)) return true
+  if (raw.split(' ').filter(Boolean).length > 5) return true
+
+  return CITY_INVALID_PATTERNS.some((pattern) => pattern.test(raw))
+}
+
 // Etiquetas Chatwoot — cores exatas
 export const ETIQUETA_CORES: Record<string, string> = {
   lead_novo:            '#1565C0',
   negociacao:           '#E53935',
   inscrito:             '#2E7D32',
+  ex_aluno:             '#0D1F3C',
   hot_lead:             '#C62828',
+  aguardando_ismenia:   '#F97316',
   aguardando_pagamento: '#F9A825',
   pgto_confirmado:      '#558B2F',
   lista_espera:         '#E65100',
+  visualizou_preco:     '#B45309',
   visita_agendada:      '#FDCB67',
 }
 
@@ -62,11 +124,60 @@ export const ETIQUETA_LABELS: Record<string, string> = {
   lead_novo:            'Novo',
   negociacao:           'Negociação',
   inscrito:             'Inscrito',
+  ex_aluno:             'Ex-aluno',
   hot_lead:             'Hot Lead',
+  aguardando_ismenia:   'Ag. Ismênia',
   aguardando_pagamento: 'Ag. Pagamento',
   pgto_confirmado:      'Pago',
   lista_espera:         'Lista Espera',
+  visualizou_preco:     'Visualizou Preço',
   visita_agendada:      'Visita',
+}
+
+const ETIQUETA_PRIORITY = [
+  'ex_aluno',
+  'aguardando_ismenia',
+  'hot_lead',
+  'aguardando_pagamento',
+  'inscrito',
+  'lista_espera',
+  'visualizou_preco',
+  'lead_novo',
+]
+
+export function parseLeadLabels(value: string | null | undefined): string[] {
+  if (!value) return []
+  return value
+    .split(',')
+    .map((label) => label.trim())
+    .filter(Boolean)
+}
+
+export function hasLeadLabel(value: string | null | undefined, label: string): boolean {
+  return parseLeadLabels(value).includes(label)
+}
+
+export function mergeLeadLabels(value: string | null | undefined, ...labels: string[]): string | null {
+  const merged = new Set(parseLeadLabels(value))
+  for (const label of labels) {
+    if (label?.trim()) merged.add(label.trim())
+  }
+  return merged.size > 0 ? [...merged].join(',') : null
+}
+
+export function removeLeadLabels(value: string | null | undefined, ...labels: string[]): string | null {
+  const blocked = new Set(labels.map((label) => label.trim()).filter(Boolean))
+  const filtered = parseLeadLabels(value).filter((label) => !blocked.has(label))
+  return filtered.length > 0 ? filtered.join(',') : null
+}
+
+export function getPrimaryLeadLabel(value: string | null | undefined): string | null {
+  const labels = parseLeadLabels(value)
+  if (labels.length === 0) return null
+  for (const priority of ETIQUETA_PRIORITY) {
+    if (labels.includes(priority)) return priority
+  }
+  return labels[0] ?? null
 }
 
 export const MARCA_BADGES: Record<string, { bg: string; label: string }> = {

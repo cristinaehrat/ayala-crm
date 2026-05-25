@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Lead } from '@/lib/types'
+import { isSuspiciousCity, normalizeCity } from '@/lib/utils'
 
 export type LeadFilter =
   | 'todos'
@@ -34,14 +35,32 @@ export function useLeads(filter: LeadFilter = 'todos') {
   return useQuery<Lead[]>({
     queryKey: ['leads', filter],
     queryFn: async () => {
+      if (filter.startsWith('cidade:')) {
+        const city = normalizeCity(filter.slice(7).trim())
+        if (!city) return []
+
+        const { data, error } = await supabase
+          .from('leads_v2')
+          .select('*')
+          .not('cidade', 'is', null)
+          .order('ultimo_contato', { ascending: false, nullsFirst: false })
+          .order('data_entrada', { ascending: false, nullsFirst: false })
+          .limit(5000)
+
+        if (error) throw error
+
+        return ((data ?? []) as Lead[])
+          .filter((lead) => !isSuspiciousCity(lead.cidade))
+          .filter((lead) => normalizeCity(lead.cidade) === city)
+          .slice(0, 200)
+      }
+
       let query = supabase
         .from('leads_v2')
         .select('*')
 
       if (filter.startsWith('uf:')) {
         query = query.ilike('uf', filter.slice(3).trim())
-      } else if (filter.startsWith('cidade:')) {
-        query = query.ilike('cidade', filter.slice(7).trim())
       } else {
         query = FILTER_MAP[filter as FixedFilter](query)
       }
@@ -89,10 +108,15 @@ export function useDistinctCidades() {
         .neq('cidade', '')
         .limit(5000)
       if (error) throw error
-      const all = (data ?? [])
-        .map((r: { cidade: string | null }) => r.cidade?.trim())
-        .filter((v): v is string => !!v)
-      return [...new Set(all)].sort()
+      const unique = new Map<string, string>()
+      for (const row of data ?? []) {
+        const raw = (row as { cidade: string | null }).cidade
+        if (isSuspiciousCity(raw)) continue
+        const normalized = normalizeCity(raw)
+        if (!normalized) continue
+        unique.set(normalized.toLocaleLowerCase('pt-BR'), normalized)
+      }
+      return [...unique.values()].sort((a, b) => a.localeCompare(b, 'pt-BR'))
     },
     staleTime: 5 * 60 * 1000,
   })
@@ -195,6 +219,7 @@ export function useCreateLead() {
     }) => {
       const { error } = await supabase.from('leads_v2').insert({
         ...data,
+        cidade: normalizeCity(data.cidade) ?? null,
         status: 'lead_novo',
         data_entrada: new Date().toISOString(),
         ultimo_contato: new Date().toISOString(),

@@ -1,4 +1,4 @@
-import { cn, MARCA_BADGES, relativeTime, formatPhone } from '@/lib/utils'
+import { cn, MARCA_BADGES, relativeTime, formatPhone, ETIQUETA_CORES, ETIQUETA_LABELS, getPrimaryLeadLabel } from '@/lib/utils'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import type { Lead } from '@/lib/types'
 
@@ -23,7 +23,7 @@ export function LeadRowHeader() {
     <div
       className={cn(
         'hidden md:grid items-center px-4 py-2',
-        'border-b border-border-subtle sticky top-0 bg-app z-10',
+        'border-b border-white/10 sticky top-0 bg-navy2/95 backdrop-blur z-10',
         'text-[10px] font-display font-bold text-muted uppercase tracking-widest',
         COL,
       )}
@@ -40,36 +40,43 @@ export function LeadRowHeader() {
 
 export default function LeadRow({ lead, onClick }: Props) {
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
-  const statusLabel = KANBAN_COLUMNS.find((c) => c.id === lead.status)?.label
-  const statusColor = lead.status ? STATUS_COLORS[lead.status] : undefined
+  const primaryLabel = getPrimaryLeadLabel(lead.etiqueta_chatwoot)
+  const statusLabel = primaryLabel
+    ? ETIQUETA_LABELS[primaryLabel] ?? primaryLabel
+    : KANBAN_COLUMNS.find((c) => c.id === lead.status)?.label
+  const statusColor = primaryLabel
+    ? ETIQUETA_CORES[primaryLabel]
+    : lead.status
+      ? STATUS_COLORS[lead.status]
+      : undefined
 
   return (
     <div
       onClick={onClick}
       className={cn(
-        'hidden md:grid items-center px-4 py-3',
-        'border-b border-border-subtle last:border-0',
-        'hover:bg-slate-50 cursor-pointer transition-colors',
+        'hidden md:grid items-center px-4 py-3 my-2 rounded-xl',
+        'border border-white/10 bg-navy2 shadow-sm',
+        'hover:border-white/20 hover:shadow-md hover:bg-navy2/95 cursor-pointer transition-all',
         COL,
       )}
     >
       {/* Nome / Empresa */}
       <div className="min-w-0 pr-3">
-        <p className="font-display font-semibold text-sm text-navy truncate">
+        <p className="font-display font-semibold text-sm text-white truncate">
           {lead.nome ?? lead.telefone}
         </p>
         {lead.empresa_oficina && (
-          <p className="text-xs text-muted truncate mt-0.5">{lead.empresa_oficina}</p>
+          <p className="text-xs text-white/75 truncate mt-0.5">{lead.empresa_oficina}</p>
         )}
       </div>
 
       {/* Telefone — lg+ */}
-      <p className="hidden lg:block text-xs text-muted truncate pr-2">
+      <p className="hidden lg:block text-xs text-white/75 truncate pr-2">
         {formatPhone(lead.telefone) || '—'}
       </p>
 
       {/* Canal origem — lg+ */}
-      <p className="hidden lg:block text-xs text-muted truncate pr-2">
+      <p className="hidden lg:block text-xs text-white/75 truncate pr-2">
         {lead.canal_origem || '—'}
       </p>
 
@@ -83,7 +90,7 @@ export default function LeadRow({ lead, onClick }: Props) {
             {statusLabel}
           </span>
         ) : (
-          <span className="text-xs text-muted">—</span>
+          <span className="text-xs text-white/60">—</span>
         )}
       </div>
 
@@ -97,12 +104,12 @@ export default function LeadRow({ lead, onClick }: Props) {
             {marca.label}
           </span>
         ) : (
-          <span className="text-xs text-muted">—</span>
+          <span className="text-xs text-white/60">—</span>
         )}
       </div>
 
       {/* Última atividade */}
-      <p className="text-xs text-muted text-right truncate">
+      <p className="text-xs text-white/75 text-right truncate">
         {relativeTime(lead.ultimo_contato ?? lead.data_entrada)}
       </p>
     </div>

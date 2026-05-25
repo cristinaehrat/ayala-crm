@@ -97,7 +97,7 @@ export default function LeadsPage() {
             </div>
           )}
 
-          {/* Desktop: table */}
+          {/* Desktop: table/cards layout with same information as before */}
           {!isLoading && filtered.length > 0 && (
             <div className="hidden md:block">
               <LeadRowHeader />

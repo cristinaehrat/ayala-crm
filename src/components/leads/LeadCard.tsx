@@ -1,52 +1,79 @@
-import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes } from '@/lib/utils'
+import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes, getPrimaryLeadLabel } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
+import { KANBAN_COLUMNS } from '@/lib/types'
 import type { Lead } from '@/lib/types'
 
 interface Props {
   lead: Lead
   active?: boolean
   onClick: () => void
+  variant?: 'light' | 'dark'
 }
 
-export default function LeadCard({ lead, active, onClick }: Props) {
-  const { data: malha = [] } = useMalhaEstrategica()
+const STATUS_COLORS: Record<string, string> = {
+  lead_novo:            '#1565C0',
+  aguardando_ismenia:   '#7C3AED',
+  aguardando_pagamento: '#B45309',
+  inscrito:             '#2E7D32',
+  lista_espera:         '#E65100',
+  perdido:              '#475569',
+}
 
-  const etiquetaCor   = lead.etiqueta_chatwoot ? ETIQUETA_CORES[lead.etiqueta_chatwoot] : null
-  const etiquetaLabel = lead.etiqueta_chatwoot ? ETIQUETA_LABELS[lead.etiqueta_chatwoot] ?? lead.etiqueta_chatwoot : null
+export default function LeadCard({ lead, active, onClick, variant = 'light' }: Props) {
+  const { data: malha = [] } = useMalhaEstrategica()
+  const dark = variant === 'dark'
+
+  const primaryLabel  = getPrimaryLeadLabel(lead.etiqueta_chatwoot)
+  const etiquetaCor   = primaryLabel ? ETIQUETA_CORES[primaryLabel] : null
+  const etiquetaLabel = primaryLabel ? ETIQUETA_LABELS[primaryLabel] ?? primaryLabel : null
   const marca         = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
   const potencial     = lead.potencial ? POTENCIAL_BADGES[lead.potencial] : null
   const rotaMes       = findRotaMes(lead.cidade, lead.marca_interesse, malha)
+  const statusLabel    = KANBAN_COLUMNS.find((c) => c.id === lead.status)?.label
+  const statusColor    = lead.status ? STATUS_COLORS[lead.status] : undefined
 
   return (
     <div
       onClick={onClick}
-      className={cn('card-lead', active && 'card-lead-active')}
+      className={cn(
+        dark
+          ? 'rounded-xl border p-3 cursor-pointer shadow-sm transition duration-150'
+          : 'card-lead',
+        dark
+          ? active
+            ? 'border-orange bg-navy2 shadow-md'
+            : 'border-white/10 bg-navy2 hover:border-white/20 hover:shadow-md'
+          : active && 'card-lead-active',
+      )}
     >
       <div className="flex items-start gap-3">
         {/* Avatar */}
         <div className="relative shrink-0">
-          <div className="w-10 h-10 rounded-full bg-navy2 flex items-center justify-center">
+          <div className={cn('w-10 h-10 rounded-full flex items-center justify-center', dark ? 'bg-navy' : 'bg-navy2')}>
             <span className="font-display font-bold text-sm text-white">
               {initials(lead.nome)}
             </span>
           </div>
           {lead.requer_atencao && (
-            <span className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-orange animate-pulse-orange border-2 border-navy" />
+            <span className={cn(
+              'absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-orange animate-pulse-orange border-2',
+              dark ? 'border-navy2' : 'border-navy',
+            )} />
           )}
         </div>
 
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1">
-            <p className="font-display font-semibold text-sm text-navy truncate">
+            <p className={cn('font-display font-semibold text-sm truncate', dark ? 'text-white' : 'text-navy')}>
               {lead.nome ?? formatPhone(lead.telefone)}
             </p>
-            <span className="text-muted text-xs shrink-0">
+            <span className={cn('text-xs shrink-0', dark ? 'text-white/75' : 'text-slate-500')}>
               {relativeTime(lead.ultimo_contato ?? lead.data_entrada)}
             </span>
           </div>
 
-          <p className="text-muted text-xs truncate mt-0.5">
+          <p className={cn('text-xs truncate mt-0.5', dark ? 'text-white/72' : 'text-slate-600')}>
             {lead.empresa_oficina ?? lead.cidade ?? '—'}
           </p>
 
@@ -64,7 +91,10 @@ export default function LeadCard({ lead, active, onClick }: Props) {
             {/* Tags secundárias: neutras, menores */}
             {marca && (
               <span
-                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold text-white/70 shrink-0"
+                className={cn(
+                  'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold shrink-0',
+                  dark ? 'text-white/90' : 'text-white',
+                )}
                 style={{ backgroundColor: `${marca.bg}99` }}
               >
                 {marca.label}
@@ -78,8 +108,19 @@ export default function LeadCard({ lead, active, onClick }: Props) {
                 {potencial.label}
               </span>
             )}
+            {dark && statusLabel && statusColor && (
+              <span
+                className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold tracking-wide text-white shrink-0"
+                style={{ backgroundColor: statusColor }}
+              >
+                {statusLabel}
+              </span>
+            )}
             {lead.origem === 'visita' && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold text-muted bg-slate-100 shrink-0">
+              <span className={cn(
+                'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold shrink-0',
+                dark ? 'text-white/90 bg-white/10' : 'text-slate-700 bg-slate-100',
+              )}>
                 Visita
               </span>
             )}

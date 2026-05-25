@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import { supabase } from '@/lib/supabase'
 import { db } from '@/lib/dexie'
-import { toE164, UF_OPTIONS } from '@/lib/utils'
+import { isSuspiciousCity, normalizeCity, toE164, UF_OPTIONS } from '@/lib/utils'
 import { toast } from 'sonner'
 import { CheckCircle, Check } from 'lucide-react'
 
@@ -98,11 +98,18 @@ export default function VisitaPage() {
     e.preventDefault()
     setLoading(true)
 
+    const cidade = normalizeCity(form.cidade)
+    if (form.cidade.trim() && (!cidade || isSuspiciousCity(form.cidade))) {
+      setLoading(false)
+      toast.error('Cidade parece inválida. Revise o campo antes de salvar.')
+      return
+    }
+
     const payload: Record<string, unknown> = {
       empresa_oficina:              form.empresa_oficina.trim() || null,
       nome_responsavel_treinamento: form.nome.trim() || null,
       whatsapp_responsavel:         toE164(form.telefone) || null,
-      cidade:                       form.cidade.trim() || null,
+      cidade:                       cidade,
       uf:                           form.uf || null,
       tipo_oficina:                 form.tipo_oficina || null,
       porte_oficina:                form.porte_oficina || null,

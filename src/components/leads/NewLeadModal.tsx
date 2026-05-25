@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import Modal from '@/components/ui/Modal'
 import { useCreateLead } from '@/hooks/useLeads'
-import { toE164 } from '@/lib/utils'
+import { isSuspiciousCity, normalizeCity, toE164 } from '@/lib/utils'
 import { toast } from 'sonner'
 
 interface Props {
@@ -53,11 +53,17 @@ export default function NewLeadModal({ open, onClose }: Props) {
       return
     }
 
+    const cidade = normalizeCity(form.cidade)
+    if (form.cidade.trim() && (!cidade || isSuspiciousCity(form.cidade))) {
+      toast.error('Cidade parece inválida. Revise o campo antes de salvar.')
+      return
+    }
+
     await createLead.mutateAsync({
       telefone,
       nome:            form.nome || undefined,
       empresa_oficina: form.empresa_oficina || undefined,
-      cidade:          form.cidade || undefined,
+      cidade:          cidade || undefined,
       uf:              form.uf || undefined,
       marca_interesse: form.marca_interesse || undefined,
       canal_origem:    form.canal_origem || undefined,

@@ -7,6 +7,7 @@ import { useLead, useUpdateLead, useDeleteLead, useTurma } from '@/hooks/useLead
 import {
   ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime,
   STATUS_ALL_OPTIONS, CANAL_ORIGEM_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, UF_OPTIONS,
+  getPrimaryLeadLabel, isSuspiciousCity, normalizeCity,
 } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -132,8 +133,9 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   }
 
   if (!lead) return null
-  const etiquetaCor = lead.etiqueta_chatwoot ? ETIQUETA_CORES[lead.etiqueta_chatwoot] : null
-  const etiquetaLabel = lead.etiqueta_chatwoot ? ETIQUETA_LABELS[lead.etiqueta_chatwoot] ?? lead.etiqueta_chatwoot : null
+  const primaryLabel = getPrimaryLeadLabel(lead.etiqueta_chatwoot)
+  const etiquetaCor = primaryLabel ? ETIQUETA_CORES[primaryLabel] : null
+  const etiquetaLabel = primaryLabel ? ETIQUETA_LABELS[primaryLabel] ?? primaryLabel : null
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
 
   function set<K extends keyof EditForm>(field: K, value: EditForm[K]) {
@@ -174,12 +176,18 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   }
 
   async function handleSave() {
+    const cidade = normalizeCity(form.cidade)
+    if (form.cidade.trim() && (!cidade || isSuspiciousCity(form.cidade))) {
+      toast.error('Cidade parece inválida. Revise o campo antes de salvar.')
+      return
+    }
+
     await updateLead.mutateAsync({
       id: lead!.id,
       data: {
         nome:             form.nome || null,
         empresa_oficina:  form.empresa_oficina || null,
-        cidade:           form.cidade || null,
+        cidade:           cidade,
         uf:               form.uf || null,
         perfil:           form.perfil || null,
         status:           form.status || null,
