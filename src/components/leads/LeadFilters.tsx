@@ -19,9 +19,10 @@ const FILTERS: { id: LeadFilter; label: string }[] = [
 interface Props {
   active: LeadFilter
   onChange: (f: LeadFilter) => void
+  mode?: 'default' | 'kanban'
 }
 
-export default function LeadFilters({ active, onChange }: Props) {
+export default function LeadFilters({ active, onChange, mode = 'default' }: Props) {
   const [ufOpen, setUfOpen] = useState(false)
   const [cidadeOpen, setCidadeOpen] = useState(false)
   const ufRef = useRef<HTMLDivElement>(null)
@@ -46,18 +47,28 @@ export default function LeadFilters({ active, onChange }: Props) {
     'px-2.5 py-1 rounded-full text-xs font-display font-semibold tracking-wide transition-colors cursor-pointer border flex items-center gap-1'
   const pillActive = 'bg-orange text-white border-orange'
   const pillInactive = 'bg-transparent text-muted border-slate-300 hover:border-orange/50 hover:text-navy'
+  const showDefaultFilters = mode === 'default'
 
   return (
     <div className="flex flex-wrap gap-1.5 px-3 pt-3 pb-2">
-      {FILTERS.map(({ id, label }) => (
-        <button
-          key={id}
-          onClick={() => onChange(id)}
-          className={cn(pillBase, active === id ? pillActive : pillInactive)}
-        >
-          {label}
-        </button>
-      ))}
+      {showDefaultFilters
+        ? FILTERS.map(({ id, label }) => (
+            <button
+              key={id}
+              onClick={() => onChange(id)}
+              className={cn(pillBase, active === id ? pillActive : pillInactive)}
+            >
+              {label}
+            </button>
+          ))
+        : (
+          <button
+            onClick={() => onChange('todos')}
+            className={cn(pillBase, active === 'todos' ? pillActive : pillInactive)}
+          >
+            Todos
+          </button>
+        )}
 
       {/* UF dropdown */}
       <div className="relative shrink-0" ref={ufRef}>

@@ -20,7 +20,7 @@ const STATUS_COLORS: Record<string, string> = {
   perdido:              '#475569',
 }
 
-const COL = 'grid-cols-[minmax(260px,320px)_132px_190px_86px_118px] xl:grid-cols-[minmax(300px,360px)_144px_210px_92px_124px] gap-x-3 justify-start'
+const COL = 'grid-cols-[minmax(250px,320px)_132px_188px_minmax(190px,1fr)_86px_118px] xl:grid-cols-[minmax(290px,360px)_144px_210px_minmax(220px,1fr)_92px_124px] gap-x-3 justify-start'
 
 export function LeadRowHeader() {
   return (
@@ -35,6 +35,7 @@ export function LeadRowHeader() {
       <span>Nome / Empresa</span>
       <span>Telefone</span>
       <span>Status</span>
+      <span>Próx. passo</span>
       <span>Marca</span>
       <span>Últ. contato</span>
     </div>
@@ -109,6 +110,13 @@ export default function LeadRow({ lead, onClick }: Props) {
             <span className="text-xs text-slate-400">—</span>
           )}
         </div>
+      </div>
+
+      {/* Próximo passo */}
+      <div className="min-w-0 pr-2">
+        <p className="text-xs text-slate-600 truncate">
+          {lead.proximo_passo || '—'}
+        </p>
       </div>
 
       {/* Marca */}
