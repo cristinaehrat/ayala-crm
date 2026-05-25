@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useLiveQuery } from 'dexie-react-hooks'
 import { db } from '@/lib/dexie'
-import { supabase } from '@/lib/supabase'
+import { persistProspectoPayload } from '@/lib/prospectos'
 import { toast } from 'sonner'
 
 export function useOfflineSync() {
@@ -33,11 +33,7 @@ export function useOfflineSync() {
     for (const item of items) {
       try {
         await db.pendentes.update(item.id!, { syncStatus: 'sincronizando' })
-        const { error } = await supabase.from('cadastro_prospectos').upsert(item.payload, {
-          onConflict: 'whatsapp_responsavel',
-          ignoreDuplicates: false,
-        })
-        if (error) throw error
+        await persistProspectoPayload(item.payload)
         await db.pendentes.delete(item.id!)
         synced++
       } catch (err) {

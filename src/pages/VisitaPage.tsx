@@ -1,10 +1,13 @@
 import { useState } from 'react'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
-import { supabase } from '@/lib/supabase'
 import { db } from '@/lib/dexie'
 import { isSuspiciousCity, normalizeCity, toE164, UF_OPTIONS } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CheckCircle, Check } from 'lucide-react'
+import { CheckCircle, Check, Link2, Search, X } from 'lucide-react'
+import { useSearchProspectos, type Prospecto } from '@/hooks/useProspectos'
+import { useSearchEmpresas } from '@/hooks/useEmpresasCadastradas'
+import type { Empresa } from '@/lib/types'
+import { persistProspectoPayload } from '@/lib/prospectos'
 
 const MARCAS = ['Volvo', 'DAF', 'Scania'] as const
 
@@ -79,7 +82,12 @@ export default function VisitaPage() {
   const [form, setForm] = useState<VisitaForm>(EMPTY)
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [linkedProspecto, setLinkedProspecto] = useState<Prospecto | null>(null)
+  const [linkedEmpresa, setLinkedEmpresa] = useState<Empresa | null>(null)
   const { isOnline } = useOfflineSync()
+  const phoneDigits = form.telefone.replace(/\D/g, '')
+  const { data: prospectoMatches = [] } = useSearchProspectos(form.empresa_oficina, phoneDigits)
+  const { data: empresaMatches = [] } = useSearchEmpresas(form.empresa_oficina)
 
   function set<K extends keyof VisitaForm>(field: K, value: VisitaForm[K]) {
     setForm(prev => ({ ...prev, [field]: value }))
@@ -94,6 +102,56 @@ export default function VisitaPage() {
     }))
   }
 
+  function fillFromProspecto(p: Prospecto) {
+    setLinkedProspecto(p)
+    setLinkedEmpresa(null)
+    setForm({
+      empresa_oficina: p.empresa_oficina ?? '',
+      tipo_oficina: p.tipo_oficina ?? '',
+      porte_oficina: p.porte_oficina ?? '',
+      multimarcas: p.multimarcas ?? false,
+      especializacao_oficina: p.especializacao_oficina ?? '',
+      qtd_interessados: p.qtd_interessados ?? '',
+      nome: p.nome_responsavel_treinamento ?? p.nome_contato_inicial ?? '',
+      telefone: p.whatsapp_responsavel ?? '',
+      cidade: p.cidade ?? '',
+      uf: p.uf ?? '',
+      marcas: (p.marca_interesse ?? '')
+        .split(',')
+        .map((value) => value.trim())
+        .filter(Boolean)
+        .map((value) => value.toLowerCase())
+        .map((value) => value === 'volvo' ? 'Volvo' : value === 'daf' ? 'DAF' : value === 'scania' ? 'Scania' : value),
+      perfil: p.perfil ?? '',
+      potencial: p.potencial ?? '',
+      resultado_visita: p.resultado_visita ?? '',
+      proximo_passo: p.proximo_passo ?? '',
+      data_retorno: p.data_retorno ?? '',
+      consultor: p.consultor ?? '',
+      empresa_parceira: p.empresa_parceira ?? '',
+      observacoes: p.observacoes ?? '',
+      qualificado_lead: p.qualificado_lead ?? false,
+    })
+  }
+
+  function fillFromEmpresa(empresa: Empresa) {
+    setLinkedEmpresa(empresa)
+    setLinkedProspecto(null)
+    setForm((prev) => ({
+      ...prev,
+      empresa_oficina: empresa.nome_fantasia ?? empresa.razao_social ?? prev.empresa_oficina,
+      cidade: empresa.cidade ?? prev.cidade,
+      uf: empresa.estado ?? prev.uf,
+      telefone: empresa.whatsapp_responsavel ?? prev.telefone,
+      nome: empresa.nome_responsavel ?? prev.nome,
+    }))
+  }
+
+  function clearReference() {
+    setLinkedProspecto(null)
+    setLinkedEmpresa(null)
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -106,6 +164,7 @@ export default function VisitaPage() {
     }
 
     const payload: Record<string, unknown> = {
+      ...(linkedProspecto?.id_visita ? { id_visita: linkedProspecto.id_visita } : {}),
       empresa_oficina:              form.empresa_oficina.trim() || null,
       nome_responsavel_treinamento: form.nome.trim() || null,
       whatsapp_responsavel:         toE164(form.telefone) || null,
@@ -132,10 +191,7 @@ export default function VisitaPage() {
 
     try {
       if (isOnline) {
-        const { error } = await supabase
-          .from('cadastro_prospectos')
-          .upsert(payload, { onConflict: 'whatsapp_responsavel', ignoreDuplicates: false })
-        if (error) throw error
+        await persistProspectoPayload(payload)
         const msg = form.qualificado_lead
           ? 'Visita registrada e lead qualificado!'
           : 'Visita registrada com sucesso!'
@@ -150,6 +206,7 @@ export default function VisitaPage() {
         toast('Visita salva offline. Será enviada ao reconectar.', { duration: 5000 })
       }
       setForm(EMPTY)
+      clearReference()
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
@@ -196,6 +253,102 @@ export default function VisitaPage() {
                 className="input-field"
               />
             </Field>
+
+            {isOnline && (form.empresa_oficina.trim().length >= 2 || phoneDigits.length >= 8) && (
+              <div className="mt-3 space-y-2">
+                {(linkedProspecto || linkedEmpresa) && (
+                  <div className="flex items-start justify-between gap-2 rounded-xl border border-orange/30 bg-orange/5 px-3 py-2">
+                    <div className="min-w-0">
+                      <p className="text-xs font-display font-bold text-orange uppercase tracking-wide">
+                        {linkedProspecto ? 'Prospecto existente selecionado' : 'Empresa de referência selecionada'}
+                      </p>
+                      <p className="text-sm text-navy truncate mt-0.5">
+                        {linkedProspecto?.empresa_oficina ?? linkedEmpresa?.nome_fantasia ?? linkedEmpresa?.razao_social ?? '—'}
+                      </p>
+                      <p className="text-[11px] text-slate-500 truncate">
+                        {linkedProspecto
+                          ? `${linkedProspecto.cidade ?? 'Sem cidade'}${linkedProspecto.uf ? `/${linkedProspecto.uf}` : ''}${linkedProspecto.whatsapp_responsavel ? ` · ${linkedProspecto.whatsapp_responsavel}` : ''}`
+                          : `${linkedEmpresa?.cidade ?? 'Sem cidade'}${linkedEmpresa?.estado ? `/${linkedEmpresa.estado}` : ''}${linkedEmpresa?.cnpj ? ` · ${linkedEmpresa.cnpj}` : ''}`}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearReference}
+                      className="text-slate-500 hover:text-navy cursor-pointer"
+                      aria-label="Limpar referência"
+                    >
+                      <X size={14} />
+                    </button>
+                  </div>
+                )}
+
+                {prospectoMatches.length > 0 && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Link2 size={14} className="text-orange" />
+                      <p className="text-xs font-display font-bold text-navy uppercase tracking-wide">
+                        Prospectos já existentes
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      {prospectoMatches.map((prospecto) => (
+                        <button
+                          key={prospecto.id_visita}
+                          type="button"
+                          onClick={() => fillFromProspecto(prospecto)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left hover:border-orange/40 hover:bg-orange/5 transition-colors"
+                        >
+                          <p className="text-sm font-display font-semibold text-navy truncate">
+                            {prospecto.empresa_oficina ?? 'Sem oficina'}
+                          </p>
+                          <p className="text-[11px] text-slate-500 truncate">
+                            {(prospecto.nome_responsavel_treinamento ?? prospecto.nome_contato_inicial ?? 'Sem contato')}
+                            {prospecto.whatsapp_responsavel ? ` · ${prospecto.whatsapp_responsavel}` : ''}
+                            {prospecto.cidade ? ` · ${prospecto.cidade}${prospecto.uf ? `/${prospecto.uf}` : ''}` : ''}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {empresaMatches.length > 0 && (
+                  <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Search size={14} className="text-orange" />
+                      <p className="text-xs font-display font-bold text-navy uppercase tracking-wide">
+                        Empresas cadastradas
+                      </p>
+                    </div>
+                    <div className="space-y-2">
+                      {empresaMatches.map((empresa) => (
+                        <button
+                          key={empresa.id}
+                          type="button"
+                          onClick={() => fillFromEmpresa(empresa)}
+                          className="w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-left hover:border-orange/40 hover:bg-orange/5 transition-colors"
+                        >
+                          <p className="text-sm font-display font-semibold text-navy truncate">
+                            {empresa.nome_fantasia ?? empresa.razao_social ?? 'Sem nome'}
+                          </p>
+                          <p className="text-[11px] text-slate-500 truncate">
+                            {empresa.cnpj ?? 'Sem CNPJ'}
+                            {empresa.cidade ? ` · ${empresa.cidade}${empresa.estado ? `/${empresa.estado}` : ''}` : ''}
+                            {empresa.whatsapp_responsavel ? ` · ${empresa.whatsapp_responsavel}` : ''}
+                          </p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {!linkedProspecto && !linkedEmpresa && (prospectoMatches.length > 0 || empresaMatches.length > 0) && (
+                  <p className="text-[11px] text-slate-500">
+                    Se nenhuma sugestão for a oficina certa, continue preenchendo normalmente e salve como nova.
+                  </p>
+                )}
+              </div>
+            )}
 
             <Field label="Tipo de oficina" className="mt-3">
               <select

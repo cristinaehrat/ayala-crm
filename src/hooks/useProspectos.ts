@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
+import { normalizeCity } from '@/lib/utils'
 
 export interface Prospecto {
   id_visita: string
@@ -54,6 +55,45 @@ export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string) {
       q = FILTER_MAP[filter](q)
       if (uf) q = q.eq('uf', uf)
       q = q.order('data_visita', { ascending: false, nullsFirst: false }).limit(300)
+      const { data, error } = await q
+      if (error) throw error
+      return (data ?? []) as Prospecto[]
+    },
+  })
+}
+
+export function useSearchProspectos(query: string, phoneDigits?: string) {
+  return useQuery<Prospecto[]>({
+    queryKey: ['prospectos', 'search', query, phoneDigits],
+    enabled: query.trim().length >= 2 || (phoneDigits?.length ?? 0) >= 8,
+    queryFn: async () => {
+      const normalizedQuery = query.trim()
+      const normalizedCity = normalizeCity(normalizedQuery)
+      let q = supabase
+        .from('cadastro_prospectos')
+        .select('*')
+        .limit(8)
+
+      const orParts: string[] = []
+      if (normalizedQuery.length >= 2) {
+        orParts.push(
+          `empresa_oficina.ilike.%${normalizedQuery}%`,
+          `nome_responsavel_treinamento.ilike.%${normalizedQuery}%`,
+          `nome_contato_inicial.ilike.%${normalizedQuery}%`,
+        )
+        if (normalizedCity) {
+          orParts.push(`cidade.ilike.%${normalizedCity}%`)
+        }
+      }
+      if ((phoneDigits?.length ?? 0) >= 8) {
+        orParts.push(`whatsapp_responsavel.ilike.%${phoneDigits}%`)
+      }
+
+      if (orParts.length > 0) {
+        q = q.or(orParts.join(','))
+      }
+
+      q = q.order('data_visita', { ascending: false, nullsFirst: false })
       const { data, error } = await q
       if (error) throw error
       return (data ?? []) as Prospecto[]
