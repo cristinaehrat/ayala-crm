@@ -41,8 +41,8 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
           : 'card-lead',
         dark
           ? active
-            ? 'border-orange bg-navy2 shadow-md'
-            : 'border-white/10 bg-navy2 hover:border-white/20 hover:shadow-md'
+            ? 'border-orange/60 bg-slate-50 shadow-md'
+            : 'border-slate-200 bg-slate-50 hover:border-orange/40 hover:bg-blue-50 hover:shadow-md'
           : active && 'card-lead-active',
       )}
     >
@@ -65,15 +65,15 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between gap-1">
-            <p className={cn('font-display font-semibold text-sm truncate', dark ? 'text-white' : 'text-navy')}>
+            <p className={cn('font-display font-semibold text-sm truncate', dark ? 'text-navy' : 'text-navy')}>
               {lead.nome ?? formatPhone(lead.telefone)}
             </p>
-            <span className={cn('text-xs shrink-0', dark ? 'text-white/75' : 'text-slate-500')}>
+            <span className={cn('text-xs shrink-0', dark ? 'text-slate-500' : 'text-slate-500')}>
               {relativeTime(lead.ultimo_contato ?? lead.data_entrada)}
             </span>
           </div>
 
-          <p className={cn('text-xs truncate mt-0.5', dark ? 'text-white/72' : 'text-slate-600')}>
+          <p className={cn('text-xs truncate mt-0.5', dark ? 'text-slate-600' : 'text-slate-600')}>
             {lead.empresa_oficina ?? lead.cidade ?? '—'}
           </p>
 
@@ -93,7 +93,7 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
               <span
                 className={cn(
                   'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold shrink-0',
-                  dark ? 'text-white/90' : 'text-white',
+                  dark ? 'text-white' : 'text-white',
                 )}
                 style={{ backgroundColor: `${marca.bg}99` }}
               >
@@ -119,7 +119,7 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
             {lead.origem === 'visita' && (
               <span className={cn(
                 'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-semibold shrink-0',
-                dark ? 'text-white/90 bg-white/10' : 'text-slate-700 bg-slate-100',
+                dark ? 'text-slate-700 bg-slate-100' : 'text-slate-700 bg-slate-100',
               )}>
                 Visita
               </span>

@@ -236,15 +236,18 @@ function ProspectoCard({
   const marcas = p.marca_interesse ? p.marca_interesse.split(',').map((m) => m.trim()).filter(Boolean) : []
   const statusLabel = p.status_contato ? STATUS_LABEL[p.status_contato] ?? p.status_contato : 'A contatar'
   const nome = p.nome_responsavel_treinamento || p.nome_contato_inicial || '—'
+  const isConvertido = !!p.convertido_lead
+  const isQualificado = !!p.qualificado_lead && !isConvertido
+  const hasLightCard = isConvertido || isQualificado
 
   return (
     <div
       className={cn(
         'rounded-xl border transition-colors cursor-pointer',
-        p.qualificado_lead
-          ? 'border-green-500/30 bg-green-500/5'
-          : p.convertido_lead
-          ? 'border-blue-500/20 bg-blue-500/5'
+        isConvertido
+          ? 'border-blue-200 bg-blue-50'
+          : isQualificado
+          ? 'border-orange-200 bg-orange-50'
           : 'border-white/10 bg-navy2 hover:border-white/20',
       )}
       onClick={onClick}
@@ -252,15 +255,15 @@ function ProspectoCard({
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className="font-display font-bold text-white text-sm truncate">{p.empresa_oficina || '—'}</p>
-            <p className="text-xs text-muted mt-0.5 truncate">{nome} · {p.cidade}{p.uf ? `/${p.uf}` : ''}</p>
+            <p className={cn('font-display font-bold text-sm truncate', hasLightCard ? 'text-navy' : 'text-white')}>{p.empresa_oficina || '—'}</p>
+            <p className={cn('text-xs mt-0.5 truncate', hasLightCard ? 'text-slate-600' : 'text-muted')}>{nome} · {p.cidade}{p.uf ? `/${p.uf}` : ''}</p>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            {p.convertido_lead && (
-              <span className="text-xs font-display font-bold text-green-400 border border-green-500/30 rounded-full px-2 py-0.5">Convertido</span>
+            {isConvertido && (
+              <span className="text-xs font-display font-bold text-blue-700 border border-blue-300 rounded-full px-2 py-0.5 bg-white/80">Convertido</span>
             )}
-            {p.qualificado_lead && !p.convertido_lead && (
-              <span className="text-xs font-display font-bold text-orange border border-orange/30 rounded-full px-2 py-0.5">Qualificado</span>
+            {isQualificado && (
+              <span className="text-xs font-display font-bold text-orange-700 border border-orange-300 rounded-full px-2 py-0.5 bg-white/80">Qualificado</span>
             )}
             {p.potencial && (
               <span className={cn('text-xs font-display font-semibold', POTENCIAL_COLOR[p.potencial] ?? 'text-muted')}>
@@ -277,15 +280,18 @@ function ProspectoCard({
               <span key={m} className="px-1.5 py-0.5 rounded text-xs font-display font-bold text-white" style={{ backgroundColor: badge.bg }}>{badge.label}</span>
             ) : null
           })}
-          <span className="px-1.5 py-0.5 rounded text-xs font-display font-semibold text-muted border border-white/10">{statusLabel}</span>
+          <span className={cn(
+            'px-1.5 py-0.5 rounded text-xs font-display font-semibold border',
+            hasLightCard ? 'text-slate-700 border-slate-200 bg-white/80' : 'text-muted border-white/10',
+          )}>{statusLabel}</span>
           {p.data_visita && (
-            <span className="text-xs text-muted">{new Date(p.data_visita + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+            <span className={cn('text-xs', hasLightCard ? 'text-slate-500' : 'text-muted')}>{new Date(p.data_visita + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
           )}
         </div>
 
         {expanded && (
-          <div className="mt-3 pt-3 border-t border-white/10 flex gap-2 flex-wrap">
-            {!p.qualificado_lead && !p.convertido_lead && (
+          <div className={cn('mt-3 pt-3 flex gap-2 flex-wrap', hasLightCard ? 'border-t border-slate-200' : 'border-t border-white/10')}>
+            {!isQualificado && !isConvertido && (
               <button
                 onClick={onQualificar}
                 disabled={qualificando}
@@ -295,7 +301,7 @@ function ProspectoCard({
                 Qualificar Lead
               </button>
             )}
-            {!p.convertido_lead && p.status_contato !== 'sem_resposta' && p.status_contato !== 'desqualificado' && (
+            {!isConvertido && p.status_contato !== 'sem_resposta' && p.status_contato !== 'desqualificado' && (
               <button
                 onClick={onTentativa}
                 className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"

@@ -23,8 +23,8 @@ export function LeadRowHeader() {
     <div
       className={cn(
         'hidden md:grid items-center px-4 py-2',
-        'border-b border-white/10 sticky top-0 bg-navy2/95 backdrop-blur z-10',
-        'text-[10px] font-display font-bold text-muted uppercase tracking-widest',
+        'border-b border-slate-200 sticky top-0 bg-white/95 backdrop-blur z-10',
+        'text-[10px] font-display font-bold text-slate-500 uppercase tracking-widest',
         COL,
       )}
     >
@@ -55,28 +55,28 @@ export default function LeadRow({ lead, onClick }: Props) {
       onClick={onClick}
       className={cn(
         'hidden md:grid items-center px-4 py-3 my-2 rounded-xl',
-        'border border-white/10 bg-navy2 shadow-sm',
-        'hover:border-white/20 hover:shadow-md hover:bg-navy2/95 cursor-pointer transition-all',
+        'border border-slate-200 bg-slate-50 shadow-sm',
+        'hover:border-orange/30 hover:shadow-md hover:bg-blue-50 cursor-pointer transition-all',
         COL,
       )}
     >
       {/* Nome / Empresa */}
       <div className="min-w-0 pr-3">
-        <p className="font-display font-semibold text-sm text-white truncate">
+        <p className="font-display font-semibold text-sm text-navy truncate">
           {lead.nome ?? lead.telefone}
         </p>
         {lead.empresa_oficina && (
-          <p className="text-xs text-white/75 truncate mt-0.5">{lead.empresa_oficina}</p>
+          <p className="text-xs text-slate-600 truncate mt-0.5">{lead.empresa_oficina}</p>
         )}
       </div>
 
       {/* Telefone — lg+ */}
-      <p className="hidden lg:block text-xs text-white/75 truncate pr-2">
+      <p className="hidden lg:block text-xs text-slate-600 truncate pr-2">
         {formatPhone(lead.telefone) || '—'}
       </p>
 
       {/* Canal origem — lg+ */}
-      <p className="hidden lg:block text-xs text-white/75 truncate pr-2">
+      <p className="hidden lg:block text-xs text-slate-600 truncate pr-2">
         {lead.canal_origem || '—'}
       </p>
 
@@ -90,7 +90,7 @@ export default function LeadRow({ lead, onClick }: Props) {
             {statusLabel}
           </span>
         ) : (
-          <span className="text-xs text-white/60">—</span>
+          <span className="text-xs text-slate-400">—</span>
         )}
       </div>
 
@@ -104,12 +104,12 @@ export default function LeadRow({ lead, onClick }: Props) {
             {marca.label}
           </span>
         ) : (
-          <span className="text-xs text-white/60">—</span>
+          <span className="text-xs text-slate-400">—</span>
         )}
       </div>
 
       {/* Última atividade */}
-      <p className="text-xs text-white/75 text-right truncate">
+      <p className="text-xs text-slate-600 text-right truncate">
         {relativeTime(lead.ultimo_contato ?? lead.data_entrada)}
       </p>
     </div>
