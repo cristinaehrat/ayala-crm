@@ -2,6 +2,7 @@ import { clsx, type ClassValue } from 'clsx'
 import { twMerge } from 'tailwind-merge'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
+import type { Lead } from '@/lib/types'
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -136,14 +137,41 @@ export const ETIQUETA_LABELS: Record<string, string> = {
 
 const ETIQUETA_PRIORITY = [
   'ex_aluno',
-  'aguardando_ismenia',
   'hot_lead',
+  'aguardando_ismenia',
   'aguardando_pagamento',
   'inscrito',
   'lista_espera',
   'visualizou_preco',
   'lead_novo',
 ]
+
+export const ACTION_SIGNAL_STYLES = {
+  hot_lead: {
+    label: 'Hot Lead',
+    bg: '#C62828',
+    text: '#FFFFFF',
+  },
+  aguardando_ismenia: {
+    label: 'Ag. Ismênia',
+    bg: '#F97316',
+    text: '#FFFFFF',
+  },
+  follow_up: {
+    label: 'Follow-up',
+    bg: '#FDE68A',
+    text: '#7C2D12',
+  },
+} as const
+
+const FOLLOW_UP_RESOLVED_STATUSES = new Set([
+  'reserva',
+  'aguardando_pagamento',
+  'inscrito',
+  'lista_espera',
+  'sem_interesse',
+  'perdido',
+])
 
 export function parseLeadLabels(value: string | null | undefined): string[] {
   if (!value) return []
@@ -178,6 +206,35 @@ export function getPrimaryLeadLabel(value: string | null | undefined): string | 
     if (labels.includes(priority)) return priority
   }
   return labels[0] ?? null
+}
+
+export function needsLeadFollowUp(
+  lead: Pick<Lead, 'etiqueta_chatwoot' | 'status' | 'follow_up_enviado'>,
+): boolean {
+  const labels = parseLeadLabels(lead.etiqueta_chatwoot)
+  if (!labels.includes('visualizou_preco')) return false
+  if (labels.includes('hot_lead')) return false
+  if (FOLLOW_UP_RESOLVED_STATUSES.has(lead.status ?? '')) return false
+  return !lead.follow_up_enviado
+}
+
+export function getLeadActionSignals(
+  lead: Pick<Lead, 'etiqueta_chatwoot' | 'status' | 'follow_up_enviado'>,
+): Array<{ id: keyof typeof ACTION_SIGNAL_STYLES; label: string; bg: string; text: string }> {
+  const labels = parseLeadLabels(lead.etiqueta_chatwoot)
+  const signals: Array<{ id: keyof typeof ACTION_SIGNAL_STYLES; label: string; bg: string; text: string }> = []
+
+  if (labels.includes('hot_lead')) {
+    signals.push({ id: 'hot_lead', ...ACTION_SIGNAL_STYLES.hot_lead })
+  }
+  if (labels.includes('aguardando_ismenia')) {
+    signals.push({ id: 'aguardando_ismenia', ...ACTION_SIGNAL_STYLES.aguardando_ismenia })
+  }
+  if (needsLeadFollowUp(lead)) {
+    signals.push({ id: 'follow_up', ...ACTION_SIGNAL_STYLES.follow_up })
+  }
+
+  return signals
 }
 
 export const MARCA_BADGES: Record<string, { bg: string; label: string }> = {

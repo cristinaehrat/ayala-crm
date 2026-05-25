@@ -147,17 +147,25 @@ export interface Despesa {
 
 export type KanbanStatus =
   | 'lead_novo'
+  | 'qualificado'
   | 'aguardando_ismenia'
+  | 'visualizou_preco'
+  | 'reserva'
   | 'aguardando_pagamento'
   | 'inscrito'
   | 'lista_espera'
+  | 'sem_interesse'
   | 'perdido'
 
 export const KANBAN_COLUMNS: { id: KanbanStatus; label: string }[] = [
   { id: 'lead_novo',            label: 'Novo Lead' },
+  { id: 'qualificado',          label: 'Qualificado' },
   { id: 'aguardando_ismenia',   label: 'Ag. Ismênia' },
+  { id: 'visualizou_preco',     label: 'Visualizou Preço' },
+  { id: 'reserva',              label: 'Reserva' },
   { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
   { id: 'inscrito',             label: 'Inscrito' },
   { id: 'lista_espera',         label: 'Lista Espera' },
+  { id: 'sem_interesse',        label: 'Sem Interesse' },
   { id: 'perdido',              label: 'Perdido' },
 ]

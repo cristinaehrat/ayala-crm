@@ -20,6 +20,11 @@ import MoverLeadSheet from '@/components/MoverLeadSheet'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 
+const DESKTOP_GRID_ROWS = [
+  KANBAN_COLUMNS.slice(0, 5),
+  KANBAN_COLUMNS.slice(5, 10),
+]
+
 function getColumnLeads(leads: Lead[], colId: string): Lead[] {
   if (colId === 'aguardando_ismenia') {
     return leads.filter((l) =>
@@ -159,8 +164,8 @@ export default function KanbanPage() {
           })}
         </div>
 
-        {/* Desktop: all columns horizontally — drag & drop funciona normalmente */}
-        <div className="hidden md:flex flex-1 overflow-x-auto gap-3 px-4 pb-4">
+        {/* Desktop médio: trilho horizontal */}
+        <div className="hidden md:flex xl:hidden flex-1 overflow-x-auto gap-3 px-4 pb-4">
           {KANBAN_COLUMNS.map(({ id, label }, i) => {
             const colLeads = getColumnLeads(leads, id)
             return (
@@ -175,6 +180,26 @@ export default function KanbanPage() {
               />
             )
           })}
+        </div>
+
+        {/* Desktop largo: grade 5x2 */}
+        <div className="hidden xl:grid flex-1 overflow-hidden px-4 pb-4 gap-3 grid-cols-5 auto-rows-fr">
+          {DESKTOP_GRID_ROWS.map((row, rowIndex) =>
+            row.map(({ id, label }) => {
+              const colLeads = getColumnLeads(leads, id)
+              return (
+                <KanbanColumn
+                  key={id}
+                  id={id}
+                  label={label}
+                  leads={colLeads}
+                  colIdx={rowIndex}
+                  totalCols={row.length}
+                  onOpenLead={(leadId) => setOpenLeadId(leadId)}
+                />
+              )
+            }),
+          )}
         </div>
 
         <DragOverlay>

@@ -1,4 +1,4 @@
-import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes, getPrimaryLeadLabel } from '@/lib/utils'
+import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes, getPrimaryLeadLabel, getLeadActionSignals } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import type { Lead } from '@/lib/types'
@@ -12,10 +12,14 @@ interface Props {
 
 const STATUS_COLORS: Record<string, string> = {
   lead_novo:            '#1565C0',
+  qualificado:          '#2563EB',
   aguardando_ismenia:   '#7C3AED',
+  visualizou_preco:     '#B45309',
+  reserva:              '#DC2626',
   aguardando_pagamento: '#B45309',
   inscrito:             '#2E7D32',
   lista_espera:         '#E65100',
+  sem_interesse:        '#64748B',
   perdido:              '#475569',
 }
 
@@ -23,7 +27,11 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
   const { data: malha = [] } = useMalhaEstrategica()
   const dark = variant === 'dark'
 
+  const actionSignals = getLeadActionSignals(lead)
   const primaryLabel  = getPrimaryLeadLabel(lead.etiqueta_chatwoot)
+  const hidePrimaryLabel = primaryLabel != null && actionSignals.some((signal) =>
+    signal.id === primaryLabel || (signal.id === 'follow_up' && primaryLabel === 'visualizou_preco'),
+  )
   const etiquetaCor   = primaryLabel ? ETIQUETA_CORES[primaryLabel] : null
   const etiquetaLabel = primaryLabel ? ETIQUETA_LABELS[primaryLabel] ?? primaryLabel : null
   const marca         = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
@@ -39,6 +47,7 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
         dark
           ? 'rounded-xl border p-3 cursor-pointer shadow-sm transition duration-150'
           : 'card-lead',
+        actionSignals.some((signal) => signal.id === 'hot_lead') && 'ring-1 ring-red-500/30',
         dark
           ? active
             ? 'border-orange/60 bg-slate-50 shadow-md'
@@ -46,6 +55,20 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
           : active && 'card-lead-active',
       )}
     >
+      {actionSignals.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          {actionSignals.map((signal) => (
+            <span
+              key={signal.id}
+              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold tracking-wide uppercase"
+              style={{ backgroundColor: signal.bg, color: signal.text }}
+            >
+              {signal.label}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-start gap-3">
         {/* Avatar */}
         <div className="relative shrink-0">
@@ -80,7 +103,7 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
           {/* Tags — máx 2 linhas, hierarquia visual */}
           <div className="flex items-center gap-1 mt-2 flex-wrap overflow-hidden max-h-[2.5rem]">
             {/* Tag primária: etiqueta com cor de status */}
-            {etiquetaCor && etiquetaLabel && (
+            {!hidePrimaryLabel && etiquetaCor && etiquetaLabel && (
               <span
                 className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold tracking-wide uppercase text-white shrink-0"
                 style={{ backgroundColor: etiquetaCor }}

@@ -3,6 +3,9 @@ import { useUpdateLeadStatus } from '@/hooks/useLeads'
 const DESTINOS = [
   { value: 'lead_novo',            label: 'Lead Novo' },
   { value: 'qualificado',          label: 'Qualificado' },
+  { value: 'aguardando_ismenia',   label: 'Ag. Ismênia' },
+  { value: 'visualizou_preco',     label: 'Visualizou Preço' },
+  { value: 'reserva',              label: 'Reserva' },
   { value: 'aguardando_pagamento', label: 'Ag. Pagamento' },
   { value: 'inscrito',             label: 'Inscrito' },
   { value: 'lista_espera',         label: 'Lista de Espera' },

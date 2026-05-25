@@ -1,4 +1,4 @@
-import { cn, MARCA_BADGES, relativeTime, formatPhone, ETIQUETA_CORES, ETIQUETA_LABELS, getPrimaryLeadLabel } from '@/lib/utils'
+import { cn, MARCA_BADGES, relativeTime, formatPhone, ETIQUETA_CORES, ETIQUETA_LABELS, getPrimaryLeadLabel, getLeadActionSignals } from '@/lib/utils'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import type { Lead } from '@/lib/types'
 
@@ -9,10 +9,14 @@ interface Props {
 
 const STATUS_COLORS: Record<string, string> = {
   lead_novo:            '#1565C0',
+  qualificado:          '#2563EB',
   aguardando_ismenia:   '#7C3AED',
+  visualizou_preco:     '#B45309',
+  reserva:              '#DC2626',
   aguardando_pagamento: '#B45309',
   inscrito:             '#2E7D32',
   lista_espera:         '#E65100',
+  sem_interesse:        '#64748B',
   perdido:              '#475569',
 }
 
@@ -40,7 +44,11 @@ export function LeadRowHeader() {
 
 export default function LeadRow({ lead, onClick }: Props) {
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
+  const actionSignals = getLeadActionSignals(lead)
   const primaryLabel = getPrimaryLeadLabel(lead.etiqueta_chatwoot)
+  const hidePrimaryLabel = primaryLabel != null && actionSignals.some((signal) =>
+    signal.id === primaryLabel || (signal.id === 'follow_up' && primaryLabel === 'visualizou_preco'),
+  )
   const statusLabel = primaryLabel
     ? ETIQUETA_LABELS[primaryLabel] ?? primaryLabel
     : KANBAN_COLUMNS.find((c) => c.id === lead.status)?.label
@@ -56,6 +64,7 @@ export default function LeadRow({ lead, onClick }: Props) {
       className={cn(
         'hidden md:grid items-center px-4 py-3 my-2 rounded-xl',
         'border border-slate-200 bg-slate-50 shadow-sm',
+        actionSignals.some((signal) => signal.id === 'hot_lead') && 'ring-1 ring-red-500/25',
         'hover:border-orange/30 hover:shadow-md hover:bg-blue-50 cursor-pointer transition-all',
         COL,
       )}
@@ -82,16 +91,28 @@ export default function LeadRow({ lead, onClick }: Props) {
 
       {/* Status */}
       <div className="pr-2">
-        {statusLabel && statusColor ? (
-          <span
-            className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold tracking-wide text-white"
-            style={{ backgroundColor: statusColor }}
-          >
-            {statusLabel}
-          </span>
-        ) : (
-          <span className="text-xs text-slate-400">—</span>
-        )}
+        <div className="flex items-center gap-1 flex-wrap">
+          {actionSignals.map((signal) => (
+            <span
+              key={signal.id}
+              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold tracking-wide uppercase"
+              style={{ backgroundColor: signal.bg, color: signal.text }}
+            >
+              {signal.label}
+            </span>
+          ))}
+          {!hidePrimaryLabel && statusLabel && statusColor ? (
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold tracking-wide text-white"
+              style={{ backgroundColor: statusColor }}
+            >
+              {statusLabel}
+            </span>
+          ) : null}
+          {actionSignals.length === 0 && (!statusLabel || !statusColor) && (
+            <span className="text-xs text-slate-400">—</span>
+          )}
+        </div>
       </div>
 
       {/* Marca */}

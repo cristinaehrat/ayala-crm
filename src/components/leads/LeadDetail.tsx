@@ -7,7 +7,7 @@ import { useLead, useUpdateLead, useDeleteLead, useTurma } from '@/hooks/useLead
 import {
   ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime,
   STATUS_ALL_OPTIONS, CANAL_ORIGEM_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, UF_OPTIONS,
-  getPrimaryLeadLabel, isSuspiciousCity, normalizeCity,
+  getLeadActionSignals, getPrimaryLeadLabel, isSuspiciousCity, normalizeCity,
 } from '@/lib/utils'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
@@ -133,7 +133,11 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   }
 
   if (!lead) return null
+  const actionSignals = getLeadActionSignals(lead)
   const primaryLabel = getPrimaryLeadLabel(lead.etiqueta_chatwoot)
+  const hidePrimaryLabel = primaryLabel != null && actionSignals.some((signal) =>
+    signal.id === primaryLabel || (signal.id === 'follow_up' && primaryLabel === 'visualizou_preco'),
+  )
   const etiquetaCor = primaryLabel ? ETIQUETA_CORES[primaryLabel] : null
   const etiquetaLabel = primaryLabel ? ETIQUETA_LABELS[primaryLabel] ?? primaryLabel : null
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
@@ -390,7 +394,16 @@ export default function LeadDetail({ leadId, onClose }: Props) {
             </h2>
             <p className="text-muted text-xs mt-0.5">{lead.empresa_oficina ?? '—'}</p>
             <div className="flex gap-1.5 mt-1.5 flex-wrap">
-              {etiquetaCor && etiquetaLabel && (
+              {actionSignals.map((signal) => (
+                <span
+                  key={signal.id}
+                  className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold tracking-wide uppercase"
+                  style={{ backgroundColor: signal.bg, color: signal.text }}
+                >
+                  {signal.label}
+                </span>
+              ))}
+              {!hidePrimaryLabel && etiquetaCor && etiquetaLabel && (
                 <span
                   className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold tracking-wide uppercase text-white"
                   style={{ backgroundColor: etiquetaCor }}

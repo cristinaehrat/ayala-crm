@@ -1,7 +1,7 @@
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { ArrowRightLeft } from 'lucide-react'
-import { initials, formatPhone, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes } from '@/lib/utils'
+import { initials, formatPhone, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes, getLeadActionSignals } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import type { Lead } from '@/lib/types'
 import { useRef } from 'react'
@@ -20,6 +20,7 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
   })
   const { data: malha = [] } = useMalhaEstrategica()
   const rotaMes = findRotaMes(lead.cidade, lead.marca_interesse, malha)
+  const actionSignals = getLeadActionSignals(lead)
   const lastClick = useRef(0)
 
   function handleClick() {
@@ -48,9 +49,28 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
       {...attributes}
       {...listeners}
       onClick={handleClick}
-      className="bg-white border border-slate-200 rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing
-                 hover:border-orange/30 hover:shadow-md transition-all"
+      className={`bg-white border rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing
+                 hover:border-orange/30 hover:shadow-md transition-all ${
+                   actionSignals.some((signal) => signal.id === 'hot_lead')
+                     ? 'border-red-300 ring-1 ring-red-500/25'
+                     : 'border-slate-200'
+                 }`}
+      data-hot-lead={actionSignals.some((signal) => signal.id === 'hot_lead') || undefined}
     >
+      {actionSignals.length > 0 && (
+        <div className="flex items-center gap-1.5 mb-2 flex-wrap">
+          {actionSignals.map((signal) => (
+            <span
+              key={signal.id}
+              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold tracking-wide uppercase"
+              style={{ backgroundColor: signal.bg, color: signal.text }}
+            >
+              {signal.label}
+            </span>
+          ))}
+        </div>
+      )}
+
       <div className="flex items-center gap-2 mb-1.5">
         <div className="w-7 h-7 rounded-full bg-navy flex items-center justify-center shrink-0">
           <span className="text-white font-display font-bold text-xs">{initials(lead.nome)}</span>

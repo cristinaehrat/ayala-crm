@@ -18,7 +18,7 @@ export default function KanbanColumn({ id, label, leads, colIdx, totalCols, onMo
 
   return (
     <div
-      className={`flex flex-col w-full md:w-64 shrink-0 rounded-xl border transition-colors
+      className={`flex flex-col w-full md:w-64 xl:w-full shrink-0 rounded-xl border transition-colors min-h-0
         ${isOver ? 'border-orange/50 bg-orange/5' : 'border-slate-200 bg-slate-50/80'}`}
     >
       <div className="flex items-center justify-between px-3 py-2.5 border-b border-slate-200">
