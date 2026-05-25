@@ -1,73 +1,58 @@
-# React + TypeScript + Vite
+# Ayala CRM
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+PWA comercial da Operação Ayala.
 
-Currently, two official plugins are available:
+- Produção: `https://crm.ayalaoficial.com.br`
+- Stack: `React + Vite + TypeScript + Supabase + React Query`
+- Deploy: `Vercel`
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+## Comandos
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+npm run dev
+npm run build
+npm run lint
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+## Deploy
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+O deploy oficial deste projeto é feito por `push` no branch `main`.
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+```bash
+git push origin main
 ```
+
+A Vercel publica automaticamente a revisão enviada.
+
+## Estado Atual
+
+O CRM já incorpora:
+
+- etapas 1, 2 e 3 da refatoração comercial
+- saneamento visual da lista de leads
+- ajustes visuais da página `/prospectos`
+- promoção de prospectos de visita para `leads_v2`
+- soma de etiquetas comerciais sem sobrescrever histórico
+
+## Regra de `ex_aluno`
+
+Ao encerrar uma turma, o CRM adiciona a etiqueta `ex_aluno` ao lead sem remover `inscrito` nem outras etiquetas já existentes.
+
+Comportamento atual:
+
+- `ex_aluno` é salvo em `leads_v2.etiqueta_chatwoot`
+- a etiqueta aparece visualmente na lista de leads
+- a etiqueta aparece no detalhe do lead
+- o `status` comercial é preservado
+
+Implementação principal:
+
+- `src/hooks/useTurmas.ts`
+- `src/lib/utils.ts`
+- `src/components/leads/LeadCard.tsx`
+- `src/components/leads/LeadRow.tsx`
+- `src/components/leads/LeadDetail.tsx`
+
+## Observação sobre lint
+
+O projeto pode gerar erros de lint já existentes em módulos fora do escopo da refatoração atual. O `build` é a validação mínima obrigatória antes de publicar.
