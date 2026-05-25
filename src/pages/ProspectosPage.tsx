@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, UserCheck, Phone, ChevronDown, MapPin, Wrench, Users } from 'lucide-react'
+import { Search, UserCheck, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle } from 'lucide-react'
 import { useProspectos, useQualificarProspecto, useRegistrarTentativa, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES } from '@/lib/utils'
@@ -298,8 +298,18 @@ function ProspectoCard({
                 className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5"
               >
                 <UserCheck size={13} />
-                Qualificar Lead
+                Qualificar e promover
               </button>
+            )}
+            {p.whatsapp_responsavel && (
+              <a
+                href={`tel:${p.whatsapp_responsavel.replace(/\D/g, '')}`}
+                onClick={(e) => e.stopPropagation()}
+                className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+              >
+                <Phone size={13} />
+                Ligar
+              </a>
             )}
             {!isConvertido && p.status_contato !== 'sem_resposta' && p.status_contato !== 'desqualificado' && (
               <button
@@ -318,6 +328,7 @@ function ProspectoCard({
                 onClick={(e) => e.stopPropagation()}
                 className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
               >
+                <MessageCircle size={13} />
                 WhatsApp
               </a>
             )}
@@ -340,13 +351,23 @@ function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onCl
           <button onClick={onClose} className="text-muted hover:text-white">✕</button>
         </div>
         <div className="p-4 space-y-2.5 text-sm">
+          <Row icon={<Building2 size={14} />} label="Oficina" value={p.empresa_oficina} />
+          <Row icon={<Phone size={14} />} label="Telefone" value={p.whatsapp_responsavel} />
+          <Row icon={<Users size={14} />} label="Responsável" value={p.nome_responsavel_treinamento ?? p.nome_contato_inicial} />
           <Row icon={<Wrench size={14} />} label="Tipo" value={p.tipo_oficina} />
           <Row icon={<Users size={14} />} label="Porte" value={p.porte_oficina} />
           <Row icon={<MapPin size={14} />} label="Cidade" value={p.cidade && p.uf ? `${p.cidade}/${p.uf}` : p.cidade} />
+          <Row label="Multimarcas" value={p.multimarcas ? 'Sim' : null} />
+          <Row label="Especialização" value={p.especializacao_oficina} />
+          <Row label="Marcas de interesse" value={p.marca_interesse} />
           <Row label="Perfil" value={p.perfil === 'grupo_b2b' ? `Grupo B2B${p.qtd_interessados ? ` (${p.qtd_interessados} pessoas)` : ''}` : p.perfil} />
+          <Row label="Potencial" value={p.potencial} />
+          <Row icon={<CalendarDays size={14} />} label="Data da visita" value={p.data_visita} />
           <Row label="Parceiro" value={p.empresa_parceira ? (PARCEIRO_LABEL[p.empresa_parceira] ?? p.empresa_parceira) : null} />
           <Row label="Consultor" value={p.consultor} />
+          <Row icon={<ClipboardList size={14} />} label="Resultado da visita" value={p.resultado_visita} />
           <Row label="Próximo passo" value={p.proximo_passo} />
+          <Row label="Data de retorno" value={p.data_retorno} />
           {p.observacoes && (
             <div>
               <p className="text-xs text-muted uppercase font-display font-semibold tracking-wide">Observações</p>

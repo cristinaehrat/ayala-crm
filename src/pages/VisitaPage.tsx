@@ -86,8 +86,8 @@ export default function VisitaPage() {
   const [linkedEmpresa, setLinkedEmpresa] = useState<Empresa | null>(null)
   const { isOnline } = useOfflineSync()
   const phoneDigits = form.telefone.replace(/\D/g, '')
-  const { data: prospectoMatches = [] } = useSearchProspectos(form.empresa_oficina, phoneDigits)
-  const { data: empresaMatches = [] } = useSearchEmpresas(form.empresa_oficina)
+  const { data: prospectoMatches = [] } = useSearchProspectos(form.empresa_oficina, phoneDigits, form.cidade, form.uf)
+  const { data: empresaMatches = [] } = useSearchEmpresas(form.empresa_oficina, phoneDigits, form.cidade, form.uf)
 
   function set<K extends keyof VisitaForm>(field: K, value: VisitaForm[K]) {
     setForm(prev => ({ ...prev, [field]: value }))

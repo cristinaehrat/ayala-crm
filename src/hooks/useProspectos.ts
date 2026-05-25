@@ -62,13 +62,13 @@ export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string) {
   })
 }
 
-export function useSearchProspectos(query: string, phoneDigits?: string) {
+export function useSearchProspectos(query: string, phoneDigits?: string, city?: string, uf?: string) {
   return useQuery<Prospecto[]>({
-    queryKey: ['prospectos', 'search', query, phoneDigits],
+    queryKey: ['prospectos', 'search', query, phoneDigits, city, uf],
     enabled: query.trim().length >= 2 || (phoneDigits?.length ?? 0) >= 8,
     queryFn: async () => {
       const normalizedQuery = query.trim()
-      const normalizedCity = normalizeCity(normalizedQuery)
+      const normalizedCity = normalizeCity(city ?? normalizedQuery)
       let q = supabase
         .from('cadastro_prospectos')
         .select('*')
@@ -91,6 +91,10 @@ export function useSearchProspectos(query: string, phoneDigits?: string) {
 
       if (orParts.length > 0) {
         q = q.or(orParts.join(','))
+      }
+
+      if (uf) {
+        q = q.eq('uf', uf)
       }
 
       q = q.order('data_visita', { ascending: false, nullsFirst: false })

@@ -35,7 +35,7 @@ export function LeadRowHeader() {
       <span>Nome / Empresa</span>
       <span>Telefone</span>
       <span>Status</span>
-      <span>Próx. passo</span>
+      <span>Observações</span>
       <span>Marca</span>
       <span>Últ. contato</span>
     </div>
@@ -112,10 +112,10 @@ export default function LeadRow({ lead, onClick }: Props) {
         </div>
       </div>
 
-      {/* Próximo passo */}
+      {/* Observações */}
       <div className="min-w-0 pr-2">
         <p className="text-xs text-slate-600 truncate">
-          {lead.proximo_passo || '—'}
+          {lead.observacoes || '—'}
         </p>
       </div>
 

@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Empresa } from '@/lib/types'
+import { normalizeCity } from '@/lib/utils'
 
 export function useEmpresasCadastradas() {
   return useQuery<Empresa[]>({
@@ -48,16 +49,43 @@ export function useEmpresaByToken(token: string | null) {
   })
 }
 
-export function useSearchEmpresas(q: string) {
+export function useSearchEmpresas(q: string, phoneDigits?: string, city?: string, uf?: string) {
   return useQuery<Empresa[]>({
-    queryKey: ['empresas_cadastradas', 'search', q],
-    enabled: q.trim().length >= 2,
+    queryKey: ['empresas_cadastradas', 'search', q, phoneDigits, city, uf],
+    enabled: q.trim().length >= 2 || (phoneDigits?.length ?? 0) >= 8,
     queryFn: async () => {
-      const { data, error } = await supabase
+      const normalizedQuery = q.trim()
+      const normalizedCity = normalizeCity(city ?? normalizedQuery)
+      let query = supabase
         .from('empresas_cadastradas')
         .select('*')
-        .or(`nome_fantasia.ilike.%${q}%,razao_social.ilike.%${q}%,cnpj.ilike.%${q}%`)
         .limit(10)
+
+      const orParts: string[] = []
+      if (normalizedQuery.length >= 2) {
+        orParts.push(
+          `nome_fantasia.ilike.%${normalizedQuery}%`,
+          `razao_social.ilike.%${normalizedQuery}%`,
+          `cnpj.ilike.%${normalizedQuery}%`,
+          `nome_responsavel.ilike.%${normalizedQuery}%`,
+        )
+      }
+      if ((phoneDigits?.length ?? 0) >= 8) {
+        orParts.push(`whatsapp_responsavel.ilike.%${phoneDigits}%`)
+      }
+      if (normalizedCity) {
+        orParts.push(`cidade.ilike.%${normalizedCity}%`)
+      }
+
+      if (orParts.length > 0) {
+        query = query.or(orParts.join(','))
+      }
+
+      if (uf) {
+        query = query.eq('estado', uf)
+      }
+
+      const { data, error } = await query
       if (error) throw error
       return (data ?? []) as Empresa[]
     },
