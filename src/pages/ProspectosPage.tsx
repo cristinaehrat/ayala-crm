@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User } from 'lucide-react'
 import { useProspectos, useRegistrarTentativa, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
-import { useDistinctUFs } from '@/hooks/useLeads'
+import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS } from '@/lib/utils'
 import { toast } from 'sonner'
 import Modal from '@/components/ui/Modal'
@@ -400,7 +400,17 @@ function ProspectoCard({
   )
 }
 
+const STATUS_LEAD_LABEL: Record<string, string> = {
+  lead_novo:            'Novo',
+  qualificado:          'Qualificado',
+  lista_espera:         'Lista de espera',
+  aguardando_pagamento: 'Ag. pagamento',
+  inscrito:             'Inscrito',
+}
+
 function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onClose: () => void }) {
+  const { data: leadsVinculados = [] } = useLeadsByProspecto(p.id_visita)
+
   return (
     <div className="fixed inset-0 z-40 bg-black/60 flex items-end md:items-center md:justify-center" onClick={onClose}>
       <div
@@ -446,6 +456,28 @@ function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onCl
             <div>
               <p className="text-xs text-muted uppercase font-display font-semibold tracking-wide">Observações</p>
               <p className="text-white/80 whitespace-pre-wrap mt-1">{p.observacoes}</p>
+            </div>
+          )}
+
+          {leadsVinculados.length > 0 && (
+            <div className="pt-2 border-t border-white/10">
+              <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-2">
+                Leads vinculados ({leadsVinculados.length})
+              </p>
+              <div className="space-y-2">
+                {leadsVinculados.map((lead) => (
+                  <div key={lead.id} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2">
+                    <User size={13} className="text-muted shrink-0" />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-white text-xs font-semibold truncate">{lead.nome || lead.telefone || '—'}</p>
+                      {lead.telefone && <p className="text-muted text-xs font-mono">{lead.telefone}</p>}
+                    </div>
+                    <span className="text-xs text-muted shrink-0">
+                      {STATUS_LEAD_LABEL[lead.status ?? ''] ?? lead.status ?? '—'}
+                    </span>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

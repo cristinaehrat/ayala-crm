@@ -237,3 +237,21 @@ export function useCreateLead() {
     },
   })
 }
+
+export function useLeadsByProspecto(idProspecto: string | null) {
+  return useQuery<Pick<Lead, 'id' | 'nome' | 'telefone' | 'status' | 'potencial' | 'etiqueta_chatwoot'>[]>({
+    queryKey: ['leads', 'by-prospecto', idProspecto],
+    enabled: !!idProspecto,
+    queryFn: async () => {
+      if (!idProspecto) return []
+      const { data, error } = await supabase
+        .from('leads_v2')
+        .select('id,nome,telefone,status,potencial,etiqueta_chatwoot')
+        .eq('id_prospecto', idProspecto)
+        .order('data_entrada', { ascending: false })
+      if (error) throw error
+      return data as Pick<Lead, 'id' | 'nome' | 'telefone' | 'status' | 'potencial' | 'etiqueta_chatwoot'>[]
+    },
+    staleTime: 60 * 1000,
+  })
+}
