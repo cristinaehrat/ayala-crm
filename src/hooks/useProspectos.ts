@@ -31,6 +31,11 @@ export interface Prospecto {
   data_tentativa_3: string | null
   qualificado_lead: boolean | null
   convertido_lead: boolean | null
+  endereco: string | null
+  place_id: string | null
+  telefone_oficina: string | null
+  telefone_financeiro: string | null
+  telefone_participante: string | null
 }
 
 export type ProspectoFilter = 'todos' | 'a_contatar' | 'em_followup' | 'sem_leads' | 'com_leads'

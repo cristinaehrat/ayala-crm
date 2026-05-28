@@ -19,7 +19,9 @@ const TIPOS_OFICINA = [
   { value: 'mecanica_diesel', label: 'Mecânica Diesel' },
   { value: 'diesel_sos',      label: 'Diesel SOS' },
   { value: 'eletro_mecanica', label: 'Eletro-Mecânica' },
-] as const
+  { value: 'outros',          label: 'Outros' },
+  { value: 'fora_publico',    label: 'Fora do público-alvo' },
+]
 
 const POTENCIAIS = [
   { value: 'alto',          label: 'Alto' },
@@ -47,7 +49,9 @@ const PARCEIROS = [
 
 interface VisitaForm {
   empresa_oficina: string
-  tipo_oficina: string
+  endereco: string
+  telefone_oficina: string
+  tipo_oficinas: string[]
   porte_oficina: string
   multimarcas: boolean
   especializacao_oficina: string
@@ -69,7 +73,8 @@ interface VisitaForm {
 }
 
 const EMPTY: VisitaForm = {
-  empresa_oficina: '', tipo_oficina: '', porte_oficina: '', multimarcas: false,
+  empresa_oficina: '', endereco: '', telefone_oficina: '',
+  tipo_oficinas: [], porte_oficina: '', multimarcas: false,
   especializacao_oficina: '', qtd_interessados: '',
   nome: '', telefone: '', cidade: '', uf: '',
   marcas: [], perfil: '', potencial: '',
@@ -102,12 +107,23 @@ export default function VisitaPage() {
     }))
   }
 
+  function toggleTipoOficina(v: string) {
+    setForm(prev => ({
+      ...prev,
+      tipo_oficinas: prev.tipo_oficinas.includes(v)
+        ? prev.tipo_oficinas.filter(x => x !== v)
+        : [...prev.tipo_oficinas, v],
+    }))
+  }
+
   function fillFromProspecto(p: Prospecto) {
     setLinkedProspecto(p)
     setLinkedEmpresa(null)
     setForm({
       empresa_oficina: p.empresa_oficina ?? '',
-      tipo_oficina: p.tipo_oficina ?? '',
+      endereco: p.endereco ?? '',
+      telefone_oficina: p.telefone_oficina ?? '',
+      tipo_oficinas: (p.tipo_oficina ?? '').split(',').map(v => v.trim()).filter(Boolean),
       porte_oficina: p.porte_oficina ?? '',
       multimarcas: p.multimarcas ?? false,
       especializacao_oficina: p.especializacao_oficina ?? '',
@@ -163,17 +179,21 @@ export default function VisitaPage() {
       return
     }
 
+    const foraPublico = form.tipo_oficinas.includes('fora_publico')
+
     const payload: Record<string, unknown> = {
       ...(linkedProspecto?.id_visita ? { id_visita: linkedProspecto.id_visita } : {}),
       empresa_oficina:              form.empresa_oficina.trim() || null,
+      endereco:                     form.endereco.trim() || null,
+      telefone_oficina:             form.telefone_oficina.trim() || null,
       nome_responsavel_treinamento: form.nome.trim() || null,
       whatsapp_responsavel:         toE164(form.telefone) || null,
       cidade:                       cidade,
       uf:                           form.uf || null,
-      tipo_oficina:                 form.tipo_oficina || null,
+      tipo_oficina:                 form.tipo_oficinas.length ? form.tipo_oficinas.join(',') : null,
       porte_oficina:                form.porte_oficina || null,
       marca_interesse:              form.marcas.length ? form.marcas.join(',').toLowerCase() : null,
-      potencial:                    form.potencial || null,
+      potencial:                    foraPublico ? 'sem_interesse' : (form.potencial || null),
       perfil:                       form.perfil || null,
       multimarcas:                  form.multimarcas,
       especializacao_oficina:       form.especializacao_oficina.trim() || null,
@@ -350,17 +370,43 @@ export default function VisitaPage() {
               </div>
             )}
 
-            <Field label="Tipo de oficina" className="mt-3">
-              <select
-                value={form.tipo_oficina}
-                onChange={(e) => set('tipo_oficina', e.target.value)}
+            <Field label="Endereço (rua e número)" className="mt-3">
+              <input
+                type="text"
+                value={form.endereco}
+                onChange={(e) => set('endereco', e.target.value)}
+                placeholder="Ex: Rua Industrial, 100"
                 className="input-field"
-              >
-                <option value="">Selecione</option>
+              />
+            </Field>
+
+            <Field label="Telefone da oficina" className="mt-3">
+              <input
+                type="tel"
+                value={form.telefone_oficina}
+                onChange={(e) => set('telefone_oficina', e.target.value)}
+                placeholder="(47) 3333-4444"
+                className="input-field"
+              />
+            </Field>
+
+            <Field label="Tipo de oficina" className="mt-3">
+              <div className="flex flex-wrap gap-2">
                 {TIPOS_OFICINA.map((t) => (
-                  <option key={t.value} value={t.value}>{t.label}</option>
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => toggleTipoOficina(t.value)}
+                    className={`rounded-lg text-xs font-display font-bold py-2 px-3 transition-colors cursor-pointer border ${
+                      form.tipo_oficinas.includes(t.value)
+                        ? 'border-orange bg-orange/10 text-orange'
+                        : 'border-slate-300 bg-slate-50 text-navy hover:border-orange/50 hover:bg-orange/5'
+                    }`}
+                  >
+                    {t.label}
+                  </button>
                 ))}
-              </select>
+              </div>
             </Field>
 
             <Field label="Porte da oficina" className="mt-3">
@@ -521,6 +567,11 @@ export default function VisitaPage() {
                   </button>
                 ))}
               </div>
+              {form.tipo_oficinas.includes('fora_publico') && (
+                <p className="text-xs text-orange mt-1.5">
+                  "Fora do público-alvo" selecionado — potencial será salvo como Sem Interesse.
+                </p>
+              )}
             </Field>
           </Section>
 

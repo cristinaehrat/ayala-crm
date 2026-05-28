@@ -55,7 +55,9 @@ const TIPO_OFICINA_OPTIONS = [
   { value: 'mecanica_diesel', label: 'Mecânica Diesel' },
   { value: 'diesel_sos',      label: 'Diesel SOS' },
   { value: 'eletro_mecanica', label: 'Eletro-Mecânica' },
-] as const
+  { value: 'outros',          label: 'Outros' },
+  { value: 'fora_publico',    label: 'Fora do público-alvo' },
+]
 
 const PARCEIRO_OPTIONS = [
   { value: 'treinatec', label: 'Treinatec Brasil' },
@@ -281,6 +283,7 @@ function ProspectoCard({
   const statusLabel = p.status_contato ? STATUS_LABEL[p.status_contato] ?? p.status_contato : 'A contatar'
   const nome = p.nome_responsavel_treinamento || p.nome_contato_inicial || '—'
   const hasLeads = leadCount > 0
+  const ligarTel = p.whatsapp_responsavel || p.telefone_oficina
 
   return (
     <div
@@ -359,9 +362,9 @@ function ProspectoCard({
                 Ver detalhes
               </button>
             )}
-            {p.whatsapp_responsavel && (
+            {ligarTel && (
               <a
-                href={`tel:${p.whatsapp_responsavel.replace(/\D/g, '')}`}
+                href={`tel:${ligarTel.replace(/\D/g, '')}`}
                 onClick={(e) => e.stopPropagation()}
                 className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
               >
@@ -410,7 +413,7 @@ function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onCl
         </div>
         <div className="p-4 space-y-2.5 text-sm">
           <Row icon={<Building2 size={14} />} label="Oficina" value={p.empresa_oficina} />
-          <Row icon={<Phone size={14} />} label="Telefone" value={p.whatsapp_responsavel} />
+          <Row icon={<MapPin size={14} />} label="Endereço" value={p.endereco} />
           <Row icon={<Users size={14} />} label="Responsável" value={p.nome_responsavel_treinamento ?? p.nome_contato_inicial} />
           <Row icon={<Wrench size={14} />} label="Tipo" value={p.tipo_oficina} />
           <Row icon={<Users size={14} />} label="Porte" value={p.porte_oficina} />
@@ -423,6 +426,19 @@ function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onCl
           <Row icon={<CalendarDays size={14} />} label="Data da visita" value={p.data_visita} />
           <Row label="Parceiro" value={p.empresa_parceira ? (PARCEIRO_LABEL[p.empresa_parceira] ?? p.empresa_parceira) : null} />
           <Row label="Consultor" value={p.consultor} />
+
+          {(p.telefone_oficina || p.whatsapp_responsavel || p.telefone_financeiro || p.telefone_participante) && (
+            <div>
+              <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1.5">Telefones</p>
+              <div className="space-y-1.5">
+                <TelRow label="Geral / Maps" value={p.telefone_oficina} />
+                <TelRow label="Resp. treinamento" value={p.whatsapp_responsavel} isWhatsApp />
+                <TelRow label="Financeiro / RH" value={p.telefone_financeiro} />
+                <TelRow label="Técnico participante" value={p.telefone_participante} />
+              </div>
+            </div>
+          )}
+
           <Row icon={<ClipboardList size={14} />} label="Resultado da visita" value={p.resultado_visita} />
           <Row label="Próximo passo" value={p.proximo_passo} />
           <Row label="Data de retorno" value={p.data_retorno} />
@@ -451,6 +467,28 @@ function Row({ icon, label, value }: { icon?: React.ReactNode; label: string; va
   )
 }
 
+function TelRow({ label, value, isWhatsApp }: { label: string; value?: string | null; isWhatsApp?: boolean }) {
+  if (!value) return null
+  const digits = value.replace(/\D/g, '')
+  return (
+    <div className="flex items-center gap-2">
+      <Phone size={12} className="text-muted shrink-0" />
+      <span className="text-xs text-muted font-display font-semibold uppercase tracking-wide w-32 shrink-0">{label}</span>
+      <a href={`tel:${digits}`} className="text-white hover:text-orange text-xs">{value}</a>
+      {isWhatsApp && (
+        <a
+          href={`https://wa.me/${digits}`}
+          target="_blank"
+          rel="noreferrer"
+          className="text-green-400 text-xs hover:underline shrink-0"
+        >
+          (WA)
+        </a>
+      )}
+    </div>
+  )
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
@@ -466,10 +504,10 @@ type ProspectoEditForm = {
   empresa_oficina: string
   nome_responsavel_treinamento: string
   nome_contato_inicial: string
-  whatsapp_responsavel: string
   cidade: string
   uf: string
-  tipo_oficina: string
+  endereco: string
+  tipo_oficinas: string[]
   porte_oficina: string
   multimarcas: boolean
   especializacao_oficina: string
@@ -483,6 +521,10 @@ type ProspectoEditForm = {
   consultor: string
   empresa_parceira: string
   observacoes: string
+  telefone_oficina: string
+  whatsapp_responsavel: string
+  telefone_financeiro: string
+  telefone_participante: string
 }
 
 function ProspectoEditModal({
@@ -507,10 +549,10 @@ function ProspectoEditModal({
       empresa_oficina: prospecto.empresa_oficina ?? '',
       nome_responsavel_treinamento: prospecto.nome_responsavel_treinamento ?? '',
       nome_contato_inicial: prospecto.nome_contato_inicial ?? '',
-      whatsapp_responsavel: prospecto.whatsapp_responsavel ?? '',
       cidade: prospecto.cidade ?? '',
       uf: prospecto.uf ?? '',
-      tipo_oficina: prospecto.tipo_oficina ?? '',
+      endereco: prospecto.endereco ?? '',
+      tipo_oficinas: (prospecto.tipo_oficina ?? '').split(',').map(v => v.trim()).filter(Boolean),
       porte_oficina: prospecto.porte_oficina ?? '',
       multimarcas: prospecto.multimarcas ?? false,
       especializacao_oficina: prospecto.especializacao_oficina ?? '',
@@ -529,6 +571,10 @@ function ProspectoEditModal({
       consultor: prospecto.consultor ?? '',
       empresa_parceira: prospecto.empresa_parceira ?? '',
       observacoes: prospecto.observacoes ?? '',
+      telefone_oficina: prospecto.telefone_oficina ?? '',
+      whatsapp_responsavel: prospecto.whatsapp_responsavel ?? '',
+      telefone_financeiro: prospecto.telefone_financeiro ?? '',
+      telefone_participante: prospecto.telefone_participante ?? '',
     })
   }, [prospecto])
 
@@ -547,36 +593,51 @@ function ProspectoEditModal({
     }) : prev)
   }
 
+  function toggleTipoOficina(v: string) {
+    setForm((prev) => prev ? ({
+      ...prev,
+      tipo_oficinas: prev.tipo_oficinas.includes(v)
+        ? prev.tipo_oficinas.filter((item) => item !== v)
+        : [...prev.tipo_oficinas, v],
+    }) : prev)
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form) return
+    const foraPublico = form.tipo_oficinas.includes('fora_publico')
     await onSave({
       empresa_oficina: form.empresa_oficina || null,
       nome_responsavel_treinamento: form.nome_responsavel_treinamento || null,
       nome_contato_inicial: form.nome_contato_inicial || null,
-      whatsapp_responsavel: form.whatsapp_responsavel || null,
       cidade: form.cidade || null,
       uf: form.uf || null,
-      tipo_oficina: form.tipo_oficina || null,
+      endereco: form.endereco || null,
+      tipo_oficina: form.tipo_oficinas.length ? form.tipo_oficinas.join(',') : null,
       porte_oficina: form.porte_oficina || null,
       multimarcas: form.multimarcas,
       especializacao_oficina: form.especializacao_oficina || null,
       marca_interesse: form.marcas.length ? form.marcas.join(',').toLowerCase() : null,
       perfil: form.perfil || null,
       qtd_interessados: form.qtd_interessados || null,
-      potencial: form.potencial || null,
+      potencial: foraPublico ? 'sem_interesse' : (form.potencial || null),
       resultado_visita: form.resultado_visita || null,
       proximo_passo: form.proximo_passo || null,
       data_retorno: form.data_retorno || null,
       consultor: form.consultor || null,
       empresa_parceira: form.empresa_parceira || null,
       observacoes: form.observacoes || null,
+      telefone_oficina: form.telefone_oficina || null,
+      whatsapp_responsavel: form.whatsapp_responsavel || null,
+      telefone_financeiro: form.telefone_financeiro || null,
+      telefone_participante: form.telefone_participante || null,
     })
   }
 
   return (
     <Modal open={!!prospecto} onClose={onClose} title="Ficha da Oficina">
       <form onSubmit={handleSubmit} className="space-y-4">
+        {/* Nomes e localização */}
         <div className="grid gap-3 md:grid-cols-2">
           <Field label="Oficina">
             <input className="input-field" value={form.empresa_oficina} onChange={(e) => set('empresa_oficina', e.target.value)} />
@@ -587,9 +648,6 @@ function ProspectoEditModal({
           <Field label="Financeiro / recepção / contato inicial">
             <input className="input-field" value={form.nome_contato_inicial} onChange={(e) => set('nome_contato_inicial', e.target.value)} />
           </Field>
-          <Field label="WhatsApp do responsável">
-            <input className="input-field" value={form.whatsapp_responsavel} onChange={(e) => set('whatsapp_responsavel', e.target.value)} />
-          </Field>
           <Field label="Cidade">
             <input className="input-field" value={form.cidade} onChange={(e) => set('cidade', e.target.value)} />
           </Field>
@@ -599,12 +657,6 @@ function ProspectoEditModal({
               {UF_OPTIONS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
             </select>
           </Field>
-          <Field label="Tipo de oficina">
-            <select className="input-field" value={form.tipo_oficina} onChange={(e) => set('tipo_oficina', e.target.value)}>
-              <option value="">Selecione</option>
-              {TIPO_OFICINA_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
-            </select>
-          </Field>
           <Field label="Porte">
             <select className="input-field" value={form.porte_oficina} onChange={(e) => set('porte_oficina', e.target.value)}>
               <option value="">Selecione</option>
@@ -612,6 +664,35 @@ function ProspectoEditModal({
             </select>
           </Field>
         </div>
+
+        <Field label="Endereço">
+          <input
+            className="input-field"
+            value={form.endereco}
+            onChange={(e) => set('endereco', e.target.value)}
+            placeholder="Rua, número, bairro"
+          />
+        </Field>
+
+        <Field label="Tipo de oficina">
+          <div className="flex flex-wrap gap-2">
+            {TIPO_OFICINA_OPTIONS.map((t) => (
+              <button
+                key={t.value}
+                type="button"
+                onClick={() => toggleTipoOficina(t.value)}
+                className={cn(
+                  'rounded-lg text-xs font-display font-bold py-2 px-3 transition-colors cursor-pointer border',
+                  form.tipo_oficinas.includes(t.value)
+                    ? 'border-orange bg-orange/10 text-orange'
+                    : 'border-white/10 bg-white/5 text-white hover:border-orange/50',
+                )}
+              >
+                {t.label}
+              </button>
+            ))}
+          </div>
+        </Field>
 
         <div className="flex items-center gap-3 h-11 px-3 bg-white/5 border border-white/10 rounded-lg">
           <input type="checkbox" id="multimarcas_prospecto" checked={form.multimarcas} onChange={(e) => set('multimarcas', e.target.checked)} className="w-4 h-4 accent-orange cursor-pointer" />
@@ -641,6 +722,25 @@ function ProspectoEditModal({
             ))}
           </div>
         </Field>
+
+        {/* Telefones — 2×2 grid */}
+        <div>
+          <p className="text-xs font-display font-semibold text-muted uppercase tracking-wide mb-2">Telefones</p>
+          <div className="grid gap-3 grid-cols-2">
+            <Field label="Geral / Maps">
+              <input type="tel" className="input-field" value={form.telefone_oficina} onChange={(e) => set('telefone_oficina', e.target.value)} placeholder="(47) 3333-4444" />
+            </Field>
+            <Field label="Resp. treinamento (WhatsApp)">
+              <input type="tel" className="input-field" value={form.whatsapp_responsavel} onChange={(e) => set('whatsapp_responsavel', e.target.value)} placeholder="(47) 99999-9999" />
+            </Field>
+            <Field label="Financeiro / RH / Secretaria">
+              <input type="tel" className="input-field" value={form.telefone_financeiro} onChange={(e) => set('telefone_financeiro', e.target.value)} placeholder="(47) 3333-4444" />
+            </Field>
+            <Field label="Técnico participante">
+              <input type="tel" className="input-field" value={form.telefone_participante} onChange={(e) => set('telefone_participante', e.target.value)} placeholder="(47) 99999-9999" />
+            </Field>
+          </div>
+        </div>
 
         <div className="grid gap-3 md:grid-cols-2">
           <Field label="Perfil">
