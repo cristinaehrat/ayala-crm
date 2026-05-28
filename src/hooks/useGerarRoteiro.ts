@@ -1,0 +1,79 @@
+import { useMutation } from '@tanstack/react-query'
+
+const WEBHOOK_URL = 'https://n8n.ayalaoficial.com.br/webhook/roteiro-visitas'
+
+export interface LeadInput {
+  nome: string
+  endereco: string
+}
+
+export interface RoteirizarInput {
+  fonte: 'banco' | 'places' | 'manual'
+  start_point: string
+  regiao: string
+  cidade?: string
+  uf?: string
+  marca?: string
+  potencial_min?: string
+  incluir_nao_visitados?: boolean
+  leads?: LeadInput[]
+}
+
+export interface Parada {
+  seq: number
+  nome: string
+  endereco: string
+  marca: string
+  potencial: string
+}
+
+export interface Rota {
+  rota: number
+  de: number
+  ate: number
+  total_paradas: number
+  paradas: Parada[]
+  url: string
+}
+
+export interface RoteirizarResult {
+  status: string
+  regiao: string
+  total_leads: number
+  total_rotas: number
+  distancia_km: number
+  tempo_estimado: string
+  rotas: Rota[]
+  mensagem_whatsapp: string
+}
+
+export function useGerarRoteiro() {
+  return useMutation({
+    mutationFn: async (input: RoteirizarInput): Promise<RoteirizarResult> => {
+      const resp = await fetch(WEBHOOK_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(input),
+      })
+      if (!resp.ok) throw new Error(`Erro no servidor: ${resp.status}`)
+      const data = await resp.json()
+      if (data.status !== 'OK') throw new Error(data.error || data.message || 'Erro ao gerar roteiro')
+      return data as RoteirizarResult
+    },
+  })
+}
+
+export function parseLeadsFromText(text: string): LeadInput[] {
+  return text
+    .split('\n')
+    .map(line => line.trim())
+    .filter(Boolean)
+    .map((line, i) => {
+      // Aceita separadores " — " ou " | " entre nome e endereço
+      const sepMatch = line.match(/^(.+?)(?:\s[—|]\s)(.+)$/)
+      if (sepMatch) {
+        return { nome: sepMatch[1].trim(), endereco: sepMatch[2].trim() }
+      }
+      return { nome: `Parada ${i + 1}`, endereco: line }
+    })
+}

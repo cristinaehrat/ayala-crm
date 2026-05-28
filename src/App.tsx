@@ -13,6 +13,7 @@ import FinanceiroPage from '@/pages/FinanceiroPage'
 import RelatoriosPage from '@/pages/RelatoriosPage'
 import DespesasPage from '@/pages/DespesasPage'
 import ProspectosPage from '@/pages/ProspectosPage'
+import RoteiroPage from '@/pages/RoteiroPage'
 import CadastroPage from '@/pages/CadastroPage'
 import AppShell from '@/components/ui/AppShell'
 
@@ -65,6 +66,7 @@ export default function App() {
           <Route path="relatorios" element={<RelatoriosPage />} />
           <Route path="visita" element={<VisitaPage />} />
           <Route path="prospectos" element={<ProspectosPage />} />
+          <Route path="roteiro" element={<RoteiroPage />} />
           <Route path="despesas" element={<DespesasPage />} />
           <Route path="dashboard" element={<DashboardPage />} />
         </Route>

@@ -1,6 +1,6 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
 import {
-  Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign, BarChart2, Receipt, Building2,
+  Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign, BarChart2, Receipt, Building2, Navigation,
 } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import SyncBadge from '@/components/visita/SyncBadge'
@@ -13,6 +13,7 @@ const NAV = [
   { to: '/relatorios', label: 'Relatórios', Icon: BarChart2 },
   { to: '/visita',      label: 'Visita',      Icon: ClipboardList },
   { to: '/prospectos', label: 'Prospectos', Icon: Building2 },
+  { to: '/roteiro',    label: 'Roteiro',    Icon: Navigation },
   { to: '/despesas',   label: 'Despesas',   Icon: Receipt },
   { to: '/dashboard',  label: 'Dashboard',  Icon: LayoutDashboard },
 ]
