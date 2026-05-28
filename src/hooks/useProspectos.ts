@@ -110,12 +110,6 @@ export function useSearchProspectos(query: string, phoneDigits?: string, city?: 
   })
 }
 
-function prospectoKey(prospecto: Pick<Prospecto, 'empresa_oficina' | 'cidade' | 'uf'>) {
-  const empresa = prospecto.empresa_oficina?.trim().toLocaleLowerCase('pt-BR') ?? ''
-  const cidade = normalizeCity(prospecto.cidade)?.toLocaleLowerCase('pt-BR') ?? ''
-  const uf = prospecto.uf?.trim().toUpperCase() ?? ''
-  return `${empresa}::${cidade}::${uf}`
-}
 
 export function useProspectoLeadCounts() {
   return useQuery<Record<string, number>>({
@@ -123,19 +117,14 @@ export function useProspectoLeadCounts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('leads_v2')
-        .select('empresa_oficina,cidade,uf')
+        .select('id_prospecto')
+        .not('id_prospecto', 'is', null)
         .limit(5000)
       if (error) throw error
       const counts: Record<string, number> = {}
       for (const row of data ?? []) {
-        const key = prospectoKey({
-          empresa_oficina: (row as { empresa_oficina: string | null }).empresa_oficina,
-          cidade: (row as { cidade: string | null }).cidade,
-          uf: (row as { uf: string | null }).uf,
-        })
-        if (!key.startsWith('::')) {
-          counts[key] = (counts[key] ?? 0) + 1
-        }
+        const id = (row as { id_prospecto: string | null }).id_prospecto
+        if (id) counts[id] = (counts[id] ?? 0) + 1
       }
       return counts
     },
@@ -144,10 +133,10 @@ export function useProspectoLeadCounts() {
 }
 
 export function getProspectoLeadCount(
-  prospecto: Pick<Prospecto, 'empresa_oficina' | 'cidade' | 'uf'>,
+  prospecto: Pick<Prospecto, 'id_visita'>,
   counts: Record<string, number>,
 ) {
-  return counts[prospectoKey(prospecto)] ?? 0
+  return counts[prospecto.id_visita] ?? 0
 }
 
 export function useUpdateProspecto() {
@@ -192,6 +181,7 @@ export function useCreateLeadFromProspecto() {
         consultor: prospecto.consultor ?? null,
         resultado_visita: prospecto.resultado_visita ?? null,
         proximo_passo: prospecto.proximo_passo ?? null,
+        id_prospecto: prospecto.id_visita,
         observacoes: prospecto.observacoes ?? null,
         data_visita: prospecto.data_visita ?? null,
         status: 'lead_novo',

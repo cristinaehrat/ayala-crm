@@ -1,6 +1,6 @@
 import {
   Phone, MessageCircle, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
-  ArrowRightLeft, GraduationCap, Trash2, AlertCircle, Wrench,
+  ArrowRightLeft, GraduationCap, Trash2, AlertCircle, Wrench, ExternalLink,
 } from 'lucide-react'
 import EmpresaSection from '@/components/empresas/EmpresaSection'
 import { useLead, useUpdateLead, useDeleteLead, useTurma } from '@/hooks/useLeads'
@@ -469,15 +469,24 @@ export default function LeadDetail({ leadId, onClose }: Props) {
           <Phone size={15} /> Ligar
         </a>
         <a
-          href={lead.conversation_id
-            ? `${CHAT_BASE}/app/accounts/1/conversations/${lead.conversation_id}`
-            : `https://wa.me/${lead.telefone?.replace(/\D/g, '')}`}
+          href={`https://wa.me/${lead.telefone?.replace(/\D/g, '')}`}
           target="_blank"
           rel="noreferrer"
           className="flex-1 flex items-center justify-center gap-2 btn-primary text-center"
         >
           <MessageCircle size={15} /> WhatsApp
         </a>
+        {lead.conversation_id && (
+          <a
+            href={`${CHAT_BASE}/app/accounts/1/conversations/${lead.conversation_id}`}
+            target="_blank"
+            rel="noreferrer"
+            className="shrink-0 flex items-center justify-center gap-1 btn-secondary px-3"
+            title="Ver histórico no Chatwoot"
+          >
+            <ExternalLink size={15} />
+          </a>
+        )}
         <button
           onClick={() => setMoveSheetOpen(true)}
           className="flex-1 flex items-center justify-center gap-2 btn-secondary text-center"
