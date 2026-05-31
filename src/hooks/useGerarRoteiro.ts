@@ -17,6 +17,8 @@ export interface RoteirizarInput {
   potencial_min?: string
   incluir_nao_visitados?: boolean
   leads?: LeadInput[]
+  dias?: number
+  return_point?: string
 }
 
 export interface Parada {
@@ -32,6 +34,7 @@ export interface Parada {
 
 export interface Rota {
   rota: number
+  dia?: number
   de: number
   ate: number
   total_paradas: number
@@ -39,13 +42,23 @@ export interface Rota {
   url: string
 }
 
+export interface DiaDado {
+  dia: number
+  total_paradas: number
+  rotas: Rota[]
+}
+
 export interface RoteirizarResult {
   status: string
   regiao: string
+  partida: string
+  retorno: string
   total_leads: number
   total_rotas: number
+  total_dias: number
   distancia_km: number
   tempo_estimado: string
+  dias?: DiaDado[]
   rotas: Rota[]
   mensagem_whatsapp: string
 }
@@ -72,7 +85,6 @@ export function parseLeadsFromText(text: string): LeadInput[] {
     .map(line => line.trim())
     .filter(Boolean)
     .map((line, i) => {
-      // Aceita separadores " — " ou " | " entre nome e endereço
       const sepMatch = line.match(/^(.+?)(?:\s[—|]\s)(.+)$/)
       if (sepMatch) {
         return { nome: sepMatch[1].trim(), endereco: sepMatch[2].trim() }

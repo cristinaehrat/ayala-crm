@@ -1,8 +1,8 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown, Pencil, Trash2, Plus, Map, AtSign } from 'lucide-react'
+import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown, Pencil, Trash2, Plus, Map, AtSign, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 import { UF_OPTIONS } from '@/lib/utils'
-import { useGerarRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota } from '@/hooks/useGerarRoteiro'
+import { useGerarRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota, type DiaDado } from '@/hooks/useGerarRoteiro'
 import { useMalhaEstrategica, useCreateMalha, useUpdateMalha, useDeleteMalha, MESES_PT } from '@/hooks/useMalhaEstrategica'
 import type { MalhaEstrategica } from '@/lib/types'
 import Modal from '@/components/ui/Modal'
@@ -28,6 +28,8 @@ interface RoteiroForm {
   cidade: string
   uf: string
   startPoint: string
+  returnPoint: string
+  dias: number
   fonte: Fonte
   listaManual: string
   potencialMin: string
@@ -39,6 +41,8 @@ const EMPTY: RoteiroForm = {
   cidade: '',
   uf: '',
   startPoint: '',
+  returnPoint: '',
+  dias: 1,
   fonte: 'manual',
   listaManual: '',
   potencialMin: '',
@@ -116,6 +120,8 @@ export default function RoteiroPage() {
         potencial_min: form.potencialMin || undefined,
         incluir_nao_visitados: form.incluirNaoVisitados,
         leads: form.fonte === 'manual' ? parseLeadsFromText(form.listaManual) : undefined,
+        dias: form.dias > 1 ? form.dias : undefined,
+        return_point: form.returnPoint.trim() || undefined,
       })
       setResultado(result)
     } catch (err) {
@@ -262,6 +268,35 @@ export default function RoteiroPage() {
                 className="input-field"
               />
             </Field>
+
+            <div className="mt-3 grid grid-cols-3 gap-3">
+              <Field label="Dividir em dias">
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => set('dias', Math.max(1, form.dias - 1))}
+                    className="w-8 h-[42px] flex items-center justify-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 text-navy font-bold hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+                  >−</button>
+                  <span className="flex-1 h-[42px] flex items-center justify-center border border-slate-300 bg-white font-display font-bold text-navy text-sm">
+                    {form.dias}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => set('dias', Math.min(7, form.dias + 1))}
+                    className="w-8 h-[42px] flex items-center justify-center rounded-r-lg border border-l-0 border-slate-300 bg-slate-50 text-navy font-bold hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+                  >+</button>
+                </div>
+              </Field>
+              <Field label="Local de retorno / fim do dia" className="col-span-2">
+                <input
+                  type="text"
+                  value={form.returnPoint}
+                  onChange={(e) => set('returnPoint', e.target.value)}
+                  placeholder="Vazio = retorna ao ponto de partida"
+                  className="input-field"
+                />
+              </Field>
+            </div>
 
             <Field label="Marca de interesse" className="mt-3">
               <div className="flex gap-2">
@@ -414,11 +449,17 @@ export default function RoteiroPage() {
                   <h2 className="font-display font-bold text-navy text-base">
                     {resultado.regiao ? `Roteiro — ${resultado.regiao}` : 'Roteiro gerado'}
                   </h2>
-                  <div className="flex items-center gap-4 mt-1 text-xs text-muted">
+                  <div className="flex items-center gap-4 mt-1 text-xs text-muted flex-wrap">
                     <span className="flex items-center gap-1">
                       <MapPin size={12} />
                       {resultado.total_leads} oficinas
                     </span>
+                    {(resultado.total_dias ?? 1) > 1 && (
+                      <span className="flex items-center gap-1">
+                        <Calendar size={12} />
+                        {resultado.total_dias} dias
+                      </span>
+                    )}
                     <span className="flex items-center gap-1">
                       <Route size={12} />
                       ~{resultado.distancia_km} km
@@ -428,14 +469,25 @@ export default function RoteiroPage() {
                       ~{resultado.tempo_estimado}
                     </span>
                   </div>
+                  {resultado.retorno && resultado.retorno !== resultado.partida && (
+                    <p className="text-[11px] text-muted mt-1">
+                      🏁 Retorno: {resultado.retorno}
+                    </p>
+                  )}
                 </div>
-                <CopyButton text={resultado.mensagem_whatsapp} label="Copiar para WhatsApp" />
+                <CopyButton text={resultado.mensagem_whatsapp} label="Copiar tudo (WhatsApp)" />
               </div>
             </div>
 
-            {resultado.rotas.map((rota) => (
-              <RotaCard key={rota.rota} rota={rota} />
-            ))}
+            {/* Multi-dia: agrupa por dia */}
+            {(resultado.total_dias ?? 1) > 1 && resultado.dias
+              ? resultado.dias.map((d) => (
+                  <DiaSection key={d.dia} dia={d} />
+                ))
+              : resultado.rotas.map((rota) => (
+                  <RotaCard key={rota.rota} rota={rota} />
+                ))
+            }
 
             {/* LISTA PARA CAMPO */}
             <ListaCampo
@@ -448,6 +500,54 @@ export default function RoteiroPage() {
 
         <MalhaGerenciar />
       </div>
+    </div>
+  )
+}
+
+const DIAS_SEMANA = ['Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado', 'Domingo']
+
+function DiaSection({ dia }: { dia: DiaDado }) {
+  const [open, setOpen] = useState(true)
+
+  const msgDia = useMemo(() => {
+    const rotasBloco = dia.rotas.map(r => {
+      const lista = r.paradas.map(p => `    ${p.seq}. ${p.nome}`).join('\n')
+      return `  *Rota ${r.rota} (paradas ${r.de}–${r.ate}):*\n${lista}\n  👉 ${r.url}`
+    }).join('\n\n')
+    return `*📅 DIA ${dia.dia}${DIAS_SEMANA[dia.dia - 1] ? ` — ${DIAS_SEMANA[dia.dia - 1]}` : ''} (${dia.total_paradas} oficinas)*\n${rotasBloco}`
+  }, [dia])
+
+  return (
+    <div className="section-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <Calendar size={15} className="text-orange" />
+          <span className="font-display font-bold text-navy text-sm">
+            Dia {dia.dia}
+            {DIAS_SEMANA[dia.dia - 1] && (
+              <span className="text-muted font-normal ml-1">· {DIAS_SEMANA[dia.dia - 1]}</span>
+            )}
+          </span>
+          <span className="bg-orange/10 text-orange text-[10px] font-display font-bold px-2 py-0.5 rounded-full">
+            {dia.total_paradas} oficinas
+          </span>
+        </div>
+        <div className="flex items-center gap-2">
+          <CopyButton text={msgDia} label="Copiar dia" small />
+          <ChevronDown size={16} className={`text-muted transition-transform ${open ? 'rotate-180' : ''}`} />
+        </div>
+      </button>
+      {open && (
+        <div className="px-4 pb-4 space-y-3 border-t border-slate-100 pt-3">
+          {dia.rotas.map((rota) => (
+            <RotaCard key={rota.rota} rota={rota} />
+          ))}
+        </div>
+      )}
     </div>
   )
 }
