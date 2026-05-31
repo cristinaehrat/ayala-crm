@@ -1,8 +1,10 @@
 import { useState, useMemo } from 'react'
-import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle } from 'lucide-react'
+import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown } from 'lucide-react'
 import { toast } from 'sonner'
 import { UF_OPTIONS } from '@/lib/utils'
 import { useGerarRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota } from '@/hooks/useGerarRoteiro'
+import { useMalhaEstrategica, MESES_PT } from '@/hooks/useMalhaEstrategica'
+import type { MalhaEstrategica } from '@/lib/types'
 
 const MARCAS = [
   { value: '',       label: 'Todas' },
@@ -42,14 +44,46 @@ const EMPTY: RoteiroForm = {
   incluirNaoVisitados: true,
 }
 
+const MARCA_BADGE: Record<string, string> = {
+  volvo:  'bg-[#1A3A6B]',
+  scania: 'bg-[#D97706]',
+  daf:    'bg-[#166534]',
+}
+
 export default function RoteiroPage() {
   const [form, setForm] = useState<RoteiroForm>(EMPTY)
   const [resultado, setResultado] = useState<RoteirizarResult | null>(null)
   const [showLista, setShowLista] = useState(false)
+  const [showMalha, setShowMalha] = useState(false)
+  const [mesMalha, setMesMalha] = useState(() => MESES_PT[new Date().getMonth()])
   const gerarRoteiro = useGerarRoteiro()
+  const { data: malhaData } = useMalhaEstrategica()
+
+  const mesesDisp = useMemo(() => {
+    if (!malhaData?.length) return []
+    return [...new Set(malhaData.map(e => e.mes))]
+      .sort((a, b) => MESES_PT.indexOf(a) - MESES_PT.indexOf(b))
+  }, [malhaData])
+
+  const entriesMes = useMemo(() =>
+    (malhaData ?? []).filter(e => e.mes === mesMalha),
+    [malhaData, mesMalha]
+  )
 
   function set<K extends keyof RoteiroForm>(field: K, value: RoteiroForm[K]) {
     setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  function handleCarregarMalha(entry: MalhaEstrategica) {
+    const [cidadeRaw, ufRaw] = entry.cidade_base.split('/')
+    setForm(prev => ({
+      ...prev,
+      marca: entry.marca.toLowerCase(),
+      cidade: cidadeRaw.trim(),
+      uf: (ufRaw ?? '').trim(),
+    }))
+    setShowMalha(false)
+    toast.success(`Região carregada: ${entry.cidade_base}${entry.regiao_estrategica ? ` — ${entry.regiao_estrategica}` : ''}`)
   }
 
   async function handleSubmit(e: React.FormEvent) {
@@ -101,6 +135,68 @@ export default function RoteiroPage() {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
+          {/* MALHA ESTRATÉGICA */}
+          {malhaData && malhaData.length > 0 && (
+            <div className="section-card overflow-hidden">
+              <button
+                type="button"
+                onClick={() => setShowMalha(v => !v)}
+                className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+              >
+                <div className="flex items-center gap-2">
+                  <CalendarDays size={15} className="text-orange" />
+                  <span className="font-display font-bold text-navy text-sm">Malha estratégica</span>
+                  <span className="text-[11px] text-muted hidden sm:inline">— carregar planejamento mensal</span>
+                </div>
+                <ChevronDown
+                  size={15}
+                  className={`text-muted transition-transform duration-200 ${showMalha ? 'rotate-180' : ''}`}
+                />
+              </button>
+
+              {showMalha && (
+                <div className="border-t border-slate-200 px-4 py-3 space-y-3">
+                  <div className="flex items-center gap-2">
+                    <label className="field-label shrink-0 mb-0">Mês</label>
+                    <select
+                      value={mesMalha}
+                      onChange={e => setMesMalha(e.target.value)}
+                      className="input-field"
+                    >
+                      {mesesDisp.map(m => <option key={m} value={m}>{m}</option>)}
+                    </select>
+                  </div>
+
+                  {entriesMes.length === 0 ? (
+                    <p className="text-xs text-muted italic">Nenhuma entrada planejada para {mesMalha}.</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {entriesMes.map(entry => (
+                        <button
+                          key={entry.id}
+                          type="button"
+                          onClick={() => handleCarregarMalha(entry)}
+                          className="w-full flex items-center gap-3 rounded-lg border border-slate-200 px-3 py-2.5 hover:border-orange/50 hover:bg-orange/5 transition-colors cursor-pointer text-left"
+                        >
+                          <span className={`${MARCA_BADGE[entry.marca.toLowerCase()] ?? 'bg-slate-600'} text-white text-[10px] font-display font-bold px-2 py-0.5 rounded shrink-0 uppercase tracking-wide`}>
+                            {entry.marca}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-sm font-display font-semibold text-navy">{entry.cidade_base}</p>
+                            {entry.regiao_estrategica && (
+                              <p className="text-[11px] text-muted">{entry.regiao_estrategica}</p>
+                            )}
+                          </div>
+                          <ChevronDown size={13} className="text-muted shrink-0 -rotate-90" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
           {/* REGIÃO */}
           <div className="section-card p-4">
             <h3 className="font-display font-bold text-xs text-slate-600 uppercase tracking-wide mb-3">Região</h3>
