@@ -1,27 +1,21 @@
 import { useEffect, useState } from 'react'
-import { useListaEspera, useListaChamada } from '@/hooks/useRelatorios'
-import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
+import { useListaEspera, useListaChamada, type LeadComTurma } from '@/hooks/useRelatorios'
+import { supabase } from '@/lib/supabase'
 import { useEmpresasCadastradas } from '@/hooks/useEmpresasCadastradas'
 import { MARCA_BADGES, formatDate, formatPhone } from '@/lib/utils'
 import { Search, AlertCircle, Printer, X } from 'lucide-react'
 import type { InscritoComTelefone, Turma } from '@/lib/types'
 import TurmaListaChamada from '@/components/turmas/TurmaListaChamada'
 
-type Tab = 'lista_espera' | 'mapa' | 'lista_chamada' | 'empresas'
+type Tab = 'lista_espera' | 'lista_chamada' | 'empresas'
 
 const TABS: { id: Tab; label: string }[] = [
   { id: 'lista_espera',  label: 'Lista de Espera' },
-  { id: 'mapa',         label: 'Mapa Estratégico' },
-  { id: 'lista_chamada',label: 'Lista de Chamada' },
-  { id: 'empresas',     label: 'Empresas Cadastradas' },
+  { id: 'lista_chamada', label: 'Lista de Chamada' },
+  { id: 'empresas',      label: 'Empresas Cadastradas' },
 ]
 
 const brl = (v: number) => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
-
-const MES_ORDER = [
-  'Janeiro','Fevereiro','Março','Abril','Maio','Junho',
-  'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro',
-]
 
 const FLUXO_LABEL: Record<string, string> = {
   link_whatsapp: 'Link WA', boleto_parceiro: 'Boleto',
@@ -63,7 +57,7 @@ function PrintOverlay({ title, onClose, children }: { title: string; onClose: ()
 
 // ─── Tab 1: Lista de Espera ────────────────────────────────────────────────
 function ListaEspera() {
-  const { data: leads = [], isLoading } = useListaEspera()
+  const { data: leads = [], isLoading } = useListaEspera() as { data: LeadComTurma[]; isLoading: boolean }
   const [search, setSearch] = useState('')
   const [filtroMarca, setFiltroMarca] = useState('')
   const [printMode, setPrintMode] = useState(false)
@@ -113,7 +107,7 @@ function ListaEspera() {
                       </span>
                     ) : '—'}
                   </td>
-                  <td className="px-3 py-2 border border-gray-200">{l.turma_selecionada ?? '—'}</td>
+                  <td className="px-3 py-2 border border-gray-200">{l.turma_nome ?? '—'}</td>
                   <td className="px-3 py-2 border border-gray-200">{formatDate(l.data_entrada)}</td>
                 </tr>
               )
@@ -190,7 +184,7 @@ function ListaEspera() {
                         </span>
                       ) : '—'}
                     </td>
-                    <td className="px-4 py-3 text-xs text-muted">{l.turma_selecionada ?? '—'}</td>
+                    <td className="px-4 py-3 text-xs text-muted">{l.turma_nome ?? '—'}</td>
                     <td className="px-4 py-3 text-xs text-muted">{formatDate(l.data_entrada)}</td>
                   </tr>
                 )
@@ -214,7 +208,7 @@ function ListaEspera() {
                 </div>
                 <p className="text-xs text-muted">{l.empresa_oficina ?? ''}</p>
                 <p className="text-xs text-muted">{[l.cidade, l.uf].filter(Boolean).join(' / ') || '—'} · {formatDate(l.data_entrada)}</p>
-                {l.turma_selecionada && <p className="text-xs text-orange">{l.turma_selecionada}</p>}
+                {l.turma_nome && <p className="text-xs text-orange">{l.turma_nome}</p>}
               </div>
             )
           })}
@@ -425,125 +419,28 @@ function ListaChamada() {
   )
 }
 
-// ─── Tab 3: Mapa Estratégico ───────────────────────────────────────────────
-function MapaEstrategico() {
-  const { data: malha = [], isLoading } = useMalhaEstrategica()
-  const [printMode, setPrintMode] = useState(false)
-  const hoje = new Date().toLocaleDateString('pt-BR')
 
-  if (isLoading) return (
-    <div className="flex justify-center py-12">
-      <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
-    </div>
-  )
-
-  const porMes = MES_ORDER.reduce<Record<string, typeof malha>>((acc, mes) => {
-    const entries = malha.filter((m) => m.mes === mes)
-    if (entries.length > 0) acc[mes] = entries
-    return acc
-  }, {})
-
-  if (printMode) {
-    return (
-      <PrintOverlay title="Mapa Estratégico" onClose={() => setPrintMode(false)}>
-        <div className="mb-6 border-b border-gray-300 pb-4">
-          <p className="text-xs text-gray-500 font-semibold uppercase tracking-widest mb-1">Ayala Treinamentos</p>
-          <h1 className="text-xl font-bold text-gray-900">Mapa Estratégico 2026</h1>
-          <p className="text-xs text-gray-400 mt-1">Emitido em {hoje}</p>
-        </div>
-        {Object.entries(porMes).map(([mes, entries]) => (
-          <div key={mes} className="mb-6">
-            <h2 className="text-sm font-bold text-gray-800 uppercase mb-2 border-b border-gray-200 pb-1">{mes}</h2>
-            <div className="grid grid-cols-3 gap-4">
-              {entries.map((entry) => {
-                const badge = MARCA_BADGES[entry.marca]
-                return (
-                  <div key={entry.id} className="border border-gray-200 rounded p-3 text-xs">
-                    {badge && (
-                      <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold text-white mb-2" style={{ backgroundColor: badge.bg }}>
-                        {badge.label}
-                      </span>
-                    )}
-                    <p className="font-bold text-gray-900">{entry.cidade_base}</p>
-                    {entry.regiao_estrategica && <p className="text-gray-500">{entry.regiao_estrategica}</p>}
-                    {entry.cidades_visitacao && <p className="text-gray-600 mt-1">Visitação: {entry.cidades_visitacao}</p>}
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-        ))}
-      </PrintOverlay>
-    )
-  }
-
-  return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-muted">Cronograma de operações itinerantes 2026 — por marca e cidade-base.</p>
-        <button
-          onClick={() => setPrintMode(true)}
-          className="flex items-center gap-1.5 text-xs btn-secondary px-3 py-2 shrink-0"
-          title="Imprimir mapa"
-        >
-          <Printer size={13} /> Imprimir
-        </button>
-      </div>
-
-      {Object.entries(porMes).map(([mes, entries]) => (
-        <div key={mes} className="section-card overflow-hidden">
-          <div className="flex items-center gap-3 px-4 py-3 border-b border-slate-200 bg-slate-50">
-            <span className="font-display font-bold text-navy text-sm uppercase tracking-wide">{mes}</span>
-            <span className="text-xs text-slate-600">{entries.length} marca{entries.length > 1 ? 's' : ''}</span>
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 divide-y md:divide-y-0 md:divide-x divide-slate-200">
-            {entries.map((entry) => {
-              const badge = MARCA_BADGES[entry.marca]
-              return (
-                <div key={entry.id} className="p-4 space-y-2">
-                  <div className="flex items-center gap-2">
-                    {badge && (
-                      <span
-                        className="inline-flex items-center px-2 py-0.5 rounded text-xs font-display font-bold text-white"
-                        style={{ backgroundColor: badge.bg }}
-                      >
-                        {badge.label}
-                      </span>
-                    )}
-                    {entry.regiao_estrategica && (
-                      <span className="text-xs text-muted">{entry.regiao_estrategica}</span>
-                    )}
-                  </div>
-                  <div>
-                    <p className="text-xs text-slate-600 uppercase tracking-wide font-display font-semibold">Cidade-base</p>
-                    <p className="font-display font-bold text-navy text-sm">{entry.cidade_base}</p>
-                  </div>
-                  {entry.cidades_visitacao && (
-                    <div>
-                      <p className="text-xs text-slate-600 uppercase tracking-wide font-display font-semibold">Visitação</p>
-                      <p className="text-xs text-slate-700">{entry.cidades_visitacao}</p>
-                    </div>
-                  )}
-                  {entry.objetivo && (
-                    <p className="text-xs text-muted italic">{entry.objetivo}</p>
-                  )}
-                </div>
-              )
-            })}
-          </div>
-        </div>
-      ))}
-
-      {Object.keys(porMes).length === 0 && (
-        <div className="text-center py-12 text-muted text-sm">Nenhum dado na malha estratégica</div>
-      )}
-    </div>
-  )
-}
 
 // ─── Tab 4: Empresas Cadastradas ───────────────────────────────────────────
 function EmpresasCadastradas() {
   const { data: empresas = [], isLoading } = useEmpresasCadastradas()
+  const [leadCounts, setLeadCounts] = useState<Record<string, number>>({})
+  const [inscritoCounts, setInscritoCounts] = useState<Record<string, number>>({})
+  useEffect(() => {
+    async function loadCounts() {
+      const [lr, ir] = await Promise.all([
+        supabase.from('leads_v2').select('empresa_id').not('empresa_id', 'is', null),
+        supabase.from('inscritos').select('empresa_id').not('empresa_id', 'is', null),
+      ])
+      const lc: Record<string, number> = {}
+      for (const r of lr.data ?? []) if (r.empresa_id) lc[r.empresa_id] = (lc[r.empresa_id] ?? 0) + 1
+      const ic: Record<string, number> = {}
+      for (const r of ir.data ?? []) if (r.empresa_id) ic[r.empresa_id] = (ic[r.empresa_id] ?? 0) + 1
+      setLeadCounts(lc)
+      setInscritoCounts(ic)
+    }
+    loadCounts()
+  }, [])
   const [search, setSearch] = useState('')
   const [printMode, setPrintMode] = useState(false)
   const hoje = new Date().toLocaleDateString('pt-BR')
@@ -570,7 +467,7 @@ function EmpresasCadastradas() {
         <table className="w-full text-xs border-collapse">
           <thead>
             <tr className="bg-gray-100">
-              {['#', 'Razão Social / Fantasia', 'CNPJ', 'Cidade / Estado', 'E-mail', 'Responsável', 'WhatsApp'].map((h) => (
+              {['#', 'Razão Social / Fantasia', 'CNPJ', 'Cidade / Estado', 'E-mail', 'Responsável', 'WhatsApp', 'Leads', 'Insc.'].map((h) => (
                 <th key={h} className="text-left px-3 py-2 border border-gray-200 font-bold">{h}</th>
               ))}
             </tr>
@@ -588,6 +485,8 @@ function EmpresasCadastradas() {
                 <td className="px-3 py-2 border border-gray-200">{e.email ?? '—'}</td>
                 <td className="px-3 py-2 border border-gray-200">{e.nome_responsavel ?? '—'}</td>
                 <td className="px-3 py-2 border border-gray-200 font-mono">{e.whatsapp_responsavel ?? '—'}</td>
+                <td className="px-3 py-2 border border-gray-200 text-center">{leadCounts[e.id] ?? 0}</td>
+                <td className="px-3 py-2 border border-gray-200 text-center">{inscritoCounts[e.id] ?? 0}</td>
               </tr>
             ))}
           </tbody>
@@ -627,7 +526,7 @@ function EmpresasCadastradas() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-slate-200">
-                {['Razão Social / Fantasia', 'CNPJ', 'Cidade / Estado', 'Responsável', 'WhatsApp'].map((h) => (
+                {['Razão Social / Fantasia', 'CNPJ', 'Cidade / Estado', 'Responsável', 'WhatsApp', 'Leads', 'Insc.'].map((h) => (
                   <th key={h} className="px-4 py-2 text-left text-xs font-display font-semibold text-muted uppercase tracking-wide">
                     {h}
                   </th>
@@ -645,6 +544,8 @@ function EmpresasCadastradas() {
                   <td className="px-4 py-3 text-xs text-navy">{[e.cidade, e.estado].filter(Boolean).join(' / ') || '—'}</td>
                   <td className="px-4 py-3 text-xs text-navy">{e.nome_responsavel ?? '—'}</td>
                   <td className="px-4 py-3 text-xs text-muted font-mono">{e.whatsapp_responsavel ?? '—'}</td>
+                  <td className="px-4 py-3 text-xs text-center font-display font-semibold text-navy">{leadCounts[e.id] ?? 0}</td>
+                  <td className="px-4 py-3 text-xs text-center font-display font-semibold text-orange">{inscritoCounts[e.id] ?? 0}</td>
                 </tr>
               ))}
             </tbody>
@@ -699,7 +600,6 @@ export default function RelatoriosPage() {
       <div className="flex-1 overflow-y-auto p-4">
         {tab === 'lista_espera'  && <ListaEspera />}
         {tab === 'lista_chamada' && <ListaChamada />}
-        {tab === 'mapa'          && <MapaEstrategico />}
         {tab === 'empresas'      && <EmpresasCadastradas />}
       </div>
     </div>

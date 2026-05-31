@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react'
-import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown } from 'lucide-react'
+import { useState, useMemo, useEffect } from 'react'
+import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown, Pencil, Trash2, Plus, Map } from 'lucide-react'
 import { toast } from 'sonner'
 import { UF_OPTIONS } from '@/lib/utils'
 import { useGerarRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota } from '@/hooks/useGerarRoteiro'
-import { useMalhaEstrategica, MESES_PT } from '@/hooks/useMalhaEstrategica'
+import { useMalhaEstrategica, useCreateMalha, useUpdateMalha, useDeleteMalha, MESES_PT } from '@/hooks/useMalhaEstrategica'
 import type { MalhaEstrategica } from '@/lib/types'
+import Modal from '@/components/ui/Modal'
 
 const MARCAS = [
   { value: '',       label: 'Todas' },
@@ -395,6 +396,8 @@ export default function RoteiroPage() {
             />
           </div>
         )}
+
+        <MalhaGerenciar />
       </div>
     </div>
   )
@@ -580,5 +583,317 @@ function Field({ label, children, className }: { label: string; children: React.
       <label className="field-label">{label}</label>
       {children}
     </div>
+  )
+}
+
+// ─── Gerenciar Malha Estratégica ─────────────────────────────────────────────
+
+const MARCAS_MALHA = ['Volvo', 'Scania', 'DAF']
+
+type MalhaPayload = Omit<MalhaEstrategica, 'id'>
+
+const EMPTY_MALHA: MalhaPayload = {
+  mes: MESES_PT[new Date().getMonth()],
+  marca: 'Volvo',
+  cidade_base: '',
+  regiao_estrategica: null,
+  cidades_visitacao: null,
+  objetivo: null,
+  observacoes: null,
+}
+
+function MalhaGerenciar() {
+  const [open, setOpen] = useState(false)
+  const [editing, setEditing] = useState<MalhaEstrategica | 'new' | null>(null)
+  const [confirmId, setConfirmId] = useState<string | null>(null)
+
+  const { data: malha = [], isLoading } = useMalhaEstrategica()
+  const createMalha = useCreateMalha()
+  const updateMalha = useUpdateMalha()
+  const deleteMalha = useDeleteMalha()
+
+  const porMes = MESES_PT.reduce<Record<string, MalhaEstrategica[]>>((acc, mes) => {
+    const entries = malha.filter(m => m.mes === mes)
+    if (entries.length > 0) acc[mes] = entries
+    return acc
+  }, {})
+
+  async function handleSave(data: MalhaPayload) {
+    try {
+      if (editing === 'new') {
+        await createMalha.mutateAsync(data)
+        toast.success('Entrada adicionada')
+      } else if (editing) {
+        await updateMalha.mutateAsync({ ...data, id: editing.id })
+        toast.success('Entrada atualizada')
+      }
+      setEditing(null)
+    } catch {
+      toast.error('Erro ao salvar')
+    }
+  }
+
+  async function handleDelete(id: string) {
+    try {
+      await deleteMalha.mutateAsync(id)
+      toast.success('Entrada removida')
+      setConfirmId(null)
+    } catch {
+      toast.error('Erro ao remover')
+    }
+  }
+
+  return (
+    <div className="mt-6 section-card overflow-hidden">
+      <button
+        type="button"
+        onClick={() => setOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <Map size={15} className="text-orange" />
+          <span className="font-display font-bold text-navy text-sm">Gerenciar Malha Estratégica</span>
+        </div>
+        <ChevronDown size={15} className={`text-muted transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-200">
+          <div className="flex items-center justify-between px-4 py-2 bg-slate-50">
+            <span className="text-xs text-muted">{malha.length} entrada{malha.length !== 1 ? 's' : ''} planejadas</span>
+            <button
+              type="button"
+              onClick={() => setEditing('new')}
+              className="flex items-center gap-1.5 text-xs btn-secondary px-3 py-1.5"
+            >
+              <Plus size={12} /> Adicionar
+            </button>
+          </div>
+
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="w-5 h-5 border-2 border-orange border-t-transparent rounded-full animate-spin" />
+            </div>
+          ) : Object.keys(porMes).length === 0 ? (
+            <p className="text-center py-8 text-muted text-sm">Nenhuma entrada cadastrada.</p>
+          ) : (
+            Object.entries(porMes).map(([mes, entries]) => (
+              <div key={mes}>
+                <div className="px-4 py-2 bg-slate-50/70 border-y border-slate-100">
+                  <span className="text-xs font-display font-bold text-slate-600 uppercase tracking-wide">{mes}</span>
+                  <span className="text-xs text-muted ml-2">{entries.length} entrada{entries.length !== 1 ? 's' : ''}</span>
+                </div>
+                {entries.map(entry => (
+                  <div key={entry.id} className="flex items-center gap-3 px-4 py-3 border-b border-slate-100 last:border-b-0">
+                    <span className={`${MARCA_BADGE[entry.marca.toLowerCase()] ?? 'bg-slate-600'} text-white text-[10px] font-display font-bold px-2 py-0.5 rounded shrink-0 uppercase tracking-wide`}>
+                      {entry.marca}
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-display font-semibold text-navy">{entry.cidade_base}</p>
+                      {entry.regiao_estrategica && (
+                        <p className="text-[11px] text-muted">{entry.regiao_estrategica}</p>
+                      )}
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => setEditing(entry)}
+                        className="p-1.5 rounded hover:bg-slate-100 text-muted hover:text-navy transition-colors cursor-pointer"
+                        title="Editar"
+                      >
+                        <Pencil size={13} />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setConfirmId(entry.id)}
+                        className="p-1.5 rounded hover:bg-red-50 text-muted hover:text-red-600 transition-colors cursor-pointer"
+                        title="Remover"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ))
+          )}
+        </div>
+      )}
+
+      <MalhaModal
+        entry={editing !== 'new' ? editing : null}
+        open={editing !== null}
+        onClose={() => setEditing(null)}
+        onSave={handleSave}
+        isPending={createMalha.isPending || updateMalha.isPending}
+      />
+
+      {confirmId && (
+        <div
+          className="fixed inset-0 z-40 bg-black/60 flex items-center justify-center"
+          onClick={() => setConfirmId(null)}
+        >
+          <div className="bg-white rounded-xl shadow-xl p-5 max-w-xs mx-4" onClick={e => e.stopPropagation()}>
+            <p className="font-display font-bold text-navy text-sm mb-2">Remover entrada?</p>
+            <p className="text-xs text-muted mb-4">Esta ação não pode ser desfeita.</p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setConfirmId(null)}
+                className="flex-1 btn-secondary text-sm py-2 cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => handleDelete(confirmId)}
+                disabled={deleteMalha.isPending}
+                className="flex-1 bg-red-600 hover:bg-red-700 text-white text-sm py-2 rounded-lg font-display font-semibold transition-colors cursor-pointer disabled:opacity-60"
+              >
+                {deleteMalha.isPending ? 'Removendo...' : 'Remover'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function MalhaModal({ entry, open, onClose, onSave, isPending }: {
+  entry: MalhaEstrategica | null
+  open: boolean
+  onClose: () => void
+  onSave: (data: MalhaPayload) => Promise<void>
+  isPending: boolean
+}) {
+  const [form, setForm] = useState<MalhaPayload>(EMPTY_MALHA)
+
+  useEffect(() => {
+    if (open) {
+      setForm(entry ? {
+        mes: entry.mes,
+        marca: entry.marca,
+        cidade_base: entry.cidade_base,
+        regiao_estrategica: entry.regiao_estrategica,
+        cidades_visitacao: entry.cidades_visitacao,
+        objetivo: entry.objetivo,
+        observacoes: entry.observacoes,
+      } : { ...EMPTY_MALHA, mes: MESES_PT[new Date().getMonth()] })
+    }
+  }, [open, entry])
+
+  function setF<K extends keyof MalhaPayload>(field: K, value: MalhaPayload[K]) {
+    setForm(prev => ({ ...prev, [field]: value }))
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.cidade_base.trim()) {
+      toast.error('Informe a cidade-base (ex: Joinville/SC)')
+      return
+    }
+    await onSave(form)
+  }
+
+  return (
+    <Modal open={open} onClose={onClose} title={entry ? 'Editar Entrada' : 'Nova Entrada'}>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="field-label">Mês</label>
+            <select value={form.mes} onChange={e => setF('mes', e.target.value)} className="input-field">
+              {MESES_PT.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+          <div>
+            <label className="field-label">Marca</label>
+            <select value={form.marca} onChange={e => setF('marca', e.target.value)} className="input-field">
+              {MARCAS_MALHA.map(m => <option key={m} value={m}>{m}</option>)}
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label className="field-label">
+            Cidade-base <span className="text-muted font-normal">(Cidade/UF)</span>
+          </label>
+          <input
+            type="text"
+            value={form.cidade_base}
+            onChange={e => setF('cidade_base', e.target.value)}
+            placeholder="Joinville/SC"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="field-label">
+            Região estratégica <span className="text-muted font-normal">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            value={form.regiao_estrategica ?? ''}
+            onChange={e => setF('regiao_estrategica', e.target.value || null)}
+            placeholder="Grande Florianópolis"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="field-label">
+            Cidades de visitação <span className="text-muted font-normal">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            value={form.cidades_visitacao ?? ''}
+            onChange={e => setF('cidades_visitacao', e.target.value || null)}
+            placeholder="Blumenau, Gaspar, Brusque"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="field-label">
+            Objetivo <span className="text-muted font-normal">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            value={form.objetivo ?? ''}
+            onChange={e => setF('objetivo', e.target.value || null)}
+            placeholder="Expandir base DAF na região sul"
+            className="input-field"
+          />
+        </div>
+
+        <div>
+          <label className="field-label">
+            Observações <span className="text-muted font-normal">(opcional)</span>
+          </label>
+          <textarea
+            value={form.observacoes ?? ''}
+            onChange={e => setF('observacoes', e.target.value || null)}
+            rows={3}
+            className="input-field resize-none"
+          />
+        </div>
+
+        <div className="flex gap-2 pt-1">
+          <button type="button" onClick={onClose} className="flex-1 btn-secondary py-2.5 text-sm cursor-pointer">
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isPending}
+            className="flex-1 btn-primary py-2.5 text-sm flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+          >
+            {isPending
+              ? <><div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" /> Salvando...</>
+              : 'Salvar'
+            }
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }
