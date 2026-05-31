@@ -3,7 +3,7 @@ import { useOfflineSync } from '@/hooks/useOfflineSync'
 import { db } from '@/lib/dexie'
 import { isSuspiciousCity, normalizeCity, toE164, UF_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CheckCircle, Check, Link2, Search, X, Plus, Trash2 } from 'lucide-react'
+import { CheckCircle, Check, Link2, Search, X, Plus, Trash2, AtSign, Globe } from 'lucide-react'
 import { useSearchProspectos, type Prospecto } from '@/hooks/useProspectos'
 import { useSearchEmpresas } from '@/hooks/useEmpresasCadastradas'
 import type { Empresa } from '@/lib/types'
@@ -71,6 +71,9 @@ interface VisitaForm {
   observacoes: string
   qualificado_lead: boolean
   participantes: { nome: string; telefone: string }[]
+  instagram_handle: string
+  facebook_url: string
+  website_url: string
 }
 
 const EMPTY: VisitaForm = {
@@ -82,6 +85,7 @@ const EMPTY: VisitaForm = {
   resultado_visita: '', proximo_passo: '', data_retorno: '',
   consultor: '', empresa_parceira: '', observacoes: '',
   qualificado_lead: false, participantes: [],
+  instagram_handle: '', facebook_url: '', website_url: '',
 }
 
 export default function VisitaPage() {
@@ -149,6 +153,9 @@ export default function VisitaPage() {
       observacoes: p.observacoes ?? '',
       qualificado_lead: p.qualificado_lead ?? false,
       participantes: p.participantes ?? [],
+      instagram_handle: p.instagram_handle ?? '',
+      facebook_url: p.facebook_url ?? '',
+      website_url: p.website_url ?? '',
     })
   }
 
@@ -208,8 +215,12 @@ export default function VisitaPage() {
       observacoes:                  form.observacoes.trim() || null,
       canal_origem:                 'visita',
       data_visita:                  new Date().toISOString().split('T')[0],
+      empresa_id:                   linkedEmpresa?.id ?? linkedProspecto?.empresa_id ?? null,
       qualificado_lead:             form.qualificado_lead,
       participantes:                form.participantes.filter(p => p.nome.trim() || p.telefone.trim()),
+      instagram_handle:             form.instagram_handle.trim() || null,
+      facebook_url:                 form.facebook_url.trim() || null,
+      website_url:                  form.website_url.trim() || null,
     }
 
     try {
@@ -548,6 +559,43 @@ export default function VisitaPage() {
                 </div>
               ))}
             </div>
+          </Section>
+
+          {/* SEÇÃO 2c — PRESENÇA DIGITAL */}
+          <Section title="Presença Digital">
+            <Field label="Instagram (sem @)">
+              <div className="relative">
+                <AtSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-400" />
+                <input
+                  type="text"
+                  value={form.instagram_handle}
+                  onChange={(e) => set('instagram_handle', e.target.value.replace(/^@/, ''))}
+                  placeholder="mecanicadiesel"
+                  className="input-field pl-8"
+                />
+              </div>
+            </Field>
+            <Field label="Facebook (URL)" className="mt-3">
+              <input
+                type="url"
+                value={form.facebook_url}
+                onChange={(e) => set('facebook_url', e.target.value)}
+                placeholder="facebook.com/oficina..."
+                className="input-field"
+              />
+            </Field>
+            <Field label="Site (URL)" className="mt-3">
+              <div className="relative">
+                <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="url"
+                  value={form.website_url}
+                  onChange={(e) => set('website_url', e.target.value)}
+                  placeholder="www.oficina.com.br"
+                  className="input-field pl-8"
+                />
+              </div>
+            </Field>
           </Section>
 
           {/* SEÇÃO 3 — INTERESSE */}

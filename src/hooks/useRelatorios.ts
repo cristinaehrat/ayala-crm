@@ -2,9 +2,13 @@ import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Lead, InscritoComTelefone, Turma } from '@/lib/types'
 
+export interface LeadComTurma extends Lead {
+  turma_nome: string | null
+}
+
 // Tab 1 — Lista de Espera
 export function useListaEspera() {
-  return useQuery<Lead[]>({
+  return useQuery<LeadComTurma[]>({
     queryKey: ['relatorios', 'lista_espera'],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -13,7 +17,26 @@ export function useListaEspera() {
         .eq('etiqueta_chatwoot', 'lista_espera')
         .order('data_entrada', { ascending: false, nullsFirst: false })
       if (error) throw error
-      return (data ?? []) as Lead[]
+
+      const leads = (data ?? []) as Lead[]
+      const turmaIds = [...new Set(leads.map(l => l.turma_selecionada).filter(Boolean))] as string[]
+
+      if (turmaIds.length === 0) return leads.map(l => ({ ...l, turma_nome: null }))
+
+      const { data: turmas } = await supabase
+        .from('turmas')
+        .select('id, nome_treinamento')
+        .in('id', turmaIds)
+
+      const turmaMap = Object.fromEntries(
+        ((turmas ?? []) as { id: string; nome_treinamento: string | null }[])
+          .map(t => [t.id, t.nome_treinamento])
+      )
+
+      return leads.map(l => ({
+        ...l,
+        turma_nome: l.turma_selecionada ? (turmaMap[l.turma_selecionada] ?? null) : null,
+      }))
     },
   })
 }

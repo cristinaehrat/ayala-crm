@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2 } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink } from 'lucide-react'
 import { useProspectos, useRegistrarTentativa, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
@@ -304,7 +304,10 @@ function ProspectoCard({
       <div className="p-3">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
-            <p className={cn('font-display font-bold text-sm truncate', hasLeads ? 'text-navy' : 'text-white')}>{p.empresa_oficina || '—'}</p>
+            <div className="flex items-center gap-1.5">
+              <p className={cn('font-display font-bold text-sm truncate', hasLeads ? 'text-navy' : 'text-white')}>{p.empresa_oficina || '—'}</p>
+              {p.instagram_handle && <AtSign size={11} className="text-pink-400 shrink-0" />}
+            </div>
             <p className={cn('text-xs mt-0.5 truncate', hasLeads ? 'text-slate-600' : 'text-muted')}>{nome} · {p.cidade}{p.uf ? `/${p.uf}` : ''}</p>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
@@ -471,6 +474,53 @@ function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onCl
               </div>
             </div>
           )}
+          {(p.instagram_handle || p.facebook_url || p.website_url) && (
+            <div>
+              <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1.5">Presença Digital</p>
+              <div className="space-y-1.5">
+                {p.instagram_handle && (
+                  <div className="flex items-center gap-2">
+                    <AtSign size={13} className="text-pink-400 shrink-0" />
+                    <a
+                      href={`https://instagram.com/${p.instagram_handle}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-pink-300 hover:text-pink-200 text-xs hover:underline"
+                    >
+                      @{p.instagram_handle}
+                    </a>
+                  </div>
+                )}
+                {p.facebook_url && (
+                  <div className="flex items-center gap-2">
+                    <ExternalLink size={13} className="text-blue-400 shrink-0" />
+                    <a
+                      href={p.facebook_url.startsWith('http') ? p.facebook_url : `https://${p.facebook_url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-blue-300 hover:text-blue-200 text-xs hover:underline truncate"
+                    >
+                      {p.facebook_url}
+                    </a>
+                  </div>
+                )}
+                {p.website_url && (
+                  <div className="flex items-center gap-2">
+                    <Globe size={13} className="text-slate-400 shrink-0" />
+                    <a
+                      href={p.website_url.startsWith('http') ? p.website_url : `https://${p.website_url}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-slate-300 hover:text-slate-200 text-xs hover:underline truncate"
+                    >
+                      {p.website_url}
+                    </a>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           <Row icon={<ClipboardList size={14} />} label="Resultado da visita" value={p.resultado_visita} />
           <Row label="Próximo passo" value={p.proximo_passo} />
           <Row label="Data de retorno" value={p.data_retorno} />
@@ -582,6 +632,9 @@ type ProspectoEditForm = {
   telefone_financeiro: string
   telefone_participante: string
   participantes: Participante[]
+  instagram_handle: string
+  facebook_url: string
+  website_url: string
 }
 
 function ProspectoEditModal({
@@ -633,6 +686,9 @@ function ProspectoEditModal({
       telefone_financeiro: prospecto.telefone_financeiro ?? '',
       telefone_participante: prospecto.telefone_participante ?? '',
       participantes: prospecto.participantes ?? [],
+      instagram_handle: prospecto.instagram_handle ?? '',
+      facebook_url: prospecto.facebook_url ?? '',
+      website_url: prospecto.website_url ?? '',
     })
   }, [prospecto])
 
@@ -690,6 +746,9 @@ function ProspectoEditModal({
       telefone_financeiro: form.telefone_financeiro || null,
       telefone_participante: form.telefone_participante || null,
       participantes: form.participantes.filter(p => p.nome.trim() || p.telefone.trim()),
+      instagram_handle: form.instagram_handle || null,
+      facebook_url: form.facebook_url || null,
+      website_url: form.website_url || null,
     })
   }
 
@@ -797,6 +856,46 @@ function ProspectoEditModal({
             </Field>
             <Field label="Técnico participante">
               <input type="tel" className="input-field" value={form.telefone_participante} onChange={(e) => set('telefone_participante', e.target.value)} placeholder="(47) 99999-9999" />
+            </Field>
+          </div>
+        </div>
+
+        {/* Presença Digital */}
+        <div>
+          <p className="text-xs font-display font-semibold text-muted uppercase tracking-wide mb-2">Presença Digital</p>
+          <div className="space-y-3">
+            <Field label="Instagram (sem @)">
+              <div className="relative">
+                <AtSign size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-pink-400" />
+                <input
+                  type="text"
+                  className="input-field pl-8"
+                  value={form.instagram_handle}
+                  onChange={(e) => set('instagram_handle', e.target.value.replace(/^@/, ''))}
+                  placeholder="mecanicadiesel"
+                />
+              </div>
+            </Field>
+            <Field label="Facebook (URL)">
+              <input
+                type="url"
+                className="input-field"
+                value={form.facebook_url}
+                onChange={(e) => set('facebook_url', e.target.value)}
+                placeholder="facebook.com/oficina..."
+              />
+            </Field>
+            <Field label="Site (URL)">
+              <div className="relative">
+                <Globe size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="url"
+                  className="input-field pl-8"
+                  value={form.website_url}
+                  onChange={(e) => set('website_url', e.target.value)}
+                  placeholder="www.oficina.com.br"
+                />
+              </div>
             </Field>
           </div>
         </div>

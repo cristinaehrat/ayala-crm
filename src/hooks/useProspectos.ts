@@ -37,6 +37,10 @@ export interface Prospecto {
   telefone_financeiro: string | null
   telefone_participante: string | null
   participantes: { nome: string; telefone: string }[] | null
+  instagram_handle: string | null
+  facebook_url: string | null
+  website_url: string | null
+  empresa_id: string | null
 }
 
 export type ProspectoFilter = 'todos' | 'a_contatar' | 'em_followup' | 'sem_leads' | 'com_leads'
