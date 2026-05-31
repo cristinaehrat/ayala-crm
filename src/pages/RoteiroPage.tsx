@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route } from 'lucide-react'
+import { useState, useMemo } from 'react'
+import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
 import { UF_OPTIONS } from '@/lib/utils'
 import { useGerarRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota } from '@/hooks/useGerarRoteiro'
@@ -45,6 +45,7 @@ const EMPTY: RoteiroForm = {
 export default function RoteiroPage() {
   const [form, setForm] = useState<RoteiroForm>(EMPTY)
   const [resultado, setResultado] = useState<RoteirizarResult | null>(null)
+  const [showLista, setShowLista] = useState(false)
   const gerarRoteiro = useGerarRoteiro()
 
   function set<K extends keyof RoteiroForm>(field: K, value: RoteiroForm[K]) {
@@ -289,6 +290,13 @@ export default function RoteiroPage() {
             {resultado.rotas.map((rota) => (
               <RotaCard key={rota.rota} rota={rota} />
             ))}
+
+            {/* LISTA PARA CAMPO */}
+            <ListaCampo
+              rotas={resultado.rotas}
+              open={showLista}
+              onToggle={() => setShowLista(v => !v)}
+            />
           </div>
         )}
       </div>
@@ -360,6 +368,113 @@ function CopyButton({ text, label, small }: { text: string; label: string; small
       {copied ? <Check size={small ? 12 : 14} /> : <Copy size={small ? 12 : 14} />}
       {copied ? 'Copiado!' : label}
     </button>
+  )
+}
+
+function shortAddr(addr: string): string {
+  return addr
+    .replace(/,?\s*Brasil$/i, '')
+    .replace(/,?\s*BR$/i, '')
+    .split(',')
+    .slice(0, 2)
+    .join(',')
+    .trim()
+}
+
+function toWaLink(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  const number = digits.startsWith('55') ? digits : `55${digits}`
+  return `https://wa.me/${number}`
+}
+
+function fmtPhone(phone: string): string {
+  const d = phone.replace(/\D/g, '')
+  if (d.length === 11) return `(${d.slice(0,2)}) ${d.slice(2,7)}-${d.slice(7)}`
+  if (d.length === 10) return `(${d.slice(0,2)}) ${d.slice(2,6)}-${d.slice(6)}`
+  return phone
+}
+
+function ListaCampo({ rotas, open, onToggle }: { rotas: Rota[]; open: boolean; onToggle: () => void }) {
+  const todasParadas = useMemo(() => rotas.flatMap(r => r.paradas), [rotas])
+
+  const textoParaCopiar = useMemo(() =>
+    todasParadas.map(p => {
+      const parts = [p.nome, shortAddr(p.endereco)]
+      if (p.telefone_oficina) parts.push(fmtPhone(p.telefone_oficina))
+      if (p.nome_responsavel || p.whatsapp_responsavel) {
+        const contato = [p.nome_responsavel, p.whatsapp_responsavel ? fmtPhone(p.whatsapp_responsavel) : '']
+          .filter(Boolean).join(' / ')
+        parts.push(contato)
+      }
+      return `${p.seq}. ${parts.join(' — ')}`
+    }).join('\n'),
+    [todasParadas]
+  )
+
+  return (
+    <div className="section-card overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors cursor-pointer"
+      >
+        <div className="flex items-center gap-2">
+          <List size={15} className="text-orange" />
+          <span className="font-display font-bold text-navy text-sm">Lista para campo</span>
+          <span className="text-[11px] text-muted">— copiar e colar no Maps / Waze</span>
+        </div>
+        <span className="text-muted text-xs">{open ? '▲' : '▼'}</span>
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-200">
+          <div className="flex items-center justify-between px-4 py-2 bg-slate-50">
+            <span className="text-[11px] text-muted">{todasParadas.length} paradas</span>
+            <CopyButton text={textoParaCopiar} label="Copiar lista" small />
+          </div>
+
+          <ol className="divide-y divide-slate-100">
+            {todasParadas.map((p) => (
+              <li key={p.seq} className="flex items-start gap-3 px-4 py-2.5">
+                <span className="w-5 h-5 rounded-full bg-orange/10 border border-orange/30 text-orange font-display font-bold flex items-center justify-center shrink-0 text-[10px] mt-0.5">
+                  {p.seq}
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="font-display font-semibold text-navy text-xs leading-tight">{p.nome}</p>
+                  <p className="text-muted text-[11px] mt-0.5 truncate">{shortAddr(p.endereco)}</p>
+                  <div className="flex items-center flex-wrap gap-x-3 gap-y-1 mt-1">
+                    {p.telefone_oficina && (
+                      <a
+                        href={`tel:${p.telefone_oficina.replace(/\D/g, '')}`}
+                        className="text-[11px] text-slate-600 hover:text-navy flex items-center gap-1"
+                      >
+                        ☎ {fmtPhone(p.telefone_oficina)}
+                      </a>
+                    )}
+                    {p.whatsapp_responsavel && (
+                      <a
+                        href={toWaLink(p.whatsapp_responsavel)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="flex items-center gap-1 text-[11px] text-emerald-700 hover:text-emerald-600 font-medium"
+                      >
+                        <MessageCircle size={11} />
+                        {p.nome_responsavel
+                          ? `${p.nome_responsavel} · ${fmtPhone(p.whatsapp_responsavel)}`
+                          : fmtPhone(p.whatsapp_responsavel)}
+                      </a>
+                    )}
+                    {!p.telefone_oficina && !p.whatsapp_responsavel && (
+                      <span className="text-[11px] text-slate-400 italic">sem contato</span>
+                    )}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
+    </div>
   )
 }
 

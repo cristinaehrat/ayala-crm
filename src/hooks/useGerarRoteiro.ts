@@ -25,6 +25,9 @@ export interface Parada {
   endereco: string
   marca: string
   potencial: string
+  telefone_oficina?: string
+  whatsapp_responsavel?: string
+  nome_responsavel?: string
 }
 
 export interface Rota {
