@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import { db } from '@/lib/dexie'
-import { isSuspiciousCity, normalizeCity, toE164, UF_OPTIONS } from '@/lib/utils'
+import { isSuspiciousCity, normalizeCity, toE164, UF_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CheckCircle, Check, Link2, Search, X } from 'lucide-react'
+import { CheckCircle, Check, Link2, Search, X, Plus, Trash2 } from 'lucide-react'
 import { useSearchProspectos, type Prospecto } from '@/hooks/useProspectos'
 import { useSearchEmpresas } from '@/hooks/useEmpresasCadastradas'
 import type { Empresa } from '@/lib/types'
@@ -70,6 +70,7 @@ interface VisitaForm {
   empresa_parceira: string
   observacoes: string
   qualificado_lead: boolean
+  participantes: { nome: string; telefone: string }[]
 }
 
 const EMPTY: VisitaForm = {
@@ -80,7 +81,7 @@ const EMPTY: VisitaForm = {
   marcas: [], perfil: '', potencial: '',
   resultado_visita: '', proximo_passo: '', data_retorno: '',
   consultor: '', empresa_parceira: '', observacoes: '',
-  qualificado_lead: false,
+  qualificado_lead: false, participantes: [],
 }
 
 export default function VisitaPage() {
@@ -147,6 +148,7 @@ export default function VisitaPage() {
       empresa_parceira: p.empresa_parceira ?? '',
       observacoes: p.observacoes ?? '',
       qualificado_lead: p.qualificado_lead ?? false,
+      participantes: p.participantes ?? [],
     })
   }
 
@@ -207,6 +209,7 @@ export default function VisitaPage() {
       canal_origem:                 'visita',
       data_visita:                  new Date().toISOString().split('T')[0],
       qualificado_lead:             form.qualificado_lead,
+      participantes:                form.participantes.filter(p => p.nome.trim() || p.telefone.trim()),
     }
 
     try {
@@ -497,6 +500,56 @@ export default function VisitaPage() {
             </div>
           </Section>
 
+          {/* SEÇÃO 2b — PARTICIPANTES */}
+          <Section title="Participantes do treinamento">
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs text-muted">Técnicos que farão o treinamento</p>
+              <button
+                type="button"
+                onClick={() => set('participantes', [...form.participantes, { nome: '', telefone: '' }])}
+                className="flex items-center gap-1 text-xs text-orange font-display font-bold cursor-pointer"
+              >
+                <Plus size={13} /> Adicionar
+              </button>
+            </div>
+            {form.participantes.length === 0 && (
+              <p className="text-xs text-slate-400 italic">Nenhum ainda — clique em Adicionar.</p>
+            )}
+            <div className="space-y-2">
+              {form.participantes.map((pt, i) => (
+                <div key={i} className="flex gap-2 items-center">
+                  <input
+                    className="input-field flex-1 text-xs"
+                    placeholder="Nome"
+                    value={pt.nome}
+                    onChange={(e) => {
+                      const list = [...form.participantes]
+                      list[i] = { ...list[i], nome: e.target.value }
+                      set('participantes', list)
+                    }}
+                  />
+                  <input
+                    className="input-field flex-1 text-xs"
+                    placeholder="WhatsApp"
+                    value={pt.telefone}
+                    onChange={(e) => {
+                      const list = [...form.participantes]
+                      list[i] = { ...list[i], telefone: e.target.value }
+                      set('participantes', list)
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => set('participantes', form.participantes.filter((_, j) => j !== i))}
+                    className="text-slate-400 hover:text-red-400 cursor-pointer shrink-0"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </Section>
+
           {/* SEÇÃO 3 — INTERESSE */}
           <Section title="Interesse">
             <Field label="Marca de interesse">
@@ -608,13 +661,10 @@ export default function VisitaPage() {
             </div>
 
             <Field label="Consultor" className="mt-3">
-              <input
-                type="text"
-                value={form.consultor}
-                onChange={(e) => set('consultor', e.target.value)}
-                placeholder="Nome do consultor"
-                className="input-field"
-              />
+              <select value={form.consultor} onChange={(e) => set('consultor', e.target.value)} className="input-field">
+                <option value="">— Selecione</option>
+                {CONSULTORES.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
             </Field>
 
             <Field label="Parceiro responsável" className="mt-3">

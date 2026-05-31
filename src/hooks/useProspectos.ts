@@ -36,6 +36,7 @@ export interface Prospecto {
   telefone_oficina: string | null
   telefone_financeiro: string | null
   telefone_participante: string | null
+  participantes: { nome: string; telefone: string }[] | null
 }
 
 export type ProspectoFilter = 'todos' | 'a_contatar' | 'em_followup' | 'sem_leads' | 'com_leads'
@@ -45,7 +46,7 @@ type AnyQuery = any
 
 const FILTER_MAP: Record<ProspectoFilter, (q: AnyQuery) => AnyQuery> = {
   todos:       (q) => q,
-  a_contatar:  (q) => q.eq('status_contato', 'a_contatar').eq('qualificado_lead', false),
+  a_contatar:  (q) => q.or('status_contato.eq.a_contatar,status_contato.is.null').eq('qualificado_lead', false),
   em_followup: (q) => q.in('status_contato', ['tentativa_1', 'tentativa_2', 'tentativa_3']),
   sem_leads:   (q) => q,
   com_leads:   (q) => q,

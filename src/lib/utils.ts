@@ -288,6 +288,8 @@ export const PERFIL_OPTIONS: { value: string; label: string }[] = [
   { value: 'grupo_b2b',  label: 'Grupo B2B' },
 ]
 
+export const CONSULTORES = ['Ismênia', 'Paola', 'Cristina', 'Bena'] as const
+
 export const POTENCIAL_BADGES: Record<string, { label: string; bg: string }> = {
   quente: { label: '🔥 Quente', bg: '#DC2626' },
   morno:  { label: 'Morno',    bg: '#F97316' },

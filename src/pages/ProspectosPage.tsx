@@ -1,8 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2 } from 'lucide-react'
 import { useProspectos, useRegistrarTentativa, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
-import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS } from '@/lib/utils'
+import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
+
+function toWaLink(phone: string): string {
+  const d = phone.replace(/\D/g, '')
+  return `https://wa.me/${d.startsWith('55') ? d : '55' + d}`
+}
 import { toast } from 'sonner'
 import Modal from '@/components/ui/Modal'
 
@@ -96,6 +101,7 @@ export default function ProspectosPage() {
         p.nome_responsavel_treinamento?.toLowerCase().includes(q) ||
         p.nome_contato_inicial?.toLowerCase().includes(q) ||
         p.whatsapp_responsavel?.includes(q) ||
+        p.telefone_oficina?.includes(q) ||
         p.cidade?.toLowerCase().includes(q)
       )
     }
@@ -349,19 +355,17 @@ function ProspectoCard({
               <UserPlus size={13} />
               {hasLeads ? 'Adicionar contato' : 'Criar lead vinculado'}
             </button>
-            {!hasLeads && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation()
-                  onOpenDetail()
-                }}
-                className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
-              >
-                <Info size={13} />
-                Ver detalhes
-              </button>
-            )}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onOpenDetail()
+              }}
+              className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
+            >
+              <Info size={13} />
+              Ver detalhes
+            </button>
             {ligarTel && (
               <a
                 href={`tel:${ligarTel.replace(/\D/g, '')}`}
@@ -383,7 +387,7 @@ function ProspectoCard({
             )}
             {p.whatsapp_responsavel && (
               <a
-                href={`https://wa.me/${p.whatsapp_responsavel.replace(/\D/g, '')}`}
+                href={toWaLink(p.whatsapp_responsavel)}
                 target="_blank"
                 rel="noreferrer"
                 onClick={(e) => e.stopPropagation()}
@@ -449,6 +453,24 @@ function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onCl
             </div>
           )}
 
+          {p.participantes && p.participantes.length > 0 && (
+            <div>
+              <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1.5">Participantes</p>
+              <div className="space-y-1.5">
+                {p.participantes.map((pt, i) => (
+                  <div key={i} className="flex items-center gap-2">
+                    <User size={12} className="text-muted shrink-0" />
+                    <span className="text-white text-xs">{pt.nome}</span>
+                    {pt.telefone && (
+                      <a href={toWaLink(pt.telefone)} target="_blank" rel="noreferrer" className="text-green-400 text-xs hover:underline ml-1">
+                        {pt.telefone}
+                      </a>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           <Row icon={<ClipboardList size={14} />} label="Resultado da visita" value={p.resultado_visita} />
           <Row label="Próximo passo" value={p.proximo_passo} />
           <Row label="Data de retorno" value={p.data_retorno} />
@@ -532,6 +554,8 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   )
 }
 
+type Participante = { nome: string; telefone: string }
+
 type ProspectoEditForm = {
   empresa_oficina: string
   nome_responsavel_treinamento: string
@@ -557,6 +581,7 @@ type ProspectoEditForm = {
   whatsapp_responsavel: string
   telefone_financeiro: string
   telefone_participante: string
+  participantes: Participante[]
 }
 
 function ProspectoEditModal({
@@ -607,6 +632,7 @@ function ProspectoEditModal({
       whatsapp_responsavel: prospecto.whatsapp_responsavel ?? '',
       telefone_financeiro: prospecto.telefone_financeiro ?? '',
       telefone_participante: prospecto.telefone_participante ?? '',
+      participantes: prospecto.participantes ?? [],
     })
   }, [prospecto])
 
@@ -663,6 +689,7 @@ function ProspectoEditModal({
       whatsapp_responsavel: form.whatsapp_responsavel || null,
       telefone_financeiro: form.telefone_financeiro || null,
       telefone_participante: form.telefone_participante || null,
+      participantes: form.participantes.filter(p => p.nome.trim() || p.telefone.trim()),
     })
   }
 
@@ -797,7 +824,10 @@ function ProspectoEditModal({
             <input type="date" className="input-field" value={form.data_retorno} onChange={(e) => set('data_retorno', e.target.value)} />
           </Field>
           <Field label="Consultor">
-            <input className="input-field" value={form.consultor} onChange={(e) => set('consultor', e.target.value)} />
+            <select className="input-field" value={form.consultor} onChange={(e) => set('consultor', e.target.value)}>
+              <option value="">— Selecione</option>
+              {CONSULTORES.map((c) => <option key={c} value={c}>{c}</option>)}
+            </select>
           </Field>
           <Field label="Parceiro">
             <select className="input-field" value={form.empresa_parceira} onChange={(e) => set('empresa_parceira', e.target.value)}>
@@ -805,6 +835,56 @@ function ProspectoEditModal({
               {PARCEIRO_OPTIONS.map((item) => <option key={item.value} value={item.value}>{item.label}</option>)}
             </select>
           </Field>
+        </div>
+
+        {/* Participantes */}
+        <div>
+          <div className="flex items-center justify-between mb-2">
+            <p className="text-xs font-display font-semibold text-muted uppercase tracking-wide">Participantes do treinamento</p>
+            <button
+              type="button"
+              onClick={() => set('participantes', [...form.participantes, { nome: '', telefone: '' }])}
+              className="flex items-center gap-1 text-xs text-orange hover:text-orange/80 font-display font-bold cursor-pointer"
+            >
+              <Plus size={13} /> Adicionar
+            </button>
+          </div>
+          {form.participantes.length === 0 && (
+            <p className="text-xs text-slate-500 italic">Nenhum participante adicionado ainda.</p>
+          )}
+          <div className="space-y-2">
+            {form.participantes.map((pt, i) => (
+              <div key={i} className="flex gap-2 items-center">
+                <input
+                  className="input-field flex-1 text-xs"
+                  placeholder="Nome"
+                  value={pt.nome}
+                  onChange={(e) => {
+                    const list = [...form.participantes]
+                    list[i] = { ...list[i], nome: e.target.value }
+                    set('participantes', list)
+                  }}
+                />
+                <input
+                  className="input-field flex-1 text-xs"
+                  placeholder="WhatsApp / Telefone"
+                  value={pt.telefone}
+                  onChange={(e) => {
+                    const list = [...form.participantes]
+                    list[i] = { ...list[i], telefone: e.target.value }
+                    set('participantes', list)
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={() => set('participantes', form.participantes.filter((_, j) => j !== i))}
+                  className="text-slate-400 hover:text-red-400 cursor-pointer shrink-0"
+                >
+                  <Trash2 size={14} />
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
         <Field label="Resultado da visita / contato">
