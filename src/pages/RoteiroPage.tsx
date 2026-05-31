@@ -137,12 +137,16 @@ export default function RoteiroPage() {
       })
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
       const data = await resp.json()
-      const criados: number = data.criados ?? 0
-      const duplicatas: number = data.duplicatas ?? 0
-      if (criados > 0) {
-        toast.success(`${criados} nova${criados !== 1 ? 's' : ''} oficina${criados !== 1 ? 's' : ''} adicionada${criados !== 1 ? 's' : ''} ao banco!${duplicatas > 0 ? ` (${duplicatas} duplicata${duplicatas !== 1 ? 's' : ''} ignorada${duplicatas !== 1 ? 's' : ''})` : ''}`)
+      if (data.status === 'iniciado') {
+        toast.success('Busca iniciada! Novas oficinas aparecerão em Prospectos em ~10 minutos.')
       } else {
-        toast('Nenhuma oficina nova encontrada no Instagram para esta cidade.')
+        const criados: number = data.criados ?? 0
+        const duplicatas: number = data.duplicatas ?? 0
+        if (criados > 0) {
+          toast.success(`${criados} nova${criados !== 1 ? 's' : ''} oficina${criados !== 1 ? 's' : ''} adicionada${criados !== 1 ? 's' : ''} ao banco!${duplicatas > 0 ? ` (${duplicatas} duplicata${duplicatas !== 1 ? 's' : ''} ignorada${duplicatas !== 1 ? 's' : ''})` : ''}`)
+        } else {
+          toast('Nenhuma oficina nova encontrada no Instagram para esta cidade.')
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao buscar no Instagram')
