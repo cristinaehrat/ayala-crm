@@ -80,6 +80,22 @@ export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string) {
   })
 }
 
+export function useProspectosByDataVisita(date: string | null) {
+  return useQuery<Prospecto[]>({
+    queryKey: ['prospectos', 'data_visita', date],
+    enabled: !!date,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cadastro_prospectos')
+        .select('*')
+        .eq('data_visita', date!)
+        .order('empresa_oficina', { ascending: true })
+      if (error) throw error
+      return (data ?? []) as Prospecto[]
+    },
+  })
+}
+
 export function useProspectosAgendaCount() {
   const today = new Date().toISOString().split('T')[0]
   return useQuery<number>({

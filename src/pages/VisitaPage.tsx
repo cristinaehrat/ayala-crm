@@ -3,7 +3,7 @@ import { useOfflineSync } from '@/hooks/useOfflineSync'
 import { db } from '@/lib/dexie'
 import { isSuspiciousCity, normalizeCity, toE164, UF_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CheckCircle, Check, Link2, Search, X, Plus, Trash2, AtSign, Globe } from 'lucide-react'
+import { CheckCircle, Check, Link2, Search, X, Plus, Trash2, AtSign, Globe, MapPin, Phone } from 'lucide-react'
 import { useSearchProspectos, type Prospecto } from '@/hooks/useProspectos'
 import { useSearchEmpresas } from '@/hooks/useEmpresasCadastradas'
 import type { Empresa } from '@/lib/types'
@@ -340,6 +340,20 @@ export default function VisitaPage() {
                             {prospecto.whatsapp_responsavel ? ` · ${prospecto.whatsapp_responsavel}` : ''}
                             {prospecto.cidade ? ` · ${prospecto.cidade}${prospecto.uf ? `/${prospecto.uf}` : ''}` : ''}
                           </p>
+                          {(prospecto.endereco || prospecto.telefone_oficina) && (
+                            <div className="flex gap-2 mt-0.5">
+                              {prospecto.endereco && (
+                                <span className="flex items-center gap-0.5 text-[10px] text-green-600 font-medium">
+                                  <MapPin size={9} />endereço
+                                </span>
+                              )}
+                              {prospecto.telefone_oficina && (
+                                <span className="flex items-center gap-0.5 text-[10px] text-green-600 font-medium">
+                                  <Phone size={9} />telefone
+                                </span>
+                              )}
+                            </div>
+                          )}
                         </button>
                       ))}
                     </div>

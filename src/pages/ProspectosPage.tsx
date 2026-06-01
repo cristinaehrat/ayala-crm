@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X } from 'lucide-react'
 
 function lembreteStatus(data_retorno?: string | null) {
   if (!data_retorno) return null
@@ -13,7 +13,7 @@ function fmtLembrete(data_retorno: string) {
   const [, m, d] = data_retorno.split('-')
   return `${d}/${m}`
 }
-import { useProspectos, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
+import { useProspectos, useProspectosByDataVisita, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { useHistoricoContatos, useCreateHistoricoContato, RESULTADO_LABEL, INTERESSE_LABEL, TIPO_CONTATO_LABEL } from '@/hooks/useHistoricoContatos'
@@ -89,6 +89,7 @@ const MARCAS = ['Volvo', 'DAF', 'Scania'] as const
 
 export default function ProspectosPage() {
   const [filter, setFilter] = useState<ProspectoFilter>('todos')
+  const [dataVisita, setDataVisita] = useState<string>('')
   const [ufFilter, setUfFilter] = useState<string>('')
   const [potencialFilter, setPotencialFilter] = useState<string>('')
   const [search, setSearch] = useState('')
@@ -98,7 +99,9 @@ export default function ProspectosPage() {
   const [editing, setEditing] = useState<Prospecto | null>(null)
   const [contatoProspecto, setContatoProspecto] = useState<Prospecto | null>(null)
 
-  const { data: prospectos = [], isLoading } = useProspectos(filter, ufFilter || undefined)
+  const today = new Date().toISOString().split('T')[0]
+  const { data: prospectos = [], isLoading } = useProspectos(dataVisita ? 'todos' : filter, dataVisita ? undefined : (ufFilter || undefined))
+  const { data: visitasData = [], isLoading: loadingVisitas } = useProspectosByDataVisita(dataVisita || null)
   const { data: leadCounts = {} } = useProspectoLeadCounts()
   const { data: ufs = [] } = useDistinctUFs()
   const { data: agendaCount = 0 } = useProspectosAgendaCount()
@@ -106,11 +109,12 @@ export default function ProspectosPage() {
   const createLead = useCreateLeadFromProspecto()
   const createHistorico = useCreateHistoricoContato()
 
-  const filtered = prospectos.filter((p) => {
+  const baseList = dataVisita ? visitasData : prospectos
+  const filtered = baseList.filter((p) => {
     if (potencialFilter && p.potencial !== potencialFilter) return false
     const leadCount = getProspectoLeadCount(p, leadCounts)
-    if (filter === 'sem_leads' && leadCount > 0) return false
-    if (filter === 'com_leads' && leadCount === 0) return false
+    if (!dataVisita && filter === 'sem_leads' && leadCount > 0) return false
+    if (!dataVisita && filter === 'com_leads' && leadCount === 0) return false
     if (search.trim()) {
       const q = search.toLowerCase()
       return (
@@ -156,6 +160,39 @@ export default function ProspectosPage() {
 
   return (
     <div className="flex flex-col h-full md:ml-56">
+      {/* Filtro de visitas por data */}
+      <div className="flex items-center gap-2 px-3 pt-3 pb-0 shrink-0 flex-wrap">
+        <CalendarDays size={13} className="text-muted shrink-0" />
+        <span className="text-xs text-muted font-display shrink-0">Visitas do dia:</span>
+        <button
+          onClick={() => setDataVisita(dataVisita === today ? '' : today)}
+          className={cn(pillBase, dataVisita === today ? pillActive : pillInactive)}
+        >
+          Hoje
+          {dataVisita === today && (
+            <span className="rounded-full text-[10px] font-bold px-1.5 min-w-[1.25rem] text-center leading-5 bg-white/20 text-white">
+              {loadingVisitas ? '…' : visitasData.length}
+            </span>
+          )}
+        </button>
+        <input
+          type="date"
+          value={dataVisita}
+          onChange={(e) => setDataVisita(e.target.value)}
+          className="text-xs border border-slate-300 rounded-lg px-2 py-1 bg-white text-navy h-7 cursor-pointer"
+        />
+        {dataVisita && (
+          <button onClick={() => setDataVisita('')} className="text-[11px] text-muted hover:text-navy flex items-center gap-0.5">
+            <X size={11} />limpar
+          </button>
+        )}
+        {dataVisita && !loadingVisitas && (
+          <span className="text-xs font-display font-semibold text-orange">
+            {visitasData.length} visita{visitasData.length !== 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
+
       {/* Search */}
       <div className="px-3 pt-3 pb-1 flex gap-2 shrink-0">
         <div className="relative flex-1">
