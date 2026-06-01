@@ -1,30 +1,10 @@
-import { cn, MARCA_BADGES, relativeTime, formatPhone, ETIQUETA_CORES, ETIQUETA_LABELS, getPrimaryLeadLabel, getLeadActionSignals } from '@/lib/utils'
+import { cn, MARCA_BADGES, POTENCIAL_BADGES, STATUS_COLORS, relativeTime, formatPhone, ETIQUETA_CORES, ETIQUETA_LABELS, getPrimaryLeadLabel, getLeadActionSignals } from '@/lib/utils'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import type { Lead } from '@/lib/types'
 
 interface Props {
   lead: Lead
   onClick: () => void
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  lead_novo:            '#1565C0',
-  qualificado:          '#2563EB',
-  aguardando_ismenia:   '#7C3AED',
-  visualizou_preco:     '#B45309',
-  reserva:              '#DC2626',
-  aguardando_pagamento: '#B45309',
-  inscrito:             '#2E7D32',
-  lista_espera:         '#E65100',
-  sem_interesse:        '#64748B',
-  perdido:              '#475569',
-}
-
-const POTENCIAL_BADGES: Record<string, { label: string; className: string }> = {
-  alto: { label: 'Alto', className: 'bg-red-100 text-red-700' },
-  medio: { label: 'Médio', className: 'bg-orange-100 text-orange-700' },
-  baixo: { label: 'Baixo', className: 'bg-slate-200 text-slate-700' },
-  sem_interesse: { label: 'Sem interesse', className: 'bg-slate-300 text-slate-700' },
 }
 
 const COL = 'grid-cols-[minmax(240px,300px)_128px_92px_180px_minmax(180px,1fr)_84px_112px] xl:grid-cols-[minmax(280px,340px)_138px_100px_198px_minmax(220px,1fr)_92px_124px] gap-x-3 justify-start'
@@ -97,7 +77,10 @@ export default function LeadRow({ lead, onClick }: Props) {
       {/* Potencial */}
       <div className="pr-2">
         {lead.potencial && POTENCIAL_BADGES[lead.potencial] ? (
-          <span className={cn('inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold uppercase tracking-wide', POTENCIAL_BADGES[lead.potencial].className)}>
+          <span
+            className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold uppercase tracking-wide text-white"
+            style={{ backgroundColor: POTENCIAL_BADGES[lead.potencial].bg }}
+          >
             {POTENCIAL_BADGES[lead.potencial].label}
           </span>
         ) : (

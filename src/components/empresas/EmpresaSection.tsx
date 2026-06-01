@@ -155,7 +155,7 @@ export default function EmpresaSection({ leadId, empresaId, leadNome }: Props) {
       <div className="space-y-2">
         {autoSuggestions.length > 0 && (
           <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
-            <p className="text-xs font-semibold text-amber-300">
+            <p className="text-xs font-display font-semibold text-amber-300">
               Empresa encontrada nos registros — clique para vincular
             </p>
             {autoSuggestions.slice(0, 3).map((e) => (

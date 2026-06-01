@@ -1,5 +1,5 @@
 import { BellRing } from 'lucide-react'
-import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes, getPrimaryLeadLabel, getLeadActionSignals } from '@/lib/utils'
+import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes, getPrimaryLeadLabel, getLeadActionSignals, STATUS_COLORS } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import { KANBAN_COLUMNS } from '@/lib/types'
 import type { Lead } from '@/lib/types'
@@ -9,19 +9,6 @@ interface Props {
   active?: boolean
   onClick: () => void
   variant?: 'light' | 'dark'
-}
-
-const STATUS_COLORS: Record<string, string> = {
-  lead_novo:            '#1565C0',
-  qualificado:          '#2563EB',
-  aguardando_ismenia:   '#7C3AED',
-  visualizou_preco:     '#B45309',
-  reserva:              '#DC2626',
-  aguardando_pagamento: '#B45309',
-  inscrito:             '#2E7D32',
-  lista_espera:         '#E65100',
-  sem_interesse:        '#64748B',
-  perdido:              '#475569',
 }
 
 export default function LeadCard({ lead, active, onClick, variant = 'light' }: Props) {

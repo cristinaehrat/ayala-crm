@@ -296,6 +296,19 @@ export const POTENCIAL_BADGES: Record<string, { label: string; bg: string }> = {
   frio:   { label: '❄ Frio',   bg: '#64748B' },
 }
 
+export const STATUS_COLORS: Record<string, string> = {
+  lead_novo:            '#1565C0',
+  qualificado:          '#2563EB',
+  aguardando_ismenia:   '#7C3AED',
+  visualizou_preco:     '#B45309',
+  reserva:              '#DC2626',
+  aguardando_pagamento: '#B45309',
+  inscrito:             '#2E7D32',
+  lista_espera:         '#E65100',
+  sem_interesse:        '#64748B',
+  perdido:              '#475569',
+}
+
 export function formatDate(d: string | null | undefined): string {
   if (!d) return '—'
   try {

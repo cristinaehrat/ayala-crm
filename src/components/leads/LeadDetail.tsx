@@ -598,20 +598,20 @@ export default function LeadDetail({ leadId, onClose }: Props) {
       {/* Banner: sugestão de vínculo com prospecto cadastrado */}
       {!lead.id_prospecto && prospectoSuggestions.length > 0 && (
         <div className="px-4 pb-2">
-          <div className="rounded-lg border border-blue-500/40 bg-blue-500/10 p-3 space-y-2">
-            <p className="text-xs font-semibold text-blue-300">
-              Este lead pode pertencer a uma oficina cadastrada
+          <div className="rounded-lg border border-white/20 bg-white/5 p-3 space-y-2">
+            <p className="text-xs font-display font-semibold text-muted uppercase tracking-wide">
+              Oficina cadastrada com esse nome — vincular?
             </p>
             {prospectoSuggestions.slice(0, 2).map((p) => (
               <div key={p.id_visita} className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <p className="text-xs font-semibold text-white truncate">{p.empresa_oficina}</p>
-                  <p className="text-xs text-slate-400">{p.cidade}{p.uf ? ` / ${p.uf}` : ''}</p>
+                  <p className="text-xs font-display font-semibold text-white truncate">{p.empresa_oficina}</p>
+                  <p className="text-xs text-muted">{p.cidade}{p.uf ? ` / ${p.uf}` : ''}</p>
                 </div>
                 <button
                   onClick={() => handleLinkProspecto(p)}
                   disabled={updateLead.isPending}
-                  className="text-xs font-bold text-blue-300 border border-blue-400/40 rounded px-2.5 py-1 hover:border-blue-400/70 transition-colors shrink-0 disabled:opacity-50"
+                  className="text-xs font-display font-bold text-orange border border-orange/40 rounded px-2.5 py-1 hover:border-orange/70 transition-colors shrink-0 disabled:opacity-50"
                 >
                   Vincular
                 </button>
