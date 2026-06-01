@@ -34,6 +34,7 @@ export interface Lead {
   data_retorno: string | null
   telefone_financeiro: string | null
   telefone_oficina: string | null
+  id_prospecto: string | null
 }
 
 export type TurmaStatus = 'aberta' | 'espera' | 'encerrada'

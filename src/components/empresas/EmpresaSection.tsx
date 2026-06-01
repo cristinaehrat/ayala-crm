@@ -35,6 +35,9 @@ export default function EmpresaSection({ leadId, empresaId, leadNome }: Props) {
   const [mode, setMode] = useState<'view' | 'search' | 'create' | 'edit'>('view')
   const [query, setQuery] = useState('')
   const { data: searchResults } = useSearchEmpresas(query)
+  const { data: autoSuggestions = [] } = useSearchEmpresas(
+    !empresaId && mode === 'view' ? (leadNome ?? '') : ''
+  )
 
   function buildWhatsappLink(token: string, responsavel: string | null) {
     const formUrl = `${CRM_URL}/cadastro/${token}`
@@ -149,21 +152,43 @@ export default function EmpresaSection({ leadId, empresaId, leadNome }: Props) {
     }
 
     return (
-      <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-dashed border-white/10">
-        <Building2 size={16} className="text-slate-500 shrink-0" />
-        <span className="text-sm text-slate-500 flex-1">Sem empresa vinculada</span>
-        <button
-          onClick={() => setMode('search')}
-          className="text-xs font-bold text-orange hover:text-orange/80 flex items-center gap-1"
-        >
-          <Link2 size={12} /> Vincular
-        </button>
-        <button
-          onClick={() => setMode('create')}
-          className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1"
-        >
-          <Plus size={12} /> Nova
-        </button>
+      <div className="space-y-2">
+        {autoSuggestions.length > 0 && (
+          <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+            <p className="text-xs font-semibold text-amber-300">
+              Empresa encontrada nos registros — clique para vincular
+            </p>
+            {autoSuggestions.slice(0, 3).map((e) => (
+              <button
+                key={e.id}
+                onClick={() => handleLink(e)}
+                className="w-full text-left flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-400/50 transition-colors"
+              >
+                <div>
+                  <p className="text-xs font-semibold text-white">{e.nome_fantasia ?? e.razao_social}</p>
+                  <p className="text-xs text-slate-400">{e.cnpj ? `CNPJ ${e.cnpj}` : ''}{e.cidade ? ` · ${e.cidade}` : ''}</p>
+                </div>
+                <span className="text-xs font-bold text-amber-400 shrink-0">Usar →</span>
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="flex items-center gap-3 p-3 rounded-lg bg-white/5 border border-dashed border-white/10">
+          <Building2 size={16} className="text-slate-500 shrink-0" />
+          <span className="text-sm text-slate-500 flex-1">Sem empresa vinculada</span>
+          <button
+            onClick={() => setMode('search')}
+            className="text-xs font-bold text-orange hover:text-orange/80 flex items-center gap-1"
+          >
+            <Link2 size={12} /> Vincular
+          </button>
+          <button
+            onClick={() => setMode('create')}
+            className="text-xs font-bold text-slate-400 hover:text-white flex items-center gap-1"
+          >
+            <Plus size={12} /> Nova
+          </button>
+        </div>
       </div>
     )
   }

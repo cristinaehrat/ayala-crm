@@ -4,6 +4,8 @@ import {
 } from 'lucide-react'
 import EmpresaSection from '@/components/empresas/EmpresaSection'
 import { useLead, useUpdateLead, useDeleteLead, useTurma } from '@/hooks/useLeads'
+import { useSearchProspectos } from '@/hooks/useProspectos'
+import type { Prospecto } from '@/hooks/useProspectos'
 import {
   ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime,
   STATUS_ALL_OPTIONS, CANAL_ORIGEM_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, UF_OPTIONS,
@@ -105,6 +107,9 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   })
 
   const { data: turma } = useTurma(lead?.turma_selecionada ?? null)
+  const { data: prospectoSuggestions = [] } = useSearchProspectos(
+    !lead?.id_prospecto && (lead?.empresa_oficina?.length ?? 0) >= 2 ? (lead?.empresa_oficina ?? '') : ''
+  )
 
   useEffect(() => {
     if (lead) {
@@ -167,6 +172,17 @@ export default function LeadDetail({ leadId, onClose }: Props) {
     await deleteLead.mutateAsync(lead!.id)
     toast.success('Lead removido')
     onClose()
+  }
+
+  async function handleLinkProspecto(prospecto: Prospecto) {
+    await updateLead.mutateAsync({
+      id: lead!.id,
+      data: {
+        id_prospecto: prospecto.id_visita,
+        ...(prospecto.empresa_id && !lead!.empresa_id ? { empresa_id: prospecto.empresa_id } : {}),
+      },
+    })
+    toast.success(`Lead vinculado à oficina ${prospecto.empresa_oficina}`)
   }
 
   async function handleSaveNota() {
@@ -578,6 +594,32 @@ export default function LeadDetail({ leadId, onClose }: Props) {
             : null
         } />
       </div>
+
+      {/* Banner: sugestão de vínculo com prospecto cadastrado */}
+      {!lead.id_prospecto && prospectoSuggestions.length > 0 && (
+        <div className="px-4 pb-2">
+          <div className="rounded-lg border border-blue-500/40 bg-blue-500/10 p-3 space-y-2">
+            <p className="text-xs font-semibold text-blue-300">
+              Este lead pode pertencer a uma oficina cadastrada
+            </p>
+            {prospectoSuggestions.slice(0, 2).map((p) => (
+              <div key={p.id_visita} className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">{p.empresa_oficina}</p>
+                  <p className="text-xs text-slate-400">{p.cidade}{p.uf ? ` / ${p.uf}` : ''}</p>
+                </div>
+                <button
+                  onClick={() => handleLinkProspecto(p)}
+                  disabled={updateLead.isPending}
+                  className="text-xs font-bold text-blue-300 border border-blue-400/40 rounded px-2.5 py-1 hover:border-blue-400/70 transition-colors shrink-0 disabled:opacity-50"
+                >
+                  Vincular
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Empresa / Pagante */}
       <div className="px-4 pb-4">

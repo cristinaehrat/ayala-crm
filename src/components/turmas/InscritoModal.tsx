@@ -459,6 +459,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
   const empresaToken = linkedEmpresa?.fill_token ?? null
   const empresaPhone = (linkedEmpresa?.whatsapp_responsavel ?? form.pj_whatsapp_responsavel ?? '').replace(/\D/g, '')
   const empresaResponsavel = linkedEmpresa?.nome_responsavel ?? form.pj_nome_responsavel ?? null
+  const financeiroPhone = (leadData?.telefone_financeiro ?? preloadedLead?.telefone_financeiro ?? '').replace(/\D/g, '')
 
   function buildPublicFormUrl(token: string) {
     return `${CRM_URL}/cadastro/${token}`
@@ -750,21 +751,54 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                           <Copy size={12} />
                           Copiar link
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => window.open(
-                            buildWhatsappLink(
-                              empresaToken,
-                              `Olá${empresaResponsavel ? `, ${empresaResponsavel.split(' ')[0]}` : ''}! 😊\n\nPara confirmar a inscrição no treinamento, precisamos dos dados da empresa. Preencha este formulário:`,
-                              empresaPhone || undefined,
-                            ),
-                            '_blank',
-                          )}
-                          className="btn-primary text-xs px-3 py-2 flex-1 flex items-center justify-center gap-1.5"
-                        >
-                          <Send size={12} />
-                          Enviar WPP
-                        </button>
+                        {financeiroPhone ? (
+                          <>
+                            <button
+                              type="button"
+                              onClick={() => window.open(
+                                buildWhatsappLink(
+                                  empresaToken,
+                                  `Olá${empresaResponsavel ? `, ${empresaResponsavel.split(' ')[0]}` : ''}! 😊\n\nPara confirmar a inscrição no treinamento, precisamos dos dados da empresa. Preencha este formulário:`,
+                                  empresaPhone || undefined,
+                                ),
+                                '_blank',
+                              )}
+                              className="btn-secondary text-xs px-2 py-2 flex items-center justify-center gap-1"
+                            >
+                              <Send size={11} /> Lead
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => window.open(
+                                buildWhatsappLink(
+                                  empresaToken,
+                                  `Olá! 😊\n\nPara confirmar a inscrição no treinamento, precisamos dos dados da empresa. Preencha este formulário:`,
+                                  financeiroPhone,
+                                ),
+                                '_blank',
+                              )}
+                              className="btn-primary text-xs px-2 py-2 flex items-center justify-center gap-1"
+                            >
+                              <Send size={11} /> Financeiro
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => window.open(
+                              buildWhatsappLink(
+                                empresaToken,
+                                `Olá${empresaResponsavel ? `, ${empresaResponsavel.split(' ')[0]}` : ''}! 😊\n\nPara confirmar a inscrição no treinamento, precisamos dos dados da empresa. Preencha este formulário:`,
+                                empresaPhone || undefined,
+                              ),
+                              '_blank',
+                            )}
+                            className="btn-primary text-xs px-3 py-2 flex-1 flex items-center justify-center gap-1.5"
+                          >
+                            <Send size={12} />
+                            Enviar WPP
+                          </button>
+                        )}
                       </div>
                     </>
                   ) : form.empresa_id || activeInscrito?.empresa_id ? (
