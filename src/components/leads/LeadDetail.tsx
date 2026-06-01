@@ -40,6 +40,8 @@ type EditForm = {
   requer_atencao: boolean
   porte_oficina: string
   qtd_interessados: string
+  telefone_financeiro: string
+  telefone_oficina: string
 }
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
@@ -99,6 +101,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
     status: '', marca_interesse: '', potencial: '', proximo_passo: '', data_retorno: '',
     canal_origem: '', observacoes: '', interesses: [],
     requer_atencao: false, porte_oficina: '', qtd_interessados: '',
+    telefone_financeiro: '', telefone_oficina: '',
   })
 
   const { data: turma } = useTurma(lead?.turma_selecionada ?? null)
@@ -122,6 +125,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         requer_atencao:   lead.requer_atencao ?? false,
         porte_oficina:    lead.porte_oficina ?? '',
         qtd_interessados: lead.qtd_interessados ?? '',
+        telefone_financeiro: lead.telefone_financeiro ?? '',
+        telefone_oficina:    lead.telefone_oficina ?? '',
       })
     }
   }, [lead])
@@ -199,6 +204,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         status:           form.status || null,
         marca_interesse:  form.marca_interesse || null,
         potencial:        form.potencial || null,
+        telefone_financeiro: form.telefone_financeiro || null,
+        telefone_oficina:    form.telefone_oficina || null,
         proximo_passo:    form.proximo_passo || null,
         data_retorno:     form.data_retorno || null,
         canal_origem:     form.canal_origem || null,
@@ -255,6 +262,14 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                   <option value="">—</option>
                   {UF_OPTIONS.map((uf) => <option key={uf} value={uf}>{uf}</option>)}
                 </select>
+              </Field>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Field label="Tel. Oficina / Geral">
+                <input type="tel" className="input-field" placeholder="(47) 3333-4444" value={form.telefone_oficina} onChange={(e) => set('telefone_oficina', e.target.value)} />
+              </Field>
+              <Field label="Tel. Financeiro / RH">
+                <input type="tel" className="input-field" placeholder="(47) 3333-5555" value={form.telefone_financeiro} onChange={(e) => set('telefone_financeiro', e.target.value)} />
               </Field>
             </div>
             <Field label="Porte da Oficina">
@@ -509,7 +524,9 @@ export default function LeadDetail({ leadId, onClose }: Props) {
 
       {/* Data grid */}
       <div className="p-4 space-y-3">
-        <InfoRow icon={<Phone size={14} />} label="Telefone" value={formatPhone(lead.telefone)} />
+        <InfoRow icon={<Phone size={14} />} label="WhatsApp" value={formatPhone(lead.telefone)} />
+        {lead.telefone_oficina && <InfoRow icon={<Phone size={14} />} label="Tel. Oficina" value={lead.telefone_oficina} />}
+        {lead.telefone_financeiro && <InfoRow icon={<Phone size={14} />} label="Financeiro / RH" value={lead.telefone_financeiro} />}
         <InfoRow icon={<MapPin size={14} />} label="Cidade" value={lead.cidade && lead.uf ? `${lead.cidade} / ${lead.uf}` : lead.cidade} />
         <InfoRow icon={<Building2 size={14} />} label="Oficina" value={lead.empresa_oficina} />
         <InfoRow icon={<Wrench size={14} />} label="Tipo de Oficina" value={lead.tipo_oficina} />

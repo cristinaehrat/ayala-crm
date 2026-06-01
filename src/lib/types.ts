@@ -32,6 +32,8 @@ export interface Lead {
   total_interacoes: number | null
   follow_up_enviado: boolean | null
   data_retorno: string | null
+  telefone_financeiro: string | null
+  telefone_oficina: string | null
 }
 
 export type TurmaStatus = 'aberta' | 'espera' | 'encerrada'

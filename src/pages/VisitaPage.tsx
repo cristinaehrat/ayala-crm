@@ -51,6 +51,7 @@ interface VisitaForm {
   empresa_oficina: string
   endereco: string
   telefone_oficina: string
+  telefone_financeiro: string
   tipo_oficinas: string[]
   porte_oficina: string
   multimarcas: boolean
@@ -77,7 +78,7 @@ interface VisitaForm {
 }
 
 const EMPTY: VisitaForm = {
-  empresa_oficina: '', endereco: '', telefone_oficina: '',
+  empresa_oficina: '', endereco: '', telefone_oficina: '', telefone_financeiro: '',
   tipo_oficinas: [], porte_oficina: '', multimarcas: false,
   especializacao_oficina: '', qtd_interessados: '',
   nome: '', telefone: '', cidade: '', uf: '',
@@ -128,6 +129,7 @@ export default function VisitaPage() {
       empresa_oficina: p.empresa_oficina ?? '',
       endereco: p.endereco ?? '',
       telefone_oficina: p.telefone_oficina ?? '',
+      telefone_financeiro: p.telefone_financeiro ?? '',
       tipo_oficinas: (p.tipo_oficina ?? '').split(',').map(v => v.trim()).filter(Boolean),
       porte_oficina: p.porte_oficina ?? '',
       multimarcas: p.multimarcas ?? false,
@@ -195,6 +197,7 @@ export default function VisitaPage() {
       empresa_oficina:              form.empresa_oficina.trim() || null,
       endereco:                     form.endereco.trim() || null,
       telefone_oficina:             form.telefone_oficina.trim() || null,
+      telefone_financeiro:          form.telefone_financeiro.trim() || null,
       nome_responsavel_treinamento: form.nome.trim() || null,
       whatsapp_responsavel:         toE164(form.telefone) || null,
       cidade:                       cidade,
@@ -408,15 +411,14 @@ export default function VisitaPage() {
               />
             </Field>
 
-            <Field label="Telefone da oficina" className="mt-3">
-              <input
-                type="tel"
-                value={form.telefone_oficina}
-                onChange={(e) => set('telefone_oficina', e.target.value)}
-                placeholder="(47) 3333-4444"
-                className="input-field"
-              />
-            </Field>
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <Field label="Telefone da oficina">
+                <input type="tel" value={form.telefone_oficina} onChange={(e) => set('telefone_oficina', e.target.value)} placeholder="(47) 3333-4444" className="input-field" />
+              </Field>
+              <Field label="Financeiro / RH">
+                <input type="tel" value={form.telefone_financeiro} onChange={(e) => set('telefone_financeiro', e.target.value)} placeholder="(47) 3333-5555" className="input-field" />
+              </Field>
+            </div>
 
             <Field label="Tipo de oficina" className="mt-3">
               <div className="flex flex-wrap gap-2">
