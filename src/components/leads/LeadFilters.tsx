@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
 import type { LeadFilter } from '@/hooks/useLeads'
-import { useDistinctUFs, useDistinctCidades } from '@/hooks/useLeads'
+import { useDistinctUFs, useDistinctCidades, useLeadsAgendaCount } from '@/hooks/useLeads'
 import { cn } from '@/lib/utils'
-import { ChevronDown } from 'lucide-react'
+import { ChevronDown, BellRing } from 'lucide-react'
 
 const FILTERS: { id: LeadFilter; label: string }[] = [
+  { id: 'hoje',                 label: 'Hoje' },
   { id: 'todos',                label: 'Todos' },
   { id: 'hot_lead',             label: 'Hot Lead' },
   { id: 'ag_ismenia',           label: 'Ag. Ismênia' },
@@ -39,6 +40,7 @@ export default function LeadFilters({ active, onChange, mode = 'default' }: Prop
 
   const { data: ufs = [] } = useDistinctUFs()
   const { data: cidades = [] } = useDistinctCidades()
+  const { data: agendaCount = 0 } = useLeadsAgendaCount()
 
   const activeUf = active.startsWith('uf:') ? active.slice(3) : null
   const activeCidade = active.startsWith('cidade:') ? active.slice(7) : null
@@ -56,9 +58,19 @@ export default function LeadFilters({ active, onChange, mode = 'default' }: Prop
             <button
               key={id}
               onClick={() => onChange(id)}
-              className={cn(pillBase, active === id ? pillActive : pillInactive)}
+              className={cn(
+                pillBase,
+                active === id ? pillActive : pillInactive,
+                id === 'hoje' && agendaCount > 0 && active !== 'hoje' ? 'border-orange/60 text-orange' : '',
+              )}
             >
+              {id === 'hoje' && <BellRing size={11} />}
               {label}
+              {id === 'hoje' && agendaCount > 0 && (
+                <span className={cn('rounded-full text-[10px] font-bold px-1.5 min-w-[1.25rem] text-center leading-5', active === 'hoje' ? 'bg-white/20 text-white' : 'bg-red-500 text-white')}>
+                  {agendaCount}
+                </span>
+              )}
             </button>
           ))
         : (

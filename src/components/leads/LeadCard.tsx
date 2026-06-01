@@ -1,3 +1,4 @@
+import { BellRing } from 'lucide-react'
 import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes, getPrimaryLeadLabel, getLeadActionSignals } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import { KANBAN_COLUMNS } from '@/lib/types'
@@ -167,6 +168,18 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
                 📍 Rota {rotaMes}
               </span>
             )}
+            {lead.data_retorno && (() => {
+              const today = new Date(); today.setHours(0,0,0,0)
+              const d = new Date(lead.data_retorno + 'T12:00:00')
+              const vencido = d < today
+              const urgente = !vencido && (d.getTime()-today.getTime())/86400000 <= 3
+              const [,m,dd] = lead.data_retorno.split('-')
+              return (
+                <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-display font-bold border shrink-0 ${vencido?'bg-red-50 text-red-600 border-red-200':urgente?'bg-orange/10 text-orange border-orange/30':'bg-slate-50 text-slate-500 border-slate-200'}`}>
+                  <BellRing size={9}/>{dd}/{m}
+                </span>
+              )
+            })()}
           </div>
         </div>
       </div>

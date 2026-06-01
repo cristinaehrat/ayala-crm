@@ -5,6 +5,7 @@ import { isSuspiciousCity, needsLeadFollowUp, normalizeCity } from '@/lib/utils'
 
 export type LeadFilter =
   | 'todos'
+  | 'hoje'
   | 'ag_ismenia'
   | 'qualificados'
   | 'hot_lead'
@@ -23,6 +24,7 @@ type AnyQuery = any
 
 const FILTER_MAP: Record<FixedFilter, (q: AnyQuery) => AnyQuery> = {
   todos:                (q) => q,
+  hoje:                 (q) => { const today = new Date().toISOString().split('T')[0]; return q.not('data_retorno', 'is', null).lte('data_retorno', today) },
   ag_ismenia:           (q) => q.ilike('etiqueta_chatwoot', '%aguardando_ismenia%'),
   qualificados:         (q) => q.eq('status', 'qualificado'),
   hot_lead:             (q) => q.ilike('etiqueta_chatwoot', '%hot_lead%'),
@@ -67,10 +69,14 @@ export function useLeads(filter: LeadFilter = 'todos') {
         query = FILTER_MAP[filter as FixedFilter](query)
       }
 
-      query = query
-        .order('ultimo_contato', { ascending: false, nullsFirst: false })
-        .order('data_entrada', { ascending: false, nullsFirst: false })
-        .limit(filter === 'follow_up' ? 500 : 200)
+      if (filter === 'hoje') {
+        query = query.order('data_retorno', { ascending: true }).limit(200)
+      } else {
+        query = query
+          .order('ultimo_contato', { ascending: false, nullsFirst: false })
+          .order('data_entrada', { ascending: false, nullsFirst: false })
+          .limit(filter === 'follow_up' ? 500 : 200)
+      }
 
       const { data, error } = await query
       if (error) throw error
@@ -80,6 +86,23 @@ export function useLeads(filter: LeadFilter = 'todos') {
       }
       return leads
     },
+  })
+}
+
+export function useLeadsAgendaCount() {
+  const today = new Date().toISOString().split('T')[0]
+  return useQuery<number>({
+    queryKey: ['leads', 'agenda-count', today],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('leads_v2')
+        .select('*', { count: 'exact', head: true })
+        .not('data_retorno', 'is', null)
+        .lte('data_retorno', today)
+      if (error) throw error
+      return count ?? 0
+    },
+    staleTime: 60_000,
   })
 }
 

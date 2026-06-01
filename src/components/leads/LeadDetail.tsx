@@ -530,9 +530,18 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         )}
         <InfoRow label="Potencial" value={lead.potencial} />
         {(lead.proximo_passo || lead.data_retorno) && (
-          <div className="flex flex-col gap-1">
+          <div className="flex flex-col gap-1.5">
             {lead.proximo_passo && <div className="flex items-start gap-2"><BellRing size={13} className="text-orange mt-0.5 shrink-0"/><p className="text-white/90 text-sm">{lead.proximo_passo}</p></div>}
             {lead.data_retorno && (() => { const today = new Date(); today.setHours(0,0,0,0); const d = new Date(lead.data_retorno + 'T12:00:00'); const vencido = d < today; const urgente = !vencido && (d.getTime()-today.getTime())/86400000<=3; const [,m,dd] = lead.data_retorno.split('-'); return <span className={`self-start text-xs font-display font-bold border rounded px-2 py-0.5 ${vencido?'text-red-400 bg-red-900/20 border-red-400/20':urgente?'text-orange bg-orange/10 border-orange/20':'text-slate-400 bg-white/5 border-white/10'}`}>🔔 {dd}/{m}{vencido?' · VENCIDO':''}</span> })()}
+            {lead.data_retorno && (
+              <button
+                onClick={() => updateLead.mutate({ id: lead.id, data: { data_retorno: null } })}
+                className="self-start flex items-center gap-1.5 text-xs font-display font-bold text-green-400 border border-green-400/30 rounded-lg px-3 py-1.5 hover:border-green-400/60 transition-colors bg-green-400/5"
+              >
+                <Check size={13} />
+                Feito — concluir lembrete
+              </button>
+            )}
           </div>
         )}
         {turma && (
