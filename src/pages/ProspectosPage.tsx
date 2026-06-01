@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check } from 'lucide-react'
 
 function lembreteStatus(data_retorno?: string | null) {
   if (!data_retorno) return null
@@ -13,7 +13,7 @@ function fmtLembrete(data_retorno: string) {
   const [, m, d] = data_retorno.split('-')
   return `${d}/${m}`
 }
-import { useProspectos, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
+import { useProspectos, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { useHistoricoContatos, useCreateHistoricoContato, RESULTADO_LABEL, INTERESSE_LABEL, TIPO_CONTATO_LABEL } from '@/hooks/useHistoricoContatos'
@@ -26,6 +26,7 @@ import { toast } from 'sonner'
 import Modal from '@/components/ui/Modal'
 
 const FILTERS: { id: ProspectoFilter; label: string }[] = [
+  { id: 'hoje',        label: 'Hoje' },
   { id: 'todos',       label: 'Todos' },
   { id: 'a_contatar',  label: 'A Contatar' },
   { id: 'em_followup', label: 'Em Follow-up' },
@@ -100,6 +101,7 @@ export default function ProspectosPage() {
   const { data: prospectos = [], isLoading } = useProspectos(filter, ufFilter || undefined)
   const { data: leadCounts = {} } = useProspectoLeadCounts()
   const { data: ufs = [] } = useDistinctUFs()
+  const { data: agendaCount = 0 } = useProspectosAgendaCount()
   const updateProspecto = useUpdateProspecto()
   const createLead = useCreateLeadFromProspecto()
   const createHistorico = useCreateHistoricoContato()
@@ -122,6 +124,23 @@ export default function ProspectosPage() {
     }
     return true
   })
+
+  async function handleConcluirLembrete(p: Prospecto, e?: React.MouseEvent) {
+    e?.stopPropagation()
+    await updateProspecto.mutateAsync({ id_visita: p.id_visita, data: { data_retorno: null } })
+    await createHistorico.mutateAsync({
+      id_prospecto:      p.id_visita,
+      consultor:         null,
+      tipo_contato:      'retorno',
+      resultado:         'concluido',
+      interesse:         null,
+      telefone_capturado: null,
+      proximo_passo:     p.proximo_passo ?? null,
+      data_retorno:      null,
+      observacoes:       null,
+    })
+    toast.success('Lembrete concluído')
+  }
 
   async function handleCreateLead(p: Prospecto, e: React.MouseEvent) {
     e.stopPropagation()
@@ -157,9 +176,19 @@ export default function ProspectosPage() {
           <button
             key={id}
             onClick={() => setFilter(id)}
-            className={cn(pillBase, filter === id ? pillActive : pillInactive)}
+            className={cn(
+              pillBase,
+              filter === id ? pillActive : pillInactive,
+              id === 'hoje' && agendaCount > 0 && filter !== 'hoje' ? 'border-orange/60 text-orange' : '',
+            )}
           >
+            {id === 'hoje' && <BellRing size={11} />}
             {label}
+            {id === 'hoje' && agendaCount > 0 && (
+              <span className={cn('rounded-full text-[10px] font-bold px-1.5 min-w-[1.25rem] text-center leading-5', filter === 'hoje' ? 'bg-white/20 text-white' : 'bg-red-500 text-white')}>
+                {agendaCount}
+              </span>
+            )}
           </button>
         ))}
         {/* Potencial pills */}
@@ -229,6 +258,7 @@ export default function ProspectosPage() {
             onOpenDetail={() => setDetailId(p.id_visita)}
             onEdit={() => setEditing(p)}
             onRegistrarContato={(e) => { e.stopPropagation(); setContatoProspecto(p) }}
+            onConcluirLembrete={(e) => handleConcluirLembrete(p, e)}
             expanded={p.id_visita === expandedId}
             leadCount={getProspectoLeadCount(p, leadCounts)}
             onCreateLead={(e) => handleCreateLead(p, e)}
@@ -239,7 +269,7 @@ export default function ProspectosPage() {
 
       {/* Detail drawer (mobile bottom sheet style) */}
       {selected && (
-        <ProspectoDetail prospecto={selected} onClose={() => setDetailId(null)} onRegistrarContato={() => { setDetailId(null); setContatoProspecto(selected) }} />
+        <ProspectoDetail prospecto={selected} onClose={() => setDetailId(null)} onRegistrarContato={() => { setDetailId(null); setContatoProspecto(selected) }} onConcluirLembrete={() => handleConcluirLembrete(selected)} />
       )}
 
       <RegistrarContatoModal
@@ -280,6 +310,7 @@ function ProspectoCard({
   onOpenDetail,
   onEdit,
   onRegistrarContato,
+  onConcluirLembrete,
   expanded,
   onCreateLead,
   leadCount,
@@ -290,6 +321,7 @@ function ProspectoCard({
   onOpenDetail: () => void
   onEdit: () => void
   onRegistrarContato: (e: React.MouseEvent) => void
+  onConcluirLembrete: (e: React.MouseEvent) => void
   expanded: boolean
   onCreateLead: (e: React.MouseEvent) => void
   leadCount: number
@@ -355,6 +387,15 @@ function ProspectoCard({
 
         {expanded && (
           <div className={cn('mt-3 pt-3 flex gap-2 flex-wrap', hasLeads ? 'border-t border-slate-200' : 'border-t border-white/10')}>
+            {p.data_retorno && (
+              <button
+                onClick={onConcluirLembrete}
+                className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 text-green-400 border-green-400/30 hover:border-green-400/60"
+              >
+                <Check size={13} />
+                Feito
+              </button>
+            )}
             <button
               onClick={(e) => {
                 e.stopPropagation()
@@ -428,7 +469,7 @@ const STATUS_LEAD_LABEL: Record<string, string> = {
   inscrito:             'Inscrito',
 }
 
-function ProspectoDetail({ prospecto: p, onClose, onRegistrarContato }: { prospecto: Prospecto; onClose: () => void; onRegistrarContato: () => void }) {
+function ProspectoDetail({ prospecto: p, onClose, onRegistrarContato, onConcluirLembrete }: { prospecto: Prospecto; onClose: () => void; onRegistrarContato: () => void; onConcluirLembrete: () => void }) {
   const { data: leadsVinculados = [] } = useLeadsByProspecto(p.id_visita)
   const { data: historico = [] } = useHistoricoContatos(p.id_visita)
 
@@ -546,9 +587,18 @@ function ProspectoDetail({ prospecto: p, onClose, onRegistrarContato }: { prospe
 
           <Row icon={<ClipboardList size={14} />} label="Resultado da visita" value={p.resultado_visita} />
           {(p.proximo_passo || p.data_retorno) && (
-            <div className="flex flex-col gap-1">
+            <div className="flex flex-col gap-1.5">
               {p.proximo_passo && <div className="flex items-start gap-2"><BellRing size={13} className={p.data_retorno ? (lembreteStatus(p.data_retorno) === 'vencido' ? 'text-red-400 mt-0.5 shrink-0' : lembreteStatus(p.data_retorno) === 'urgente' ? 'text-orange mt-0.5 shrink-0' : 'text-slate-400 mt-0.5 shrink-0') : 'text-slate-500 mt-0.5 shrink-0'}/><p className="text-white/90 text-sm">{p.proximo_passo}</p></div>}
               {p.data_retorno && (() => { const st = lembreteStatus(p.data_retorno); const cls = st === 'vencido' ? 'text-red-400 bg-red-900/20 border-red-400/20' : st === 'urgente' ? 'text-orange bg-orange/10 border-orange/20' : 'text-slate-400 bg-white/5 border-white/10'; return <span className={cn('self-start text-xs font-display font-bold border rounded px-2 py-0.5', cls)}>🔔 Lembrar em {fmtLembrete(p.data_retorno)}{st === 'vencido' ? ' · VENCIDO' : ''}</span> })()}
+              {p.data_retorno && (
+                <button
+                  onClick={onConcluirLembrete}
+                  className="self-start flex items-center gap-1.5 text-xs font-display font-bold text-green-400 border border-green-400/30 rounded-lg px-3 py-1.5 hover:border-green-400/60 transition-colors bg-green-400/5"
+                >
+                  <Check size={13} />
+                  Feito — concluir lembrete
+                </button>
+              )}
             </div>
           )}
           {p.observacoes && (

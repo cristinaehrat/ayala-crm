@@ -43,7 +43,7 @@ export interface Prospecto {
   empresa_id: string | null
 }
 
-export type ProspectoFilter = 'todos' | 'a_contatar' | 'em_followup' | 'sem_leads' | 'com_leads'
+export type ProspectoFilter = 'todos' | 'a_contatar' | 'em_followup' | 'sem_leads' | 'com_leads' | 'hoje'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = any
@@ -54,6 +54,10 @@ const FILTER_MAP: Record<ProspectoFilter, (q: AnyQuery) => AnyQuery> = {
   em_followup: (q) => q.in('status_contato', ['tentativa_1', 'tentativa_2', 'tentativa_3']),
   sem_leads:   (q) => q,
   com_leads:   (q) => q,
+  hoje:        (q) => {
+    const today = new Date().toISOString().split('T')[0]
+    return q.not('data_retorno', 'is', null).lte('data_retorno', today)
+  },
 }
 
 export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string) {
@@ -64,11 +68,32 @@ export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string) {
       let q: any = supabase.from('cadastro_prospectos').select('*')
       q = FILTER_MAP[filter](q)
       if (uf) q = q.eq('uf', uf)
-      q = q.order('data_visita', { ascending: false, nullsFirst: false }).limit(300)
+      if (filter === 'hoje') {
+        q = q.order('data_retorno', { ascending: true }).limit(300)
+      } else {
+        q = q.order('data_visita', { ascending: false, nullsFirst: false }).limit(300)
+      }
       const { data, error } = await q
       if (error) throw error
       return (data ?? []) as Prospecto[]
     },
+  })
+}
+
+export function useProspectosAgendaCount() {
+  const today = new Date().toISOString().split('T')[0]
+  return useQuery<number>({
+    queryKey: ['prospectos', 'agenda-count', today],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('cadastro_prospectos')
+        .select('*', { count: 'exact', head: true })
+        .not('data_retorno', 'is', null)
+        .lte('data_retorno', today)
+      if (error) throw error
+      return count ?? 0
+    },
+    staleTime: 60_000,
   })
 }
 

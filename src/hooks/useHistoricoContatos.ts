@@ -24,6 +24,7 @@ export const RESULTADO_LABEL: Record<string, string> = {
   falou_responsavel:  'Falou com responsável',
   mensagem_enviada:   'Mensagem enviada',
   sem_resposta_wpp:   'Sem resposta (WPP)',
+  concluido:          'Concluído',
 }
 
 export const INTERESSE_LABEL: Record<string, string> = {
@@ -39,6 +40,7 @@ export const TIPO_CONTATO_LABEL: Record<string, string> = {
   ligacao:    'Ligação',
   whatsapp:   'WhatsApp',
   presencial: 'Presencial',
+  retorno:    'Retorno',
 }
 
 export function useHistoricoContatos(id_prospecto: string | null) {
