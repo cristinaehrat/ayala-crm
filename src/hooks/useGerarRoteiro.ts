@@ -15,7 +15,7 @@ export interface RoteirizarInput {
   uf?: string
   marca?: string
   potencial_min?: string
-  incluir_nao_visitados?: boolean
+  filtro_visita?: string
   leads?: LeadInput[]
   dias?: number
   return_point?: string

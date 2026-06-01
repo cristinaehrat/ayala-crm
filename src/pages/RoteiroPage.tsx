@@ -21,6 +21,13 @@ const POTENCIAIS_MIN = [
   { value: 'baixo',        label: 'Qualquer' },
 ]
 
+const FILTROS_VISITA = [
+  { value: 'todas',                    label: 'Todas',                       desc: 'Prospecção + retorno' },
+  { value: 'nao_visitadas',            label: 'Nunca visitadas',             desc: 'Sem visita presencial' },
+  { value: 'visitadas_nao_qualificadas', label: 'Visitadas, não qualificadas', desc: 'Re-visita para qualificar' },
+  { value: 'qualificadas_retorno',     label: 'Qualificadas (retorno)',      desc: 'Já promovidas a lead' },
+]
+
 type Fonte = 'banco' | 'places' | 'manual'
 
 interface RoteiroForm {
@@ -33,7 +40,7 @@ interface RoteiroForm {
   fonte: Fonte
   listaManual: string
   potencialMin: string
-  incluirNaoVisitados: boolean
+  filtroVisita: string
 }
 
 const EMPTY: RoteiroForm = {
@@ -46,7 +53,7 @@ const EMPTY: RoteiroForm = {
   fonte: 'manual',
   listaManual: '',
   potencialMin: '',
-  incluirNaoVisitados: true,
+  filtroVisita: 'todas',
 }
 
 const MARCA_BADGE: Record<string, string> = {
@@ -126,7 +133,7 @@ export default function RoteiroPage() {
         uf: form.uf || undefined,
         marca: form.marca || undefined,
         potencial_min: form.potencialMin || undefined,
-        incluir_nao_visitados: form.incluirNaoVisitados,
+        filtro_visita: form.filtroVisita !== 'todas' ? form.filtroVisita : undefined,
         leads: form.fonte === 'manual' ? parseLeadsFromText(form.listaManual) : undefined,
         dias: form.dias > 1 ? form.dias : undefined,
         return_point: form.returnPoint.trim() || undefined,
@@ -404,18 +411,20 @@ export default function RoteiroPage() {
                         {POTENCIAIS_MIN.map((p) => <option key={p.value} value={p.value}>{p.label}</option>)}
                       </select>
                     </Field>
-                    <div className="flex items-center gap-3 h-11 px-3 bg-white border border-slate-300 rounded-lg">
-                      <input
-                        type="checkbox"
-                        id="incluir_nao_visitados"
-                        checked={form.incluirNaoVisitados}
-                        onChange={(e) => set('incluirNaoVisitados', e.target.checked)}
-                        className="w-4 h-4 accent-orange cursor-pointer"
-                      />
-                      <label htmlFor="incluir_nao_visitados" className="text-sm font-display font-semibold text-navy cursor-pointer">
-                        Incluir não visitados
-                      </label>
-                    </div>
+                    <Field label="Tipo de visita">
+                      <select
+                        value={form.filtroVisita}
+                        onChange={(e) => set('filtroVisita', e.target.value)}
+                        className="input-field"
+                      >
+                        {FILTROS_VISITA.map((f) => (
+                          <option key={f.value} value={f.value}>{f.label}</option>
+                        ))}
+                      </select>
+                      <p className="text-[11px] text-muted mt-1">
+                        {FILTROS_VISITA.find(f => f.value === form.filtroVisita)?.desc}
+                      </p>
+                    </Field>
                   </>
                 )}
                 {form.fonte === 'places' && (
