@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink } from 'lucide-react'
-import { useProspectos, useRegistrarTentativa, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall } from 'lucide-react'
+import { useProspectos, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
+import { useHistoricoContatos, useCreateHistoricoContato, RESULTADO_LABEL, INTERESSE_LABEL, TIPO_CONTATO_LABEL } from '@/hooks/useHistoricoContatos'
 
 function toWaLink(phone: string): string {
   const d = phone.replace(/\D/g, '')
@@ -81,13 +82,14 @@ export default function ProspectosPage() {
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [editing, setEditing] = useState<Prospecto | null>(null)
+  const [contatoProspecto, setContatoProspecto] = useState<Prospecto | null>(null)
 
   const { data: prospectos = [], isLoading } = useProspectos(filter, ufFilter || undefined)
   const { data: leadCounts = {} } = useProspectoLeadCounts()
   const { data: ufs = [] } = useDistinctUFs()
   const updateProspecto = useUpdateProspecto()
   const createLead = useCreateLeadFromProspecto()
-  const registrarTentativa = useRegistrarTentativa()
+  const createHistorico = useCreateHistoricoContato()
 
   const filtered = prospectos.filter((p) => {
     if (potencialFilter && p.potencial !== potencialFilter) return false
@@ -116,28 +118,6 @@ export default function ProspectosPage() {
     }
     await createLead.mutateAsync(p)
     toast.success('Lead vinculado ao CRM criado com sucesso!')
-  }
-
-  async function handleTentativa(p: Prospecto, e: React.MouseEvent) {
-    e.stopPropagation()
-    const status = p.status_contato ?? 'a_contatar'
-    const next: Record<string, { status: string; campo: 'data_tentativa_1' | 'data_tentativa_2' | 'data_tentativa_3' }> = {
-      a_contatar:  { status: 'tentativa_1', campo: 'data_tentativa_1' },
-      tentativa_1: { status: 'tentativa_2', campo: 'data_tentativa_2' },
-      tentativa_2: { status: 'tentativa_3', campo: 'data_tentativa_3' },
-      tentativa_3: { status: 'sem_resposta', campo: 'data_tentativa_3' },
-    }
-    const action = next[status]
-    if (!action) {
-      toast.info('Sem próxima tentativa disponível neste status.')
-      return
-    }
-    await registrarTentativa.mutateAsync({
-      id_visita: p.id_visita,
-      status_contato: action.status,
-      campo_data: action.campo,
-    })
-    toast.success(`Registrado: ${STATUS_LABEL[action.status]}`)
   }
 
   const selected = detailId ? prospectos.find((p) => p.id_visita === detailId) ?? null : null
@@ -235,10 +215,10 @@ export default function ProspectosPage() {
             onClick={() => setExpandedId(p.id_visita === expandedId ? null : p.id_visita)}
             onOpenDetail={() => setDetailId(p.id_visita)}
             onEdit={() => setEditing(p)}
+            onRegistrarContato={(e) => { e.stopPropagation(); setContatoProspecto(p) }}
             expanded={p.id_visita === expandedId}
             leadCount={getProspectoLeadCount(p, leadCounts)}
             onCreateLead={(e) => handleCreateLead(p, e)}
-            onTentativa={(e) => handleTentativa(p, e)}
             creatingLead={createLead.isPending}
           />
         ))}
@@ -246,8 +226,25 @@ export default function ProspectosPage() {
 
       {/* Detail drawer (mobile bottom sheet style) */}
       {selected && (
-        <ProspectoDetail prospecto={selected} onClose={() => setDetailId(null)} />
+        <ProspectoDetail prospecto={selected} onClose={() => setDetailId(null)} onRegistrarContato={() => { setDetailId(null); setContatoProspecto(selected) }} />
       )}
+
+      <RegistrarContatoModal
+        prospecto={contatoProspecto}
+        onClose={() => setContatoProspecto(null)}
+        onSave={async (payload, novoStatus) => {
+          await createHistorico.mutateAsync(payload)
+          if (novoStatus) {
+            await updateProspecto.mutateAsync({ id_visita: payload.id_prospecto, data: { status_contato: novoStatus } })
+          }
+          if (payload.telefone_capturado) {
+            await updateProspecto.mutateAsync({ id_visita: payload.id_prospecto, data: { whatsapp_responsavel: payload.telefone_capturado } })
+          }
+          toast.success('Contato registrado!')
+          setContatoProspecto(null)
+        }}
+        saving={createHistorico.isPending}
+      />
 
       <ProspectoEditModal
         prospecto={editing}
@@ -269,9 +266,9 @@ function ProspectoCard({
   onClick,
   onOpenDetail,
   onEdit,
+  onRegistrarContato,
   expanded,
   onCreateLead,
-  onTentativa,
   leadCount,
   creatingLead,
 }: {
@@ -279,9 +276,9 @@ function ProspectoCard({
   onClick: () => void
   onOpenDetail: () => void
   onEdit: () => void
+  onRegistrarContato: (e: React.MouseEvent) => void
   expanded: boolean
   onCreateLead: (e: React.MouseEvent) => void
-  onTentativa: (e: React.MouseEvent) => void
   leadCount: number
   creatingLead: boolean
 }) {
@@ -379,15 +376,13 @@ function ProspectoCard({
                 Ligar
               </a>
             )}
-            {p.status_contato !== 'sem_resposta' && p.status_contato !== 'desqualificado' && (
-              <button
-                onClick={onTentativa}
-                className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5"
-              >
-                <Phone size={13} />
-                Registrar Tentativa
-              </button>
-            )}
+            <button
+              onClick={onRegistrarContato}
+              className="btn-secondary text-xs px-3 py-1.5 flex items-center gap-1.5 text-orange border-orange/40 hover:border-orange"
+            >
+              <PhoneCall size={13} />
+              Registrar Contato
+            </button>
             {p.whatsapp_responsavel && (
               <a
                 href={toWaLink(p.whatsapp_responsavel)}
@@ -415,8 +410,9 @@ const STATUS_LEAD_LABEL: Record<string, string> = {
   inscrito:             'Inscrito',
 }
 
-function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onClose: () => void }) {
+function ProspectoDetail({ prospecto: p, onClose, onRegistrarContato }: { prospecto: Prospecto; onClose: () => void; onRegistrarContato: () => void }) {
   const { data: leadsVinculados = [] } = useLeadsByProspecto(p.id_visita)
+  const { data: historico = [] } = useHistoricoContatos(p.id_visita)
 
   return (
     <div className="fixed inset-0 z-40 bg-black/60 flex items-end md:items-center md:justify-center" onClick={onClose}>
@@ -424,9 +420,18 @@ function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onCl
         className="bg-navy w-full md:max-w-lg md:rounded-2xl md:border md:border-white/10 max-h-[80vh] overflow-y-auto rounded-t-2xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="p-4 border-b border-white/10 flex items-center justify-between">
-          <h3 className="font-display font-bold text-white">{p.empresa_oficina || 'Prospecto'}</h3>
-          <button onClick={onClose} className="text-muted hover:text-white">✕</button>
+        <div className="p-4 border-b border-white/10 flex items-center justify-between gap-3">
+          <h3 className="font-display font-bold text-white truncate">{p.empresa_oficina || 'Prospecto'}</h3>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={onRegistrarContato}
+              className="flex items-center gap-1.5 text-xs font-display font-bold text-orange border border-orange/40 rounded-lg px-3 py-1.5 hover:border-orange transition-colors"
+            >
+              <PhoneCall size={13} />
+              Registrar Contato
+            </button>
+            <button onClick={onClose} className="text-muted hover:text-white">✕</button>
+          </div>
         </div>
         <div className="p-4 space-y-2.5 text-sm">
           <Row icon={<Building2 size={14} />} label="Oficina" value={p.empresa_oficina} />
@@ -552,6 +557,42 @@ function ProspectoDetail({ prospecto: p, onClose }: { prospecto: Prospecto; onCl
               </div>
             </div>
           )}
+
+          {/* Histórico de contatos */}
+          <div className="pt-2 border-t border-white/10">
+            <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-2">
+              Histórico de contatos ({historico.length})
+            </p>
+            {historico.length === 0 ? (
+              <p className="text-xs text-slate-600 italic">Nenhum contato registrado ainda.</p>
+            ) : (
+              <div className="space-y-2">
+                {historico.map((h) => {
+                  const tipoLabel = TIPO_CONTATO_LABEL[h.tipo_contato] ?? h.tipo_contato
+                  const resultadoLabel = h.resultado ? (RESULTADO_LABEL[h.resultado] ?? h.resultado) : null
+                  const interesseLabel = h.interesse ? (INTERESSE_LABEL[h.interesse] ?? h.interesse) : null
+                  const dataFmt = new Date(h.data_contato).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' })
+                  const horaFmt = new Date(h.data_contato).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
+                  return (
+                    <div key={h.id} className="bg-white/5 rounded-lg px-3 py-2 text-xs space-y-0.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-display font-bold text-white">{tipoLabel}</span>
+                          {resultadoLabel && <span className="text-muted">· {resultadoLabel}</span>}
+                          {interesseLabel && <span className="text-orange font-semibold">· {interesseLabel}</span>}
+                        </div>
+                        <span className="text-muted shrink-0">{dataFmt} {horaFmt}</span>
+                      </div>
+                      {h.consultor && <p className="text-muted">por {h.consultor}</p>}
+                      {h.telefone_capturado && <p className="text-green-400">📞 {h.telefone_capturado}</p>}
+                      {h.proximo_passo && <p className="text-slate-300">→ {h.proximo_passo}</p>}
+                      {h.observacoes && <p className="text-slate-400 italic">{h.observacoes}</p>}
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -590,6 +631,240 @@ function TelRow({ label, value, isWhatsApp }: { label: string; value?: string | 
         </a>
       )}
     </div>
+  )
+}
+
+const RESULTADOS_LIGACAO = [
+  { value: 'nao_atendeu',        label: 'Não atendeu' },
+  { value: 'caixa_postal',       label: 'Caixa postal' },
+  { value: 'numero_errado',      label: 'Número errado' },
+  { value: 'numero_inexistente', label: 'Número inexistente' },
+  { value: 'falou_secretaria',   label: 'Falou com secretaria' },
+  { value: 'falou_responsavel',  label: 'Falou com responsável' },
+]
+
+const RESULTADOS_WPP = [
+  { value: 'mensagem_enviada',  label: 'Mensagem enviada' },
+  { value: 'sem_resposta_wpp',  label: 'Sem resposta' },
+  { value: 'falou_responsavel', label: 'Respondeu' },
+]
+
+const INTERESSES = [
+  { value: 'demonstrou_interesse', label: 'Demonstrou interesse' },
+  { value: 'pediu_preco',          label: 'Pediu preço' },
+  { value: 'follow_up',            label: 'Follow-up / retornar' },
+  { value: 'aguardando_ismenia',   label: 'Aguardando Ismênia' },
+  { value: 'sem_interesse',        label: 'Sem interesse' },
+  { value: 'qualificado',          label: 'Qualificado ✓' },
+]
+
+const STATUS_POR_RESULTADO: Record<string, string> = {
+  nao_atendeu:        'tentativa_1',
+  caixa_postal:       'tentativa_1',
+  numero_errado:      'desqualificado',
+  numero_inexistente: 'desqualificado',
+  falou_secretaria:   'tentativa_2',
+  falou_responsavel:  'retornou',
+  mensagem_enviada:   'tentativa_1',
+  sem_resposta_wpp:   'tentativa_1',
+}
+
+type ContatoForm = {
+  consultor: string
+  tipo_contato: 'ligacao' | 'whatsapp' | 'presencial'
+  resultado: string
+  interesse: string
+  telefone_capturado: string
+  proximo_passo: string
+  data_retorno: string
+  observacoes: string
+}
+
+const CONTATO_EMPTY: ContatoForm = {
+  consultor: '', tipo_contato: 'ligacao', resultado: '',
+  interesse: '', telefone_capturado: '', proximo_passo: '',
+  data_retorno: '', observacoes: '',
+}
+
+import type { CreateHistoricoPayload } from '@/hooks/useHistoricoContatos'
+
+function RegistrarContatoModal({
+  prospecto,
+  onClose,
+  onSave,
+  saving,
+}: {
+  prospecto: Prospecto | null
+  onClose: () => void
+  onSave: (payload: CreateHistoricoPayload, novoStatus: string | null) => Promise<void>
+  saving: boolean
+}) {
+  const [form, setForm] = useState<ContatoForm>(CONTATO_EMPTY)
+
+  useEffect(() => {
+    if (prospecto) setForm(CONTATO_EMPTY)
+  }, [prospecto])
+
+  if (!prospecto) return null
+
+  function set<K extends keyof ContatoForm>(field: K, value: ContatoForm[K]) {
+    setForm((prev) => ({ ...prev, [field]: value }))
+  }
+
+  const resultadosDisponiveis = form.tipo_contato === 'whatsapp' ? RESULTADOS_WPP : RESULTADOS_LIGACAO
+  const mostrarInteresse = ['falou_responsavel', 'falou_secretaria'].includes(form.resultado)
+  const mostrarTelefone  = ['falou_responsavel', 'falou_secretaria'].includes(form.resultado)
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!form.resultado && form.tipo_contato !== 'presencial') return
+    const novoStatus = form.resultado ? (STATUS_POR_RESULTADO[form.resultado] ?? null) : null
+    const finalStatus = form.interesse === 'sem_interesse' ? 'desqualificado' : novoStatus
+    await onSave({
+      id_prospecto:      prospecto!.id_visita,
+      consultor:         form.consultor || null,
+      tipo_contato:      form.tipo_contato,
+      resultado:         form.resultado || null,
+      interesse:         form.interesse || null,
+      telefone_capturado: form.telefone_capturado.trim() || null,
+      proximo_passo:     form.proximo_passo.trim() || null,
+      data_retorno:      form.data_retorno || null,
+      observacoes:       form.observacoes.trim() || null,
+    }, finalStatus)
+  }
+
+  const ligarTel = prospecto.whatsapp_responsavel || prospecto.telefone_oficina
+
+  return (
+    <Modal open={!!prospecto} onClose={onClose} title={`Registrar Contato — ${prospecto.empresa_oficina || 'Oficina'}`}>
+      {ligarTel && (
+        <div className="mb-4 flex gap-2">
+          <a
+            href={`tel:${ligarTel.replace(/\D/g, '')}`}
+            className="flex-1 flex items-center justify-center gap-2 bg-orange/10 border border-orange/30 text-orange rounded-lg py-2.5 text-sm font-display font-bold hover:bg-orange/20 transition-colors"
+          >
+            <Phone size={15} />
+            Ligar agora
+          </a>
+          {prospecto.whatsapp_responsavel && (
+            <a
+              href={toWaLink(prospecto.whatsapp_responsavel)}
+              target="_blank"
+              rel="noreferrer"
+              className="flex-1 flex items-center justify-center gap-2 bg-green-500/10 border border-green-500/30 text-green-400 rounded-lg py-2.5 text-sm font-display font-bold hover:bg-green-500/20 transition-colors"
+            >
+              <MessageCircle size={15} />
+              WhatsApp
+            </a>
+          )}
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <Field label="Consultor">
+          <select className="input-field" value={form.consultor} onChange={(e) => set('consultor', e.target.value)}>
+            <option value="">— Selecione</option>
+            {CONSULTORES.map((c) => <option key={c} value={c}>{c}</option>)}
+          </select>
+        </Field>
+
+        <Field label="Tipo de contato">
+          <div className="flex gap-2">
+            {(['ligacao', 'whatsapp', 'presencial'] as const).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => { set('tipo_contato', t); set('resultado', '') }}
+                className={cn(
+                  'flex-1 rounded-lg text-xs font-display font-bold py-2 px-3 border transition-colors cursor-pointer',
+                  form.tipo_contato === t
+                    ? 'border-orange bg-orange/10 text-orange'
+                    : 'border-white/10 bg-white/5 text-white hover:border-orange/50',
+                )}
+              >
+                {TIPO_CONTATO_LABEL[t]}
+              </button>
+            ))}
+          </div>
+        </Field>
+
+        {form.tipo_contato !== 'presencial' && (
+          <Field label="Resultado da ligação / mensagem">
+            <select
+              className="input-field"
+              value={form.resultado}
+              onChange={(e) => set('resultado', e.target.value)}
+              required
+            >
+              <option value="">— Selecione</option>
+              {resultadosDisponiveis.map((r) => (
+                <option key={r.value} value={r.value}>{r.label}</option>
+              ))}
+            </select>
+          </Field>
+        )}
+
+        {(mostrarInteresse || form.tipo_contato === 'presencial') && (
+          <Field label="Interesse demonstrado">
+            <select className="input-field" value={form.interesse} onChange={(e) => set('interesse', e.target.value)}>
+              <option value="">— Selecione</option>
+              {INTERESSES.map((i) => (
+                <option key={i.value} value={i.value}>{i.label}</option>
+              ))}
+            </select>
+          </Field>
+        )}
+
+        {mostrarTelefone && (
+          <Field label="Telefone capturado (opcional)">
+            <input
+              type="tel"
+              className="input-field"
+              value={form.telefone_capturado}
+              onChange={(e) => set('telefone_capturado', e.target.value)}
+              placeholder="Número do responsável ou técnico"
+            />
+          </Field>
+        )}
+
+        <Field label="Próximo passo">
+          <input
+            className="input-field"
+            value={form.proximo_passo}
+            onChange={(e) => set('proximo_passo', e.target.value)}
+            placeholder="Ex: Ligar na sexta após 14h"
+          />
+        </Field>
+
+        <Field label="Data de retorno">
+          <input
+            type="date"
+            className="input-field"
+            value={form.data_retorno}
+            onChange={(e) => set('data_retorno', e.target.value)}
+          />
+        </Field>
+
+        <Field label="Observações">
+          <textarea
+            rows={3}
+            className="input-field resize-none"
+            value={form.observacoes}
+            onChange={(e) => set('observacoes', e.target.value)}
+            placeholder="Detalhes da conversa, nome de quem atendeu..."
+          />
+        </Field>
+
+        <div className="flex gap-3">
+          <button type="submit" disabled={saving} className="btn-primary flex-1 py-2.5">
+            {saving ? 'Salvando...' : 'Salvar contato'}
+          </button>
+          <button type="button" onClick={onClose} className="btn-secondary px-5">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </Modal>
   )
 }
 

@@ -5,9 +5,22 @@ export async function persistProspectoPayload(payload: Record<string, unknown>) 
     ? 'id_visita'
     : 'whatsapp_responsavel'
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('cadastro_prospectos')
     .upsert(payload, { onConflict, ignoreDuplicates: false })
+    .select('id_visita')
+    .single()
 
   if (error) throw error
+
+  const idVisita = (data as { id_visita: string } | null)?.id_visita
+  if (idVisita) {
+    await supabase.from('historico_contatos').insert({
+      id_prospecto: idVisita,
+      consultor:    typeof payload.consultor === 'string' ? payload.consultor : null,
+      tipo_contato: 'presencial',
+      resultado:    'falou_responsavel',
+      interesse:    payload.qualificado_lead ? 'qualificado' : null,
+    })
+  }
 }
