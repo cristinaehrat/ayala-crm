@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Building2, Link2, Plus, Edit2, Send, CheckCircle, X, Search } from 'lucide-react'
 import { toast } from 'sonner'
 import {
@@ -21,6 +21,16 @@ export default function EmpresaSection({ leadId, empresaId, leadNome }: Props) {
   const linkMutation = useLinkEmpresaToLead()
   const createMutation = useCreateEmpresa()
   const updateMutation = useUpdateEmpresa()
+
+  // Auto-gera fill_token assim que a empresa é vinculada, para links funcionarem antes da inscrição
+  useEffect(() => {
+    if (!empresa || empresa.fill_token) return
+    const fillToken = crypto.randomUUID()
+    updateMutation.mutateAsync({
+      id: empresa.id,
+      data: { fill_token: fillToken, fill_status: empresa.fill_status ?? 'pendente' } as Partial<Empresa>,
+    }).catch(() => {})
+  }, [empresa]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const [mode, setMode] = useState<'view' | 'search' | 'create' | 'edit'>('view')
   const [query, setQuery] = useState('')

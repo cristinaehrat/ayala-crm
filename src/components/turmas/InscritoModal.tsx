@@ -795,10 +795,35 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
               {/* PJ */}
               <div className="border-t border-white/10 pt-3 space-y-3">
                 <p className="text-xs font-display font-semibold text-white/60 uppercase tracking-wide">Dados PJ (Pessoa Jurídica)</p>
-                <EmpresaSearch onSelect={fillEmpresaFields} />
+
+                {/* Sugestão automática: empresa encontrada pelo nome do lead */}
+                {!form.empresa_id && empresaSuggestions.length > 0 && (
+                  <div className="rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 space-y-2">
+                    <p className="text-xs font-display font-semibold text-amber-300">
+                      Empresa encontrada nos registros — clique para preencher automaticamente
+                    </p>
+                    {empresaSuggestions.slice(0, 3).map((emp) => (
+                      <button
+                        key={emp.id}
+                        type="button"
+                        onClick={() => fillEmpresaFields(emp)}
+                        className="w-full text-left flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-white/5 hover:bg-amber-500/20 border border-white/10 hover:border-amber-400/50 transition-colors cursor-pointer"
+                      >
+                        <div>
+                          <p className="text-xs font-semibold text-white">{emp.razao_social ?? emp.nome_fantasia}</p>
+                          <p className="text-xs text-slate-400">{emp.cnpj ? `CNPJ ${emp.cnpj}` : ''}{emp.cidade ? ` · ${emp.cidade}` : ''}</p>
+                        </div>
+                        <span className="text-xs font-bold text-amber-400 shrink-0">Usar →</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
                 {form.empresa_id && (
                   <p className="text-xs text-green-400">Empresa vinculada · dados serão atualizados ao salvar</p>
                 )}
+
+                <EmpresaSearch onSelect={fillEmpresaFields} />
                 <div className="grid grid-cols-2 gap-2">
                   <Field label="Nome Fantasia">
                     <input className="input-field text-xs" value={form.pj_nome_fantasia} onChange={(e) => set('pj_nome_fantasia', e.target.value)} />
