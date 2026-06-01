@@ -252,7 +252,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
         const q = searchQuery.trim()
         const { data } = await supabase
           .from('leads_v2')
-          .select('id, nome, telefone, empresa_oficina, status')
+          .select('id, nome, telefone, empresa_oficina, status, empresa_id')
           .eq('status', 'inscrito')
           .or(`nome.ilike.%${q}%,telefone.ilike.%${q}%`)
           .limit(10)
@@ -283,6 +283,16 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
     }))
     setSearchQuery('')
     setSearchResults([])
+    if (lead.empresa_id) {
+      supabase
+        .from('empresas_cadastradas')
+        .select('*')
+        .eq('id', lead.empresa_id)
+        .single()
+        .then(({ data }) => {
+          if (data) fillEmpresaFields(data as Empresa)
+        })
+    }
   }
 
   function fillEmpresaFields(e: Empresa) {

@@ -144,7 +144,7 @@ export default function NewLeadModal({ open, onClose }: Props) {
           <div className="grid grid-cols-2 gap-2">
             <Field label="Marca">
               <select className="input-field" value={form.marca_interesse} onChange={(e) => set('marca_interesse', e.target.value)}>
-                {MARCAS.map((m) => <option key={m} value={m}>{m || '—'}</option>)}
+                {MARCAS.map((m) => <option key={m} value={m.toLowerCase()}>{m || '—'}</option>)}
               </select>
             </Field>
             <Field label="Potencial">
