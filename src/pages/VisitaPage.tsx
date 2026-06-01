@@ -688,24 +688,10 @@ export default function VisitaPage() {
               />
             </Field>
 
-            <div className="grid grid-cols-2 gap-3 mt-3">
-              <Field label="Próximo passo">
-                <input
-                  type="text"
-                  value={form.proximo_passo}
-                  onChange={(e) => set('proximo_passo', e.target.value)}
-                  placeholder="Ex: Ligar em 3 dias"
-                  className="input-field"
-                />
-              </Field>
-              <Field label="Data de retorno">
-                <input
-                  type="date"
-                  value={form.data_retorno}
-                  onChange={(e) => set('data_retorno', e.target.value)}
-                  className="input-field"
-                />
-              </Field>
+            <div className="mt-3">
+              <label className="field-label flex items-center gap-1.5">🔔 Próximo passo <span className="text-muted font-normal normal-case tracking-normal">+ lembrete</span></label>
+              <input type="text" value={form.proximo_passo} onChange={(e) => set('proximo_passo', e.target.value)} placeholder="Ex: Ligar no sábado após 14h" className="input-field"/>
+              <input type="date" value={form.data_retorno} onChange={(e) => set('data_retorno', e.target.value)} className="input-field mt-1.5" title="Data do lembrete"/>
             </div>
 
             <Field label="Consultor" className="mt-3">

@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown, Pencil, Trash2, Plus, Map, AtSign, Calendar } from 'lucide-react'
+import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown, Pencil, Trash2, Plus, Map, AtSign, Calendar, Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { UF_OPTIONS } from '@/lib/utils'
 import { useGerarRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota, type DiaDado } from '@/hooks/useGerarRoteiro'
@@ -65,6 +65,14 @@ export default function RoteiroPage() {
   const gerarRoteiro = useGerarRoteiro()
   const { data: malhaData } = useMalhaEstrategica()
 
+  // Restaura último roteiro do localStorage ao montar
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ayala_roteiro_ultimo')
+      if (saved) setResultado(JSON.parse(saved))
+    } catch { /* ignora */ }
+  }, [])
+
   const mesesDisp = useMemo(() => {
     if (!malhaData?.length) return []
     return [...new Set(malhaData.map(e => e.mes))]
@@ -124,6 +132,7 @@ export default function RoteiroPage() {
         return_point: form.returnPoint.trim() || undefined,
       })
       setResultado(result)
+      try { localStorage.setItem('ayala_roteiro_ultimo', JSON.stringify(result)) } catch { /* ignora */ }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao gerar roteiro')
     }
@@ -475,6 +484,7 @@ export default function RoteiroPage() {
                     </p>
                   )}
                 </div>
+                <button type="button" onClick={() => window.print()} className="btn-secondary flex items-center gap-1.5 text-sm px-4 py-2 no-print"><Printer size={14} />Imprimir</button>
                 <CopyButton text={resultado.mensagem_whatsapp} label="Copiar tudo (WhatsApp)" />
               </div>
             </div>
@@ -646,16 +656,7 @@ function ListaCampo({ rotas, open, onToggle }: { rotas: Rota[]; open: boolean; o
   const todasParadas = useMemo(() => rotas.flatMap(r => r.paradas), [rotas])
 
   const textoParaCopiar = useMemo(() =>
-    todasParadas.map(p => {
-      const parts = [p.nome, shortAddr(p.endereco)]
-      if (p.telefone_oficina) parts.push(fmtPhone(p.telefone_oficina))
-      if (p.nome_responsavel || p.whatsapp_responsavel) {
-        const contato = [p.nome_responsavel, p.whatsapp_responsavel ? fmtPhone(p.whatsapp_responsavel) : '']
-          .filter(Boolean).join(' / ')
-        parts.push(contato)
-      }
-      return `${p.seq}. ${parts.join(' — ')}`
-    }).join('\n'),
+    todasParadas.map(p => p.nome).join('\n'),
     [todasParadas]
   )
 

@@ -1,5 +1,18 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing } from 'lucide-react'
+
+function lembreteStatus(data_retorno?: string | null) {
+  if (!data_retorno) return null
+  const today = new Date(); today.setHours(0,0,0,0)
+  const d = new Date(data_retorno + 'T12:00:00')
+  if (d < today) return 'vencido'
+  if ((d.getTime() - today.getTime()) / 86400000 <= 3) return 'urgente'
+  return 'futuro'
+}
+function fmtLembrete(data_retorno: string) {
+  const [, m, d] = data_retorno.split('-')
+  return `${d}/${m}`
+}
 import { useProspectos, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
@@ -333,6 +346,11 @@ function ProspectoCard({
           {p.data_visita && (
             <span className={cn('text-xs', hasLeads ? 'text-slate-500' : 'text-muted')}>{new Date(p.data_visita + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
           )}
+          {p.data_retorno && (() => {
+            const st = lembreteStatus(p.data_retorno)
+            const cls = st === 'vencido' ? 'text-red-400 border-red-400/40' : st === 'urgente' ? 'text-orange border-orange/40' : 'text-slate-400 border-white/10'
+            return <span className={cn('flex items-center gap-0.5 text-[10px] border rounded px-1 py-0.5 font-display font-bold', cls)}><BellRing size={9}/>{fmtLembrete(p.data_retorno)}</span>
+          })()}
         </div>
 
         {expanded && (
@@ -527,8 +545,12 @@ function ProspectoDetail({ prospecto: p, onClose, onRegistrarContato }: { prospe
           )}
 
           <Row icon={<ClipboardList size={14} />} label="Resultado da visita" value={p.resultado_visita} />
-          <Row label="Próximo passo" value={p.proximo_passo} />
-          <Row label="Data de retorno" value={p.data_retorno} />
+          {(p.proximo_passo || p.data_retorno) && (
+            <div className="flex flex-col gap-1">
+              {p.proximo_passo && <div className="flex items-start gap-2"><BellRing size={13} className={p.data_retorno ? (lembreteStatus(p.data_retorno) === 'vencido' ? 'text-red-400 mt-0.5 shrink-0' : lembreteStatus(p.data_retorno) === 'urgente' ? 'text-orange mt-0.5 shrink-0' : 'text-slate-400 mt-0.5 shrink-0') : 'text-slate-500 mt-0.5 shrink-0'}/><p className="text-white/90 text-sm">{p.proximo_passo}</p></div>}
+              {p.data_retorno && (() => { const st = lembreteStatus(p.data_retorno); const cls = st === 'vencido' ? 'text-red-400 bg-red-900/20 border-red-400/20' : st === 'urgente' ? 'text-orange bg-orange/10 border-orange/20' : 'text-slate-400 bg-white/5 border-white/10'; return <span className={cn('self-start text-xs font-display font-bold border rounded px-2 py-0.5', cls)}>🔔 Lembrar em {fmtLembrete(p.data_retorno)}{st === 'vencido' ? ' · VENCIDO' : ''}</span> })()}
+            </div>
+          )}
           {p.observacoes && (
             <div>
               <p className="text-xs text-muted uppercase font-display font-semibold tracking-wide">Observações</p>
@@ -827,23 +849,11 @@ function RegistrarContatoModal({
           </Field>
         )}
 
-        <Field label="Próximo passo">
-          <input
-            className="input-field"
-            value={form.proximo_passo}
-            onChange={(e) => set('proximo_passo', e.target.value)}
-            placeholder="Ex: Ligar na sexta após 14h"
-          />
-        </Field>
-
-        <Field label="Data de retorno">
-          <input
-            type="date"
-            className="input-field"
-            value={form.data_retorno}
-            onChange={(e) => set('data_retorno', e.target.value)}
-          />
-        </Field>
+        <div>
+          <label className="field-label flex items-center gap-1.5"><BellRing size={12} className="text-orange"/>Próximo passo <span className="text-muted font-normal normal-case tracking-normal">+ lembrete</span></label>
+          <input className="input-field" value={form.proximo_passo} onChange={(e) => set('proximo_passo', e.target.value)} placeholder="Ex: Ligar na sexta após 14h"/>
+          <input type="date" className="input-field mt-1.5" value={form.data_retorno} onChange={(e) => set('data_retorno', e.target.value)} title="Data do lembrete"/>
+        </div>
 
         <Field label="Observações">
           <textarea
@@ -1194,10 +1204,7 @@ function ProspectoEditModal({
               <option value="sem_interesse">Sem interesse</option>
             </select>
           </Field>
-          <Field label="Data de retorno">
-            <input type="date" className="input-field" value={form.data_retorno} onChange={(e) => set('data_retorno', e.target.value)} />
-          </Field>
-          <Field label="Consultor">
+            <Field label="Consultor">
             <select className="input-field" value={form.consultor} onChange={(e) => set('consultor', e.target.value)}>
               <option value="">— Selecione</option>
               {CONSULTORES.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -1264,9 +1271,11 @@ function ProspectoEditModal({
         <Field label="Resultado da visita / contato">
           <textarea rows={3} className="input-field resize-none" value={form.resultado_visita} onChange={(e) => set('resultado_visita', e.target.value)} />
         </Field>
-        <Field label="Próximo passo">
-          <input className="input-field" value={form.proximo_passo} onChange={(e) => set('proximo_passo', e.target.value)} />
-        </Field>
+        <div>
+          <label className="field-label flex items-center gap-1.5"><BellRing size={12} className="text-orange"/>Próximo passo <span className="text-muted font-normal normal-case tracking-normal">+ lembrete</span></label>
+          <input className="input-field" value={form.proximo_passo} onChange={(e) => set('proximo_passo', e.target.value)}/>
+          <input type="date" className="input-field mt-1.5" value={form.data_retorno ?? ''} onChange={(e) => set('data_retorno', e.target.value)} title="Data do lembrete"/>
+        </div>
         <Field label="Observações / dono / particularidades">
           <textarea rows={4} className="input-field resize-none" value={form.observacoes} onChange={(e) => set('observacoes', e.target.value)} />
         </Field>

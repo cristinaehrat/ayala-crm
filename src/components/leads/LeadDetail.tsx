@@ -1,6 +1,6 @@
 import {
   Phone, MessageCircle, X, User, Building2, MapPin, Calendar, Edit2, Check, Send,
-  ArrowRightLeft, GraduationCap, Trash2, AlertCircle, Wrench, ExternalLink,
+  ArrowRightLeft, GraduationCap, Trash2, AlertCircle, Wrench, ExternalLink, BellRing,
 } from 'lucide-react'
 import EmpresaSection from '@/components/empresas/EmpresaSection'
 import { useLead, useUpdateLead, useDeleteLead, useTurma } from '@/hooks/useLeads'
@@ -33,6 +33,7 @@ type EditForm = {
   marca_interesse: string
   potencial: string
   proximo_passo: string
+  data_retorno: string
   canal_origem: string
   observacoes: string
   interesses: string[]
@@ -95,7 +96,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   const [savingNota, setSavingNota] = useState(false)
   const [form, setForm] = useState<EditForm>({
     nome: '', empresa_oficina: '', cidade: '', uf: '', perfil: '',
-    status: '', marca_interesse: '', potencial: '', proximo_passo: '',
+    status: '', marca_interesse: '', potencial: '', proximo_passo: '', data_retorno: '',
     canal_origem: '', observacoes: '', interesses: [],
     requer_atencao: false, porte_oficina: '', qtd_interessados: '',
   })
@@ -114,6 +115,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         marca_interesse:  lead.marca_interesse ?? '',
         potencial:        lead.potencial ?? '',
         proximo_passo:    lead.proximo_passo ?? '',
+        data_retorno:     lead.data_retorno ?? '',
         canal_origem:     lead.canal_origem ?? '',
         observacoes:      lead.observacoes ?? '',
         interesses:       lead.interesses ?? [],
@@ -198,6 +200,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         marca_interesse:  form.marca_interesse || null,
         potencial:        form.potencial || null,
         proximo_passo:    form.proximo_passo || null,
+        data_retorno:     form.data_retorno || null,
         canal_origem:     form.canal_origem || null,
         observacoes:      form.observacoes || null,
         interesses:       form.interesses.length > 0 ? form.interesses : null,
@@ -327,9 +330,11 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                 {CANAL_ORIGEM_OPTIONS.map((c) => <option key={c.value} value={c.value}>{c.label}</option>)}
               </select>
             </Field>
-            <Field label="Próximo Passo">
-              <input className="input-field" value={form.proximo_passo} onChange={(e) => set('proximo_passo', e.target.value)} />
-            </Field>
+            <div>
+              <label className="block text-xs font-display font-semibold text-muted uppercase tracking-wide mb-1 flex items-center gap-1.5"><BellRing size={11} className="text-orange"/>Próximo Passo + lembrete</label>
+              <input className="input-field" value={form.proximo_passo} onChange={(e) => set('proximo_passo', e.target.value)} placeholder="Ex: Ligar na sexta após 14h"/>
+              <input type="date" className="input-field mt-1.5" value={form.data_retorno} onChange={(e) => set('data_retorno', e.target.value)} title="Data do lembrete"/>
+            </div>
             {/* Requer Atenção */}
             <div
               onClick={() => set('requer_atencao', !form.requer_atencao)}
@@ -524,7 +529,12 @@ export default function LeadDetail({ leadId, onClose }: Props) {
           </>
         )}
         <InfoRow label="Potencial" value={lead.potencial} />
-        <InfoRow label="Próximo passo" value={lead.proximo_passo} />
+        {(lead.proximo_passo || lead.data_retorno) && (
+          <div className="flex flex-col gap-1">
+            {lead.proximo_passo && <div className="flex items-start gap-2"><BellRing size={13} className="text-orange mt-0.5 shrink-0"/><p className="text-white/90 text-sm">{lead.proximo_passo}</p></div>}
+            {lead.data_retorno && (() => { const today = new Date(); today.setHours(0,0,0,0); const d = new Date(lead.data_retorno + 'T12:00:00'); const vencido = d < today; const urgente = !vencido && (d.getTime()-today.getTime())/86400000<=3; const [,m,dd] = lead.data_retorno.split('-'); return <span className={`self-start text-xs font-display font-bold border rounded px-2 py-0.5 ${vencido?'text-red-400 bg-red-900/20 border-red-400/20':urgente?'text-orange bg-orange/10 border-orange/20':'text-slate-400 bg-white/5 border-white/10'}`}>🔔 {dd}/{m}{vencido?' · VENCIDO':''}</span> })()}
+          </div>
+        )}
         {turma && (
           <InfoRow icon={<GraduationCap size={14} />} label="Turma selecionada" value={
             [turma.nome_treinamento, turma.cidade, turma.data_inicio ? new Date(turma.data_inicio + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit' }) : null]

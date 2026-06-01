@@ -82,6 +82,13 @@
   }
 }
 
+@media print {
+  .no-print { display: none !important; }
+  body { background: white !important; color: #0D1F3C !important; }
+  .print-roteiro { display: block !important; }
+  .md\:ml-56 { margin-left: 0 !important; }
+}
+
 @layer utilities {
   .scrollbar-hide {
     -ms-overflow-style: none;

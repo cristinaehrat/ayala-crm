@@ -15,6 +15,7 @@ const CATEGORIAS = [
   { value: 'marketing',   label: 'Marketing',     emoji: '📣', bg: 'bg-purple-700' },
   { value: 'material',    label: 'Material',      emoji: '📦', bg: 'bg-gray-600' },
   { value: 'manutencao_carro', label: 'Manutenção carro', emoji: '🔧', bg: 'bg-slate-700' },
+  { value: 'pedagio',     label: 'Pedágio',       emoji: '🛣️', bg: 'bg-yellow-700' },
   { value: 'airbnb',      label: 'Airbnb',        emoji: '🏠', bg: 'bg-blue-700' },
   { value: 'outros',      label: 'Outros',        emoji: '📎', bg: 'bg-white/20' },
 ] as const
