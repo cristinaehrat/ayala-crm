@@ -186,6 +186,7 @@ export function useCreateLeadFromProspecto() {
         consultor: prospecto.consultor ?? null,
         resultado_visita: prospecto.resultado_visita ?? null,
         proximo_passo: prospecto.proximo_passo ?? null,
+        empresa_id: prospecto.empresa_id ?? null,
         id_prospecto: prospecto.id_visita,
         observacoes: prospecto.observacoes ?? null,
         data_visita: prospecto.data_visita ?? null,
