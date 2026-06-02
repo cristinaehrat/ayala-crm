@@ -88,7 +88,7 @@ export function useCloseTurma() {
 
           const { error: leadError } = await supabase
             .from('leads_v2')
-            .update({ etiqueta_chatwoot: etiquetas })
+            .update({ etiqueta_chatwoot: etiquetas, status: 'cliente' })
             .eq('id', lead.id)
 
           if (leadError) throw leadError

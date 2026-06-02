@@ -451,7 +451,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
           sideEffects.push(
             supabase
               .from('leads_v2')
-              .update({ turma_selecionada: turmaId })
+              .update({ turma_selecionada: turmaId, status: 'cliente' })
               .eq('id', selectedLead.id)
               .then(({ error }) => {
                 if (error) console.error('Falha ao vincular turma no lead:', error.message)
