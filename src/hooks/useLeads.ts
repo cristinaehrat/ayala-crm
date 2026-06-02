@@ -278,3 +278,21 @@ export function useLeadsByProspecto(idProspecto: string | null) {
     staleTime: 60 * 1000,
   })
 }
+
+export function useSearchLeadByPhone(phoneDigits: string) {
+  return useQuery<Lead[]>({
+    queryKey: ['leads', 'phone-search', phoneDigits],
+    enabled: phoneDigits.length >= 8,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('leads_v2')
+        .select('*')
+        .ilike('telefone', `%${phoneDigits}%`)
+        .order('ultimo_contato', { ascending: false, nullsFirst: false })
+        .limit(20)
+      if (error) throw error
+      return (data ?? []) as Lead[]
+    },
+    staleTime: 30 * 1000,
+  })
+}

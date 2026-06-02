@@ -2,6 +2,10 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import { normalizeCity } from '@/lib/utils'
 
+function removeAccents(str: string): string {
+  return str.normalize('NFD').replace(/[̀-ͯ]/g, '')
+}
+
 export interface Prospecto {
   id_visita: string
   data_visita: string | null
@@ -118,8 +122,8 @@ export function useSearchProspectos(query: string, phoneDigits?: string, city?: 
     queryKey: ['prospectos', 'search', query, phoneDigits, city, uf],
     enabled: query.trim().length >= 2 || (phoneDigits?.length ?? 0) >= 8,
     queryFn: async () => {
-      const normalizedQuery = query.trim()
-      const normalizedCity = normalizeCity(city ?? normalizedQuery)
+      const normalizedQuery = removeAccents(query.trim())
+      const normalizedCity = normalizeCity(city ?? query.trim())
       let q = supabase
         .from('cadastro_prospectos')
         .select('*')

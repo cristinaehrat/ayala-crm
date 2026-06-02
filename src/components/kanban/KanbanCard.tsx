@@ -21,15 +21,14 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
   const { data: malha = [] } = useMalhaEstrategica()
   const rotaMes = findRotaMes(lead.cidade, lead.marca_interesse, malha)
   const actionSignals = getLeadActionSignals(lead)
-  const lastClick = useRef(0)
+  const pointerDownX = useRef(0)
+  const pointerDownY = useRef(0)
 
-  function handleClick() {
-    const now = Date.now()
-    if (now - lastClick.current < 350) {
+  function handleClick(e: React.MouseEvent) {
+    const dx = Math.abs(e.clientX - pointerDownX.current)
+    const dy = Math.abs(e.clientY - pointerDownY.current)
+    if (dx < 8 && dy < 8) {
       onOpenLead?.(lead.id)
-      lastClick.current = 0
-    } else {
-      lastClick.current = now
     }
   }
 
@@ -48,6 +47,10 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
       style={style}
       {...attributes}
       {...listeners}
+      onPointerDownCapture={(e) => {
+        pointerDownX.current = e.clientX
+        pointerDownY.current = e.clientY
+      }}
       onClick={handleClick}
       className={`bg-white border rounded-lg p-3 shadow-sm cursor-grab active:cursor-grabbing
                  hover:border-orange/30 hover:shadow-md transition-all ${
@@ -82,7 +85,10 @@ export default function KanbanCard({ lead, onMoverLead, onOpenLead }: Props) {
           <p className="text-muted text-xs truncate">{lead.empresa_oficina ?? lead.cidade}</p>
         </div>
         {lead.requer_atencao && (
-          <span className="shrink-0 w-2 h-2 rounded-full bg-orange animate-pulse-orange" />
+          <span
+            className="shrink-0 w-2 h-2 rounded-full bg-orange animate-pulse-orange"
+            title="Requer atenção"
+          />
         )}
       </div>
 

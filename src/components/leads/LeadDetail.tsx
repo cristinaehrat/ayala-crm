@@ -209,31 +209,35 @@ export default function LeadDetail({ leadId, onClose }: Props) {
       return
     }
 
-    await updateLead.mutateAsync({
-      id: lead!.id,
-      data: {
-        nome:             form.nome || null,
-        empresa_oficina:  form.empresa_oficina || null,
-        cidade:           cidade,
-        uf:               form.uf || null,
-        perfil:           form.perfil || null,
-        status:           form.status || null,
-        marca_interesse:  form.marca_interesse || null,
-        potencial:        form.potencial || null,
-        telefone_financeiro: form.telefone_financeiro || null,
-        telefone_oficina:    form.telefone_oficina || null,
-        proximo_passo:    form.proximo_passo || null,
-        data_retorno:     form.data_retorno || null,
-        canal_origem:     form.canal_origem || null,
-        observacoes:      form.observacoes || null,
-        interesses:       form.interesses.length > 0 ? form.interesses : null,
-        requer_atencao:   form.requer_atencao,
-        porte_oficina:    form.porte_oficina || null,
-        qtd_interessados: form.qtd_interessados || null,
-      },
-    })
-    toast.success('Lead atualizado')
-    setEditMode(false)
+    try {
+      await updateLead.mutateAsync({
+        id: lead!.id,
+        data: {
+          nome:             form.nome || null,
+          empresa_oficina:  form.empresa_oficina || null,
+          cidade:           cidade,
+          uf:               form.uf || null,
+          perfil:           form.perfil || null,
+          status:           form.status || null,
+          marca_interesse:  form.marca_interesse || null,
+          potencial:        form.potencial || null,
+          telefone_financeiro: form.telefone_financeiro || null,
+          telefone_oficina:    form.telefone_oficina || null,
+          proximo_passo:    form.proximo_passo || null,
+          data_retorno:     form.data_retorno || null,
+          canal_origem:     form.canal_origem || null,
+          observacoes:      form.observacoes || null,
+          interesses:       form.interesses.length > 0 ? form.interesses : null,
+          requer_atencao:   form.requer_atencao,
+          porte_oficina:    form.porte_oficina || null,
+          qtd_interessados: form.qtd_interessados || null,
+        },
+      })
+      toast.success('Lead atualizado')
+      setEditMode(false)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao salvar lead')
+    }
   }
 
   /* ── EDIT MODE ── */

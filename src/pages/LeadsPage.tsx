@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useLeads, type LeadFilter } from '@/hooks/useLeads'
+import { useLeads, useSearchLeadByPhone, type LeadFilter } from '@/hooks/useLeads'
 import { useRealtime } from '@/hooks/useRealtime'
 import LeadFilters from '@/components/leads/LeadFilters'
 import LeadCard from '@/components/leads/LeadCard'
@@ -27,15 +27,21 @@ export default function LeadsPage() {
 
   const { data: leads = [], isLoading } = useLeads(filter)
 
+  const phoneDigits = search.replace(/\D/g, '')
+  const isPhoneSearch = phoneDigits.length >= 8
+  const { data: phoneResults = [], isFetching: isPhoneFetching } = useSearchLeadByPhone(phoneDigits)
+
   const filtered = search.trim()
-    ? leads.filter((l) => {
-        const q = search.toLowerCase()
-        return (
-          l.nome?.toLowerCase().includes(q) ||
-          l.telefone?.includes(q) ||
-          l.empresa_oficina?.toLowerCase().includes(q)
-        )
-      })
+    ? isPhoneSearch
+      ? phoneResults
+      : leads.filter((l) => {
+          const q = search.toLowerCase()
+          return (
+            l.nome?.toLowerCase().includes(q) ||
+            l.telefone?.includes(q) ||
+            l.empresa_oficina?.toLowerCase().includes(q)
+          )
+        })
     : leads
 
   return (
@@ -67,20 +73,22 @@ export default function LeadsPage() {
 
         {/* Counter */}
         <p className="text-xs text-muted px-4 py-2 shrink-0">
-          {isLoading ? 'Carregando...' : `${filtered.length} leads`}
+          {isLoading || isPhoneFetching ? 'Carregando...' : `${filtered.length} leads`}
         </p>
 
         {/* List */}
         <div className="flex-1 overflow-y-auto">
-          {isLoading && (
+          {(isLoading || isPhoneFetching) && (
             <div className="flex justify-center py-8">
               <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
-          {!isLoading && filtered.length === 0 && (
+          {!isLoading && !isPhoneFetching && filtered.length === 0 && (
             <div className="text-center py-12 text-muted text-sm">
-              Nenhum lead encontrado
+              {isPhoneSearch
+                ? 'Nenhum lead encontrado para esse número'
+                : 'Nenhum lead encontrado'}
             </div>
           )}
 

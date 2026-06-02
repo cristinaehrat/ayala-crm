@@ -9,7 +9,7 @@ import {
 } from '@dnd-kit/core'
 import { useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { useLeads, useUpdateLeadStatus } from '@/hooks/useLeads'
+import { useLeads, useUpdateLeadStatus, useSearchLeadByPhone } from '@/hooks/useLeads'
 import type { LeadFilter } from '@/hooks/useLeads'
 import LeadFilters from '@/components/leads/LeadFilters'
 import { KANBAN_COLUMNS } from '@/lib/types'
@@ -19,6 +19,7 @@ import KanbanCard from '@/components/kanban/KanbanCard'
 import MoverLeadSheet from '@/components/MoverLeadSheet'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
+import { toast } from 'sonner'
 
 const DESKTOP_GRID_ROWS = [KANBAN_COLUMNS]
 
@@ -68,7 +69,7 @@ export default function KanbanPage() {
       if (!targetLead || targetLead.status === lead.status) return
       updateStatus.mutate(
         { id: lead.id, status: targetLead.status ?? 'novo' },
-        { onSuccess: invalidate, onError: invalidate },
+        { onSuccess: invalidate, onError: () => { invalidate(); toast.error('Não foi possível mover o lead.') } },
       )
       return
     }
@@ -81,15 +82,21 @@ export default function KanbanPage() {
 
   const activeLead = activeId ? leads.find((l) => l.id === activeId) : null
 
+  const phoneDigits = search.replace(/\D/g, '')
+  const isPhoneSearch = phoneDigits.length >= 8
+  const { data: phoneResults = [] } = useSearchLeadByPhone(phoneDigits)
+
   const filteredLeads = search.trim()
-    ? leads.filter((lead) => {
-        const q = search.toLowerCase()
-        return (
-          lead.nome?.toLowerCase().includes(q) ||
-          lead.telefone?.includes(q) ||
-          lead.empresa_oficina?.toLowerCase().includes(q)
-        )
-      })
+    ? isPhoneSearch
+      ? phoneResults
+      : leads.filter((lead) => {
+          const q = search.toLowerCase()
+          return (
+            lead.nome?.toLowerCase().includes(q) ||
+            lead.telefone?.includes(q) ||
+            lead.empresa_oficina?.toLowerCase().includes(q)
+          )
+        })
     : leads
 
   if (isLoading) {
@@ -123,6 +130,12 @@ export default function KanbanPage() {
         </div>
         <LeadFilters active={filter} onChange={setFilter} mode="kanban" />
       </div>
+
+      {isPhoneSearch && filteredLeads.length === 0 && (
+        <div className="px-4 pb-2 shrink-0">
+          <p className="text-sm text-muted text-center py-2">Nenhum lead encontrado para esse número</p>
+        </div>
+      )}
 
       {/* Mobile: column selector */}
       <div className="flex md:hidden items-center gap-2 px-4 pb-2 shrink-0">

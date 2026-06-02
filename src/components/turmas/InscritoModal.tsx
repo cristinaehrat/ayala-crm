@@ -444,6 +444,27 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
         if (empresaId) {
           setForm((prev) => ({ ...prev, empresa_id: empresaId }))
         }
+
+        // Vincular turma ao lead e decrementar vagas
+        const sideEffects: PromiseLike<unknown>[] = []
+        if (selectedLead?.id) {
+          sideEffects.push(
+            supabase
+              .from('leads_v2')
+              .update({ turma_selecionada: turmaId })
+              .eq('id', selectedLead.id)
+              .then(({ error }) => {
+                if (error) console.error('Falha ao vincular turma no lead:', error.message)
+              }),
+          )
+        }
+        sideEffects.push(
+          supabase.rpc('fn_decrementar_vaga', { p_turma_id: turmaId }).then(({ error }) => {
+            if (error) console.error('Falha ao decrementar vaga:', error.message)
+          }),
+        )
+        await Promise.allSettled(sideEffects)
+
         toast.success('Inscrito adicionado. Os links de formulário foram liberados.')
       }
     } catch (err) {
