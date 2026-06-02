@@ -152,8 +152,12 @@ export default function ProspectosPage() {
       toast.error('Oficina sem WhatsApp do responsável — não é possível criar o lead.')
       return
     }
-    await createLead.mutateAsync(p)
-    toast.success('Lead vinculado ao CRM criado com sucesso!')
+    try {
+      await createLead.mutateAsync(p)
+      toast.success('Lead vinculado ao CRM criado com sucesso!')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao criar lead')
+    }
   }
 
   const selected = detailId ? prospectos.find((p) => p.id_visita === detailId) ?? null : null

@@ -217,7 +217,9 @@ export function useCreateLeadFromProspecto() {
         empresa_oficina: prospecto.empresa_oficina ?? null,
         cidade: prospecto.cidade ?? null,
         uf: prospecto.uf ?? null,
-        marca_interesse: prospecto.marca_interesse ?? null,
+        marca_interesse: prospecto.marca_interesse
+          ? (prospecto.marca_interesse.split(',')[0].trim().toLowerCase() || null)
+          : null,
         canal_origem: 'visita',
         origem: 'visita',
         potencial: prospecto.potencial ?? null,
