@@ -499,11 +499,11 @@ function ProspectoCard({
 }
 
 const STATUS_LEAD_LABEL: Record<string, string> = {
-  lead_novo:            'Novo',
-  qualificado:          'Qualificado',
-  lista_espera:         'Lista de espera',
-  aguardando_pagamento: 'Ag. pagamento',
-  inscrito:             'Inscrito',
+  novo:         'Novo',
+  em_contato:   'Em Contato',
+  oportunidade: 'Oportunidade',
+  cliente:      'Cliente',
+  inativo:      'Inativo',
 }
 
 function ProspectoDetail({ prospecto: p, onClose, onRegistrarContato, onConcluirLembrete }: { prospecto: Prospecto; onClose: () => void; onRegistrarContato: () => void; onConcluirLembrete: () => void }) {

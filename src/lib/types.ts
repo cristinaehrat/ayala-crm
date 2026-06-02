@@ -150,16 +150,11 @@ export interface Despesa {
 }
 
 export type KanbanStatus =
-  | 'lead_novo'
-  | 'qualificado'
-  | 'aguardando_ismenia'
-  | 'visualizou_preco'
-  | 'reserva'
-  | 'aguardando_pagamento'
-  | 'inscrito'
-  | 'lista_espera'
-  | 'sem_interesse'
-  | 'perdido'
+  | 'novo'
+  | 'em_contato'
+  | 'oportunidade'
+  | 'cliente'
+  | 'inativo'
 
 export const KANBAN_COLUMNS: Array<{
   id: KanbanStatus
@@ -167,14 +162,9 @@ export const KANBAN_COLUMNS: Array<{
   accent: string
   surface: string
 }> = [
-  { id: 'lead_novo',            label: 'Novo Lead',         accent: '#1565C0', surface: '#DBEAFE' },
-  { id: 'qualificado',          label: 'Qualificado',       accent: '#2563EB', surface: '#E0E7FF' },
-  { id: 'aguardando_ismenia',   label: 'Ag. Ismênia',       accent: '#F97316', surface: '#FFEDD5' },
-  { id: 'visualizou_preco',     label: 'Visualizou Preço',  accent: '#B45309', surface: '#FEF3C7' },
-  { id: 'reserva',              label: 'Reserva',           accent: '#DC2626', surface: '#FEE2E2' },
-  { id: 'aguardando_pagamento', label: 'Ag. Pagamento',     accent: '#C2410C', surface: '#FFEDD5' },
-  { id: 'inscrito',             label: 'Inscrito',          accent: '#15803D', surface: '#DCFCE7' },
-  { id: 'lista_espera',         label: 'Lista Espera',      accent: '#EA580C', surface: '#FFEDD5' },
-  { id: 'sem_interesse',        label: 'Sem Interesse',     accent: '#64748B', surface: '#E2E8F0' },
-  { id: 'perdido',              label: 'Perdido',           accent: '#475569', surface: '#E2E8F0' },
+  { id: 'novo',        label: 'Novo',        accent: '#1565C0', surface: '#DBEAFE' },
+  { id: 'em_contato',  label: 'Em Contato',  accent: '#2563EB', surface: '#E0E7FF' },
+  { id: 'oportunidade',label: 'Oportunidade',accent: '#F97316', surface: '#FFEDD5' },
+  { id: 'cliente',     label: 'Cliente',     accent: '#15803D', surface: '#DCFCE7' },
+  { id: 'inativo',     label: 'Inativo',     accent: '#64748B', surface: '#E2E8F0' },
 ]

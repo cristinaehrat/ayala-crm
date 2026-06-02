@@ -1,16 +1,11 @@
 import { useUpdateLeadStatus } from '@/hooks/useLeads'
 
 const DESTINOS = [
-  { value: 'lead_novo',            label: 'Lead Novo' },
-  { value: 'qualificado',          label: 'Qualificado' },
-  { value: 'aguardando_ismenia',   label: 'Ag. Ismênia' },
-  { value: 'visualizou_preco',     label: 'Visualizou Preço' },
-  { value: 'reserva',              label: 'Reserva' },
-  { value: 'aguardando_pagamento', label: 'Ag. Pagamento' },
-  { value: 'inscrito',             label: 'Inscrito' },
-  { value: 'lista_espera',         label: 'Lista de Espera' },
-  { value: 'perdido',              label: 'Perdido' },
-  { value: 'sem_interesse',        label: 'Sem Interesse' },
+  { value: 'novo',         label: 'Novo' },
+  { value: 'em_contato',   label: 'Em Contato' },
+  { value: 'oportunidade', label: 'Oportunidade' },
+  { value: 'cliente',      label: 'Cliente' },
+  { value: 'inativo',      label: 'Inativo' },
 ] as const
 
 interface Props {

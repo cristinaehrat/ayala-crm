@@ -256,16 +256,11 @@ export const UF_OPTIONS = [
 ]
 
 export const STATUS_ALL_OPTIONS: { id: string; label: string }[] = [
-  { id: 'lead_novo',            label: 'Novo Lead' },
-  { id: 'qualificado',          label: 'Qualificado' },
-  { id: 'aguardando_ismenia',   label: 'Ag. Ismênia' },
-  { id: 'visualizou_preco',     label: 'Visualizou Preço' },
-  { id: 'reserva',              label: 'Reserva' },
-  { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
-  { id: 'inscrito',             label: 'Inscrito' },
-  { id: 'lista_espera',         label: 'Lista Espera' },
-  { id: 'sem_interesse',        label: 'Sem Interesse' },
-  { id: 'perdido',              label: 'Perdido' },
+  { id: 'novo',         label: 'Novo' },
+  { id: 'em_contato',  label: 'Em Contato' },
+  { id: 'oportunidade',label: 'Oportunidade' },
+  { id: 'cliente',     label: 'Cliente' },
+  { id: 'inativo',     label: 'Inativo' },
 ]
 
 export const CANAL_ORIGEM_OPTIONS: { value: string; label: string }[] = [
@@ -297,16 +292,11 @@ export const POTENCIAL_BADGES: Record<string, { label: string; bg: string }> = {
 }
 
 export const STATUS_COLORS: Record<string, string> = {
-  lead_novo:            '#1565C0',
-  qualificado:          '#2563EB',
-  aguardando_ismenia:   '#7C3AED',
-  visualizou_preco:     '#B45309',
-  reserva:              '#DC2626',
-  aguardando_pagamento: '#B45309',
-  inscrito:             '#2E7D32',
-  lista_espera:         '#E65100',
-  sem_interesse:        '#64748B',
-  perdido:              '#475569',
+  novo:         '#1565C0',
+  em_contato:   '#2563EB',
+  oportunidade: '#F97316',
+  cliente:      '#15803D',
+  inativo:      '#64748B',
 }
 
 export function formatDate(d: string | null | undefined): string {

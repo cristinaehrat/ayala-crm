@@ -20,34 +20,17 @@ import MoverLeadSheet from '@/components/MoverLeadSheet'
 import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react'
 
-const DESKTOP_GRID_ROWS = [
-  KANBAN_COLUMNS.slice(0, 5),
-  KANBAN_COLUMNS.slice(5, 10),
-]
+const DESKTOP_GRID_ROWS = [KANBAN_COLUMNS]
 
 function getColumnLeads(leads: Lead[], colId: string): Lead[] {
-  if (colId === 'aguardando_ismenia') {
-    return leads.filter((l) =>
-      l.status === 'aguardando_ismenia' ||
-      l.etiqueta_chatwoot?.toLowerCase().includes('aguardando_ismenia')
-    )
+  if (colId === 'em_contato') {
+    return leads.filter((l) => (l.status ?? 'novo') === colId).slice(0, 25)
   }
-  if (colId === 'qualificado') {
-    return leads
-      .filter((l) => (l.status ?? 'lead_novo') === colId)
-      .slice(0, 25)
-  }
-  return leads.filter((l) => (l.status ?? 'lead_novo') === colId)
+  return leads.filter((l) => (l.status ?? 'novo') === colId)
 }
 
 function getColumnTotalCount(leads: Lead[], colId: string): number {
-  if (colId === 'aguardando_ismenia') {
-    return leads.filter((l) =>
-      l.status === 'aguardando_ismenia' ||
-      l.etiqueta_chatwoot?.toLowerCase().includes('aguardando_ismenia')
-    ).length
-  }
-  return leads.filter((l) => (l.status ?? 'lead_novo') === colId).length
+  return leads.filter((l) => (l.status ?? 'novo') === colId).length
 }
 
 export default function KanbanPage() {
@@ -84,7 +67,7 @@ export default function KanbanPage() {
       const targetLead = leads.find((l) => l.id === String(over.id))
       if (!targetLead || targetLead.status === lead.status) return
       updateStatus.mutate(
-        { id: lead.id, status: targetLead.status ?? 'lead_novo' },
+        { id: lead.id, status: targetLead.status ?? 'novo' },
         { onSuccess: invalidate, onError: invalidate },
       )
       return
@@ -196,8 +179,7 @@ export default function KanbanPage() {
                   leads={colLeads}
                   accent={accent}
                   surface={surface}
-                  subtitle={id === 'qualificado' ? 'fila operacional recente' : undefined}
-                  countLabel={id === 'qualificado' && totalCount > colLeads.length ? `${colLeads.length}/${totalCount}` : String(totalCount)}
+                  countLabel={id === 'em_contato' && totalCount > colLeads.length ? `${colLeads.length}/${totalCount}` : String(totalCount)}
                   colIdx={i}
                   totalCols={KANBAN_COLUMNS.length}
                   onMoverLead={(id) => setMoveSheetLeadId(id)}
@@ -221,8 +203,7 @@ export default function KanbanPage() {
                 leads={colLeads}
                 accent={accent}
                 surface={surface}
-                subtitle={id === 'qualificado' ? 'fila operacional recente' : undefined}
-                countLabel={id === 'qualificado' && totalCount > colLeads.length ? `${colLeads.length}/${totalCount}` : String(totalCount)}
+                countLabel={id === 'em_contato' && totalCount > colLeads.length ? `${colLeads.length}/${totalCount}` : String(totalCount)}
                 colIdx={i}
                 totalCols={KANBAN_COLUMNS.length}
                 onOpenLead={(id) => setOpenLeadId(id)}
@@ -231,9 +212,9 @@ export default function KanbanPage() {
           })}
         </div>
 
-        {/* Desktop largo: grade 5x2 */}
+        {/* Desktop largo: grade 5 colunas */}
         <div className="hidden xl:grid flex-1 overflow-hidden px-4 pb-4 gap-3 grid-cols-5 auto-rows-fr">
-          {DESKTOP_GRID_ROWS.map((row, rowIndex) =>
+          {DESKTOP_GRID_ROWS.map((row) =>
             row.map(({ id, label, accent, surface }) => {
               const colLeads = getColumnLeads(filteredLeads, id)
               const totalCount = getColumnTotalCount(filteredLeads, id)
@@ -245,9 +226,8 @@ export default function KanbanPage() {
                   leads={colLeads}
                   accent={accent}
                   surface={surface}
-                  subtitle={id === 'qualificado' ? 'fila operacional recente' : rowIndex === 0 ? 'avanço comercial' : 'fechamento e saída'}
-                  countLabel={id === 'qualificado' && totalCount > colLeads.length ? `${colLeads.length}/${totalCount}` : String(totalCount)}
-                  colIdx={rowIndex}
+                  countLabel={id === 'em_contato' && totalCount > colLeads.length ? `${colLeads.length}/${totalCount}` : String(totalCount)}
+                  colIdx={0}
                   totalCols={row.length}
                   onOpenLead={(leadId) => setOpenLeadId(leadId)}
                 />

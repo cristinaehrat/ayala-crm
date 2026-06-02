@@ -10,9 +10,9 @@ const FILTERS: { id: LeadFilter; label: string }[] = [
   { id: 'hot_lead',             label: 'Hot Lead' },
   { id: 'ag_ismenia',           label: 'Ag. Ismênia' },
   { id: 'follow_up',            label: 'Follow-up' },
-  { id: 'qualificados',         label: 'Qualif. recentes' },
-  { id: 'aguardando_pagamento', label: 'Ag. Pagamento' },
-  { id: 'inscrito',             label: 'Inscritos' },
+  { id: 'qualificados',         label: 'Em Contato' },
+  { id: 'aguardando_pagamento', label: 'Oportunidade' },
+  { id: 'inscrito',             label: 'Clientes' },
   { id: 'visualizou_preco',     label: 'Viu Preço' },
   { id: 'lista_espera',         label: 'Lista Espera' },
 ]

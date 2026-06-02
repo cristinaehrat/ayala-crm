@@ -231,7 +231,7 @@ export function useCreateLeadFromProspecto() {
         id_prospecto: prospecto.id_visita,
         observacoes: prospecto.observacoes ?? null,
         data_visita: prospecto.data_visita ?? null,
-        status: 'lead_novo',
+        status: 'em_contato',
         data_entrada: new Date().toISOString(),
         ultimo_contato: new Date().toISOString(),
       }

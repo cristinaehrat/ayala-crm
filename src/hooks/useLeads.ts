@@ -26,12 +26,12 @@ const FILTER_MAP: Record<FixedFilter, (q: AnyQuery) => AnyQuery> = {
   todos:                (q) => q,
   hoje:                 (q) => { const today = new Date().toISOString().split('T')[0]; return q.not('data_retorno', 'is', null).lte('data_retorno', today) },
   ag_ismenia:           (q) => q.ilike('etiqueta_chatwoot', '%aguardando_ismenia%'),
-  qualificados:         (q) => q.eq('status', 'qualificado'),
+  qualificados:         (q) => q.eq('status', 'em_contato'),
   hot_lead:             (q) => q.ilike('etiqueta_chatwoot', '%hot_lead%'),
   follow_up:            (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
-  lista_espera:         (q) => q.eq('status', 'lista_espera'),
-  aguardando_pagamento: (q) => q.eq('status', 'aguardando_pagamento'),
-  inscrito:             (q) => q.eq('status', 'inscrito'),
+  lista_espera:         (q) => q.ilike('etiqueta_chatwoot', '%lista_espera%'),
+  aguardando_pagamento: (q) => q.eq('status', 'oportunidade'),
+  inscrito:             (q) => q.eq('status', 'cliente'),
   visualizou_preco:     (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
 }
 
@@ -249,7 +249,7 @@ export function useCreateLead() {
       const { error } = await supabase.from('leads_v2').insert({
         ...data,
         cidade: normalizeCity(data.cidade) ?? null,
-        status: 'lead_novo',
+        status: 'novo',
         data_entrada: new Date().toISOString(),
         ultimo_contato: new Date().toISOString(),
       })
