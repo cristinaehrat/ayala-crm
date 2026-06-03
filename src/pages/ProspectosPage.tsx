@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X, Download, Sparkles, ChevronUp } from 'lucide-react'
 
 function lembreteStatus(data_retorno?: string | null) {
   if (!data_retorno) return null
@@ -13,7 +13,7 @@ function fmtLembrete(data_retorno: string) {
   const [, m, d] = data_retorno.split('-')
   return `${d}/${m}`
 }
-import { useProspectos, useProspectosByDataVisita, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, useDistinctCidades, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
+import { useProspectos, useProspectosByDataVisita, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, useDistinctCidades, useExtrairProspectos, type ExtracaoResult, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { useHistoricoContatos, useCreateHistoricoContato, RESULTADO_LABEL, INTERESSE_LABEL, TIPO_CONTATO_LABEL } from '@/hooks/useHistoricoContatos'
@@ -101,6 +101,40 @@ export default function ProspectosPage() {
   const [detailId, setDetailId] = useState<string | null>(null)
   const [editing, setEditing] = useState<Prospecto | null>(null)
   const [contatoProspecto, setContatoProspecto] = useState<Prospecto | null>(null)
+  const [extCidade, setExtCidade] = useState('')
+  const [extUf, setExtUf] = useState('')
+  const [extResultado, setExtResultado] = useState<ExtracaoResult | null>(null)
+  const [extAberto, setExtAberto] = useState(false)
+  const extrairProspectos = useExtrairProspectos()
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('ayala_prospectos_extracao')
+      if (saved) {
+        const parsed = JSON.parse(saved)
+        if (parsed.cidade) setExtCidade(parsed.cidade)
+        if (parsed.uf) setExtUf(parsed.uf)
+        if (parsed.resultado) { setExtResultado(parsed.resultado); setExtAberto(true) }
+      }
+    } catch { /* ignora */ }
+  }, [])
+
+  async function handleExtrair() {
+    if (!extCidade.trim() || !extUf) {
+      toast.error('Informe cidade e UF antes de extrair.')
+      return
+    }
+    try {
+      const result = await extrairProspectos.mutateAsync({ cidade: extCidade.trim(), uf: extUf })
+      setExtResultado(result)
+      setExtAberto(true)
+      try { localStorage.setItem('ayala_prospectos_extracao', JSON.stringify({ cidade: extCidade.trim(), uf: extUf, resultado: result })) } catch { /* ignora */ }
+      setCidadeFilter(extCidade.trim())
+      toast.success(`${result.criados} nova${result.criados !== 1 ? 's' : ''} oficina${result.criados !== 1 ? 's' : ''} · ${result.atualizados} atualizada${result.atualizados !== 1 ? 's' : ''}`)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao extrair prospectos')
+    }
+  }
 
   const today = new Date().toISOString().split('T')[0]
   const { data: prospectos = [], isLoading } = useProspectos(dataVisita ? 'todos' : filter, dataVisita ? undefined : (ufFilter || undefined), dataVisita ? undefined : (cidadeFilter || undefined))
@@ -201,6 +235,80 @@ export default function ProspectosPage() {
 
   return (
     <div className="flex flex-col h-full md:ml-56">
+      {/* Painel de Extração */}
+      <div className="px-3 pt-3 shrink-0">
+        <div className="rounded-xl border border-orange/30 bg-orange/5 overflow-hidden">
+          <button
+            onClick={() => setExtAberto(o => !o)}
+            className="w-full flex items-center justify-between gap-2 px-3 py-2.5 text-left"
+          >
+            <div className="flex items-center gap-2">
+              <Sparkles size={14} className="text-orange shrink-0" />
+              <span className="text-xs font-display font-bold text-orange">Extrair prospectos do Google Maps</span>
+              {extResultado && (
+                <span className="text-[10px] font-display font-semibold text-orange/70 bg-orange/10 rounded-full px-2 py-0.5">
+                  {extResultado.criados + extResultado.atualizados} oficinas · {extResultado.cidade}/{extResultado.uf}
+                </span>
+              )}
+            </div>
+            {extAberto ? <ChevronUp size={13} className="text-orange/60 shrink-0" /> : <ChevronDown size={13} className="text-orange/60 shrink-0" />}
+          </button>
+          {extAberto && (
+            <div className="px-3 pb-3 border-t border-orange/20 pt-3 space-y-3">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder="Cidade"
+                  value={extCidade}
+                  onChange={e => {
+                    setExtCidade(e.target.value)
+                    try { localStorage.setItem('ayala_prospectos_extracao', JSON.stringify({ cidade: e.target.value, uf: extUf, resultado: extResultado })) } catch { /* ignora */ }
+                  }}
+                  className="input-field flex-1 text-xs"
+                />
+                <select
+                  value={extUf}
+                  onChange={e => {
+                    setExtUf(e.target.value)
+                    try { localStorage.setItem('ayala_prospectos_extracao', JSON.stringify({ cidade: extCidade, uf: e.target.value, resultado: extResultado })) } catch { /* ignora */ }
+                  }}
+                  className="input-field w-20 text-xs"
+                >
+                  <option value="">UF</option>
+                  {UF_OPTIONS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                </select>
+                <button
+                  onClick={handleExtrair}
+                  disabled={extrairProspectos.isPending || !extCidade.trim() || !extUf}
+                  className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                >
+                  {extrairProspectos.isPending
+                    ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    : <Download size={13} />}
+                  {extrairProspectos.isPending ? 'Extraindo...' : 'Extrair'}
+                </button>
+              </div>
+              {extResultado && (
+                <div className="space-y-1.5">
+                  <p className="text-[10px] font-display font-semibold text-orange/70 uppercase tracking-wide">
+                    Última extração — {extResultado.cidade}/{extResultado.uf} · {extResultado.criados} novas · {extResultado.atualizados} atualizadas · {extResultado.total_analisado} analisadas
+                  </p>
+                  <div className="max-h-40 overflow-y-auto space-y-1">
+                    {extResultado.prospectos.map((p, i) => (
+                      <div key={p.id_visita ?? i} className={cn('flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs', p._novo ? 'bg-orange/10 border border-orange/20' : 'bg-white/5 border border-white/5')}>
+                        {p._novo && <span className="text-[9px] font-display font-bold text-orange uppercase tracking-wide shrink-0">Novo</span>}
+                        <span className={cn('font-semibold truncate', p._novo ? 'text-white' : 'text-muted')}>{p.empresa_oficina || '—'}</span>
+                        {p.telefone_oficina && <span className="text-muted shrink-0 font-mono text-[10px]">{p.telefone_oficina}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Filtro de visitas por data */}
       <div className="flex items-center gap-2 px-3 pt-3 pb-0 shrink-0 flex-wrap">
         <CalendarDays size={13} className="text-muted shrink-0" />
@@ -459,15 +567,23 @@ function ProspectoCard({
   const nome = p.nome_responsavel_treinamento || p.nome_contato_inicial || '—'
   const hasLeads = leadCount > 0
   const ligarTel = p.whatsapp_responsavel || p.telefone_oficina
+  const isDesqualificado = p.status_contato === 'desqualificado' || p.potencial === 'sem_interesse'
+  const isTentativa = ['tentativa_1', 'tentativa_2', 'tentativa_3', 'sem_resposta'].includes(p.status_contato ?? '')
+  const isRetornou = p.status_contato === 'retornou'
+
+  const cardClass = hasLeads
+    ? 'border-blue-200 bg-blue-50'
+    : isRetornou
+      ? 'border-orange/50 bg-orange/5 hover:border-orange/70'
+      : isTentativa
+        ? 'border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50'
+        : isDesqualificado
+          ? 'border-slate-700/50 bg-navy2/50 opacity-55'
+          : 'border-white/10 bg-navy2 hover:border-white/20'
 
   return (
     <div
-      className={cn(
-        'rounded-xl border transition-colors cursor-pointer',
-        hasLeads
-          ? 'border-blue-200 bg-blue-50'
-          : 'border-white/10 bg-navy2 hover:border-white/20',
-      )}
+      className={cn('rounded-xl border transition-colors cursor-pointer', cardClass)}
       onClick={onClick}
     >
       <div className="p-3">

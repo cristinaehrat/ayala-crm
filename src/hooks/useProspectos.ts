@@ -317,6 +317,50 @@ export function useDistinctCidades() {
   })
 }
 
+export interface ExtracaoResultProspecto {
+  id_visita: string | null
+  empresa_oficina: string | null
+  endereco: string | null
+  telefone_oficina: string | null
+  potencial: string | null
+  status_contato: string | null
+  _novo: boolean
+}
+
+export interface ExtracaoResult {
+  status: string
+  cidade: string
+  uf: string
+  total_analisado: number
+  total_filtrado: number
+  criados: number
+  atualizados: number
+  prospectos: ExtracaoResultProspecto[]
+}
+
+export function useExtrairProspectos() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async ({ cidade, uf }: { cidade: string; uf: string }): Promise<ExtracaoResult> => {
+      const resp = await fetch('https://n8n.ayalaoficial.com.br/webhook/extrair-prospectos', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cidade, uf }),
+      })
+      if (!resp.ok) {
+        const txt = await resp.text().catch(() => '')
+        throw new Error(`HTTP ${resp.status}: ${txt.slice(0, 200)}`)
+      }
+      const data = await resp.json()
+      if (data.status !== 'OK') throw new Error(data.message || 'Erro na extração')
+      return data as ExtracaoResult
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['prospectos'] })
+    },
+  })
+}
+
 export function useRegistrarTentativa() {
   const qc = useQueryClient()
   return useMutation({
