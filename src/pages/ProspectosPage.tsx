@@ -164,7 +164,7 @@ export default function ProspectosPage() {
   }
 
   const today = new Date().toISOString().split('T')[0]
-  const { data: prospectos = [], isLoading } = useProspectos(dataVisita ? 'todos' : filter, dataVisita ? undefined : (ufFilter || undefined), dataVisita ? undefined : (cidadeFilter || undefined))
+  const { data: prospectos = [], isLoading, isError, error } = useProspectos(dataVisita ? 'todos' : filter, dataVisita ? undefined : (ufFilter || undefined), dataVisita ? undefined : (cidadeFilter || undefined))
   const { data: visitasData = [], isLoading: loadingVisitas } = useProspectosByDataVisita(dataVisita || null)
   const { data: leadCounts = {} } = useProspectoLeadCounts()
   const { data: ufs = [] } = useDistinctUFs()
@@ -518,7 +518,16 @@ export default function ProspectosPage() {
             <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
           </div>
         )}
-        {!isLoading && filtered.length === 0 && (
+        {isError && (
+          <div className="text-center py-12 space-y-3">
+            <p className="text-red-400 text-sm font-display font-semibold">Erro ao carregar prospectos</p>
+            <p className="text-muted text-xs font-mono">{error instanceof Error ? error.message : 'Erro desconhecido'}</p>
+            <button onClick={() => window.location.reload()} className="btn-secondary text-xs px-4 py-2 mx-auto flex items-center gap-1.5">
+              Tentar novamente
+            </button>
+          </div>
+        )}
+        {!isLoading && !isError && filtered.length === 0 && (
           <div className="text-center py-12 text-muted text-sm">Nenhum prospecto encontrado</div>
         )}
         {!isLoading && filtered.map((p) => (

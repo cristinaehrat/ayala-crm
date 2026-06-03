@@ -77,7 +77,7 @@ export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string, ci
       if (filter === 'hoje') {
         q = q.order('data_retorno', { ascending: true }).limit(300)
       } else {
-        q = q.order('created_at', { ascending: false }).limit(300)
+        q = q.order('created_at', { ascending: false, nullsFirst: false }).limit(300)
       }
       const { data, error } = await q
       if (error) throw error
