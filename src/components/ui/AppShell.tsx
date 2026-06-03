@@ -1,8 +1,9 @@
-import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import {
-  Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign, BarChart2, Receipt, Building2, Navigation, MessageCircle,
+  Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign, BarChart2, Receipt, Building2, Navigation, MessageCircle, RotateCcw,
 } from 'lucide-react'
+import { useRegisterSW } from 'virtual:pwa-register/react'
 import { supabase } from '@/lib/supabase'
 import SyncBadge from '@/components/visita/SyncBadge'
 
@@ -24,7 +25,9 @@ const PAOLA_ROUTES = new Set(['/atendimento', '/leads', '/kanban', '/prospectos'
 
 export default function AppShell() {
   const navigate = useNavigate()
+  const location = useLocation()
   const [userEmail, setUserEmail] = useState('')
+  const { needRefresh: [needRefresh], updateServiceWorker } = useRegisterSW()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? ''))
@@ -32,10 +35,18 @@ export default function AppShell() {
 
   const isPaola = userEmail === 'paola@ayalaoficial.com.br'
   const visibleNav = isPaola ? NAV.filter(item => PAOLA_ROUTES.has(item.to)) : NAV
+  const isAtendimento = location.pathname.startsWith('/atendimento')
 
   async function handleLogout() {
     await supabase.auth.signOut()
     navigate('/login')
+  }
+
+  function handleRefresh() {
+    if (isAtendimento) {
+      if (!window.confirm('O Chatwoot será recarregado.\nConversas salvas no servidor não serão perdidas.\n\nAtualizar agora?')) return
+    }
+    updateServiceWorker(true)
   }
 
   return (
@@ -58,6 +69,17 @@ export default function AppShell() {
         </div>
         <div className="flex items-center gap-3">
           <SyncBadge />
+          <button
+            onClick={handleRefresh}
+            className="relative text-muted hover:text-white transition-colors cursor-pointer"
+            aria-label="Atualizar app"
+            title={needRefresh ? 'Nova versão disponível — clique para atualizar' : 'Atualizar app'}
+          >
+            <RotateCcw size={18} />
+            {needRefresh && (
+              <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-orange animate-pulse" />
+            )}
+          </button>
           <button
             onClick={handleLogout}
             className="text-muted hover:text-white transition-colors cursor-pointer"
