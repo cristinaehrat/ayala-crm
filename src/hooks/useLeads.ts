@@ -14,6 +14,8 @@ export type LeadFilter =
   | 'aguardando_pagamento'
   | 'inscrito'
   | 'visualizou_preco'
+  | 'para_paola'
+  | 'requer_atencao'
   | `uf:${string}`
   | `cidade:${string}`
 
@@ -33,6 +35,8 @@ const FILTER_MAP: Record<FixedFilter, (q: AnyQuery) => AnyQuery> = {
   aguardando_pagamento: (q) => q.eq('status', 'oportunidade'),
   inscrito:             (q) => q.eq('status', 'cliente'),
   visualizou_preco:     (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
+  para_paola:           (q) => q.ilike('etiqueta_chatwoot', '%para_paola%'),
+  requer_atencao:       (q) => q.eq('requer_atencao', true),
 }
 
 export function useLeads(filter: LeadFilter = 'todos') {

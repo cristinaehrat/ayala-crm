@@ -127,7 +127,7 @@ export const ETIQUETA_LABELS: Record<string, string> = {
   inscrito:             'Inscrito',
   ex_aluno:             'Ex-aluno',
   hot_lead:             'Hot Lead',
-  aguardando_ismenia:   'Ag. Ismênia',
+  aguardando_ismenia:   'Ag. Consultora',
   aguardando_pagamento: 'Ag. Pagamento',
   pgto_confirmado:      'Pago',
   lista_espera:         'Lista Espera',
@@ -153,7 +153,7 @@ export const ACTION_SIGNAL_STYLES = {
     text: '#FFFFFF',
   },
   aguardando_ismenia: {
-    label: 'Ag. Ismênia',
+    label: 'Ag. Consultora',
     bg: '#F97316',
     text: '#FFFFFF',
   },

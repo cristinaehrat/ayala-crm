@@ -422,8 +422,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                 {form.requer_atencao && <Check size={10} className="text-white" />}
               </div>
               <div>
-                <p className="text-xs font-display font-bold text-white">Requer atenção da Ismênia</p>
-                <p className="text-xs text-muted mt-0.5">Sinaliza para acompanhamento prioritário</p>
+                <p className="text-xs font-display font-bold text-white">Ação pendente</p>
+                <p className="text-xs text-muted mt-0.5">Marca o lead como prioritário para o consultor responsável</p>
               </div>
             </div>
           </section>

@@ -1,20 +1,35 @@
 import { useState, useRef, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import type { LeadFilter } from '@/hooks/useLeads'
 import { useDistinctUFs, useDistinctCidades, useLeadsAgendaCount } from '@/hooks/useLeads'
 import { cn } from '@/lib/utils'
 import { ChevronDown, BellRing } from 'lucide-react'
 
-const FILTERS: { id: LeadFilter; label: string }[] = [
+const FILTERS_ISA: { id: LeadFilter; label: string }[] = [
   { id: 'hoje',                 label: 'Hoje' },
   { id: 'todos',                label: 'Todos' },
   { id: 'hot_lead',             label: 'Hot Lead' },
-  { id: 'ag_ismenia',           label: 'Ag. Ismênia' },
+  { id: 'ag_ismenia',           label: 'Ag. Consultora' },
+  { id: 'para_paola',           label: 'Para Paola' },
   { id: 'follow_up',            label: 'Follow-up' },
   { id: 'qualificados',         label: 'Em Contato' },
   { id: 'aguardando_pagamento', label: 'Oportunidade' },
   { id: 'inscrito',             label: 'Clientes' },
   { id: 'visualizou_preco',     label: 'Viu Preço' },
   { id: 'lista_espera',         label: 'Lista Espera' },
+]
+
+const FILTERS_PAOLA: { id: LeadFilter; label: string }[] = [
+  { id: 'hoje',                 label: 'Hoje' },
+  { id: 'todos',                label: 'Todos' },
+  { id: 'para_paola',           label: 'Para mim' },
+  { id: 'requer_atencao',       label: 'Ação Pendente' },
+  { id: 'hot_lead',             label: 'Hot Lead' },
+  { id: 'follow_up',            label: 'Follow-up' },
+  { id: 'qualificados',         label: 'Em Contato' },
+  { id: 'aguardando_pagamento', label: 'Oportunidade' },
+  { id: 'inscrito',             label: 'Clientes' },
+  { id: 'visualizou_preco',     label: 'Viu Preço' },
 ]
 
 interface Props {
@@ -26,8 +41,15 @@ interface Props {
 export default function LeadFilters({ active, onChange, mode = 'default' }: Props) {
   const [ufOpen, setUfOpen] = useState(false)
   const [cidadeOpen, setCidadeOpen] = useState(false)
+  const [isPaola, setIsPaola] = useState(false)
   const ufRef = useRef<HTMLDivElement>(null)
   const cidadeRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      setIsPaola(data.user?.email === 'paola@ayalaoficial.com.br')
+    })
+  }, [])
 
   useEffect(() => {
     function h(e: MouseEvent) {
@@ -41,6 +63,7 @@ export default function LeadFilters({ active, onChange, mode = 'default' }: Prop
   const { data: ufs = [] } = useDistinctUFs()
   const { data: cidades = [] } = useDistinctCidades()
   const { data: agendaCount = 0 } = useLeadsAgendaCount()
+  const FILTERS = isPaola ? FILTERS_PAOLA : FILTERS_ISA
 
   const activeUf = active.startsWith('uf:') ? active.slice(3) : null
   const activeCidade = active.startsWith('cidade:') ? active.slice(7) : null
