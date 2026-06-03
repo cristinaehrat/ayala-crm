@@ -9,6 +9,7 @@ function removeAccents(str: string): string {
 export interface Prospecto {
   id_visita: string
   created_at: string | null
+  data_ultimo_contato: string | null
   data_visita: string | null
   consultor: string | null
   empresa_oficina: string | null
@@ -77,10 +78,17 @@ export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string, ci
       if (filter === 'hoje') {
         q = q.order('data_retorno', { ascending: true }).limit(300)
       } else if (filter === 'com_leads' || filter === 'sem_leads') {
-        // sem limite rígido para garantir que todos os prospectos com leads apareçam
-        q = q.order('created_at', { ascending: false, nullsFirst: false }).limit(5500)
+        q = q
+          .order('data_ultimo_contato', { ascending: false, nullsFirst: false })
+          .order('data_visita', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false, nullsFirst: false })
+          .limit(5500)
       } else {
-        q = q.order('created_at', { ascending: false, nullsFirst: false }).limit(300)
+        q = q
+          .order('data_ultimo_contato', { ascending: false, nullsFirst: false })
+          .order('data_visita', { ascending: false, nullsFirst: false })
+          .order('created_at', { ascending: false, nullsFirst: false })
+          .limit(300)
       }
       const { data, error } = await q
       if (error) throw error

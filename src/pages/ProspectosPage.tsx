@@ -44,12 +44,6 @@ const STATUS_LABEL: Record<string, string> = {
   desqualificado:'Desqualificado',
 }
 
-const POTENCIAL_COLOR: Record<string, string> = {
-  alto:          'text-red-400',
-  medio:         'text-orange',
-  baixo:         'text-muted',
-  sem_interesse: 'text-slate-500',
-}
 
 const PARCEIRO_LABEL: Record<string, string> = {
   treinatec:   'Treinatec Brasil',
@@ -626,16 +620,18 @@ function ProspectoCard({
     : STATUS_PILL_COLOR[p.status_contato ?? ''] ?? 'text-slate-300 border-white/10'
 
   const bgTint = hasLeads
-    ? 'bg-sky-400/5'
+    ? 'bg-sky-500/10'
     : p.status_contato === 'retornou'
-    ? 'bg-orange/5'
+    ? 'bg-orange/10'
+    : ['tentativa_1','tentativa_2','tentativa_3','sem_resposta'].includes(p.status_contato ?? '')
+    ? 'bg-amber-400/8'
     : ''
 
   return (
     <div
       className={cn(
-        'relative rounded-xl border border-white/10 cursor-pointer transition-colors overflow-hidden',
-        bgTint || 'bg-navy2',
+        'relative rounded-xl border border-white/10 bg-navy2 cursor-pointer transition-colors overflow-hidden',
+        bgTint,
         isDesqualificado ? 'opacity-60' : 'hover:border-white/20',
       )}
       onClick={onClick}
@@ -652,14 +648,17 @@ function ProspectoCard({
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
             {hasLeads && (
-              <span className="text-xs font-display font-bold rounded-full px-2 py-0.5 border text-sky-400 border-sky-400/30">
+              <span className="text-xs font-display font-bold rounded-full px-2 py-0.5 bg-sky-500 text-white">
                 {leadCount} {leadCount === 1 ? 'lead' : 'leads'}
               </span>
             )}
-            {p.potencial && p.potencial !== 'sem_interesse' && (
-              <span className={cn('text-xs font-display font-semibold', POTENCIAL_COLOR[p.potencial] ?? 'text-muted')}>
-                {p.potencial === 'alto' ? '▲' : '~'} {p.potencial}
+            {p.potencial === 'alto' && (
+              <span className="text-[10px] font-display font-bold px-1.5 py-0.5 rounded bg-red-500/20 text-red-400 border border-red-500/30">
+                ▲ alto
               </span>
+            )}
+            {p.potencial === 'medio' && (
+              <span className="text-[10px] font-display font-semibold text-orange">~ médio</span>
             )}
           </div>
         </div>
