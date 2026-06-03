@@ -13,8 +13,8 @@ function fmtLembrete(data_retorno: string) {
   const [, m, d] = data_retorno.split('-')
   return `${d}/${m}`
 }
-import { useProspectos, useProspectosByDataVisita, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, useDistinctCidades, useExtrairProspectos, type ExtracaoResult, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
-import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
+import { useProspectos, useProspectosByDataVisita, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, useDistinctCidades, useDistinctUFsProspectos, useExtrairProspectos, type ExtracaoResult, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
+import { useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { useHistoricoContatos, useCreateHistoricoContato, RESULTADO_LABEL, INTERESSE_LABEL, TIPO_CONTATO_LABEL } from '@/hooks/useHistoricoContatos'
 
@@ -68,11 +68,12 @@ const POTENCIAL_FILTERS = [
 ]
 
 const STATUS_LEGEND = [
-  { accent: 'bg-white/25',  label: 'A contatar' },
-  { accent: 'bg-orange',    label: 'Retornou' },
-  { accent: 'bg-amber-400', label: 'Em tentativa' },
-  { accent: 'bg-sky-400',   label: 'Tem leads' },
-  { accent: 'bg-slate-600', label: 'Sem interesse' },
+  { accent: 'bg-white/25',    label: 'A contatar' },
+  { accent: 'bg-green-400',   label: 'Visitado' },
+  { accent: 'bg-orange',      label: 'Retornou' },
+  { accent: 'bg-amber-400',   label: 'Em tentativa' },
+  { accent: 'bg-sky-400',     label: 'Tem leads' },
+  { accent: 'bg-slate-600',   label: 'Sem interesse' },
 ]
 
 const STATUS_ACCENT: Record<string, string> = {
@@ -167,7 +168,7 @@ export default function ProspectosPage() {
   const { data: prospectos = [], isLoading, isError, error } = useProspectos(dataVisita ? 'todos' : filter, dataVisita ? undefined : (ufFilter || undefined), dataVisita ? undefined : (cidadeFilter || undefined))
   const { data: visitasData = [], isLoading: loadingVisitas } = useProspectosByDataVisita(dataVisita || null)
   const { data: leadCounts = {} } = useProspectoLeadCounts()
-  const { data: ufs = [] } = useDistinctUFs()
+  const { data: ufs = [] } = useDistinctUFsProspectos()
   const { data: cidades = [] } = useDistinctCidades()
   const { data: agendaCount = 0 } = useProspectosAgendaCount()
   const updateProspecto = useUpdateProspecto()
@@ -614,19 +615,27 @@ function ProspectoCard({
   const ligarTel = p.whatsapp_responsavel || p.telefone_oficina
   const isDesqualificado = p.status_contato === 'desqualificado' || p.potencial === 'sem_interesse'
 
+  const isVisitado = !!p.data_visita
   const accentColor = hasLeads
     ? 'bg-sky-400'
     : (p.status_contato ? STATUS_ACCENT[p.status_contato] : null)
-    ?? (isDesqualificado ? 'bg-slate-600' : 'bg-white/25')
+    ?? (isDesqualificado ? 'bg-slate-600' : isVisitado ? 'bg-green-400' : 'bg-white/25')
 
   const statusPillColor = hasLeads
     ? 'text-sky-400 border-sky-400/30'
     : STATUS_PILL_COLOR[p.status_contato ?? ''] ?? 'text-slate-300 border-white/10'
 
+  const bgTint = hasLeads
+    ? 'bg-sky-400/5'
+    : p.status_contato === 'retornou'
+    ? 'bg-orange/5'
+    : ''
+
   return (
     <div
       className={cn(
-        'relative rounded-xl border border-white/10 bg-navy2 cursor-pointer transition-colors overflow-hidden',
+        'relative rounded-xl border border-white/10 cursor-pointer transition-colors overflow-hidden',
+        bgTint || 'bg-navy2',
         isDesqualificado ? 'opacity-60' : 'hover:border-white/20',
       )}
       onClick={onClick}
@@ -666,7 +675,10 @@ function ProspectoCard({
             {statusLabel}
           </span>
           {p.data_visita && (
-            <span className="text-xs text-muted">{new Date(p.data_visita + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+            <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-display font-semibold text-green-400 border border-green-400/20 bg-green-400/5">
+              <CalendarDays size={9} className="shrink-0" />
+              {new Date(p.data_visita + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}
+            </span>
           )}
           {p.data_retorno && (() => {
             const st = lembreteStatus(p.data_retorno)

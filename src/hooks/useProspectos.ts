@@ -72,10 +72,13 @@ export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string, ci
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q: any = supabase.from('cadastro_prospectos').select('*')
       q = FILTER_MAP[filter](q)
-      if (uf) q = q.eq('uf', uf)
-      if (cidade) q = q.eq('cidade', cidade)
+      if (uf) q = q.ilike('uf', uf.trim())
+      if (cidade) q = q.ilike('cidade', cidade.trim())
       if (filter === 'hoje') {
         q = q.order('data_retorno', { ascending: true }).limit(300)
+      } else if (filter === 'com_leads' || filter === 'sem_leads') {
+        // sem limite rígido para garantir que todos os prospectos com leads apareçam
+        q = q.order('created_at', { ascending: false, nullsFirst: false }).limit(5500)
       } else {
         q = q.order('created_at', { ascending: false, nullsFirst: false }).limit(300)
       }
@@ -309,8 +312,32 @@ export function useDistinctCidades() {
       const seen = new Set<string>()
       const unique: string[] = []
       for (const row of data ?? []) {
-        const c = (row as { cidade: string }).cidade
+        const c = (row as { cidade: string }).cidade?.trim()
         if (c && !seen.has(c)) { seen.add(c); unique.push(c) }
+      }
+      return unique
+    },
+    staleTime: 5 * 60 * 1000,
+  })
+}
+
+export function useDistinctUFsProspectos() {
+  return useQuery<string[]>({
+    queryKey: ['prospectos', 'distinct-ufs'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cadastro_prospectos')
+        .select('uf')
+        .not('uf', 'is', null)
+        .neq('uf', '')
+        .order('uf', { ascending: true })
+        .limit(100)
+      if (error) throw error
+      const seen = new Set<string>()
+      const unique: string[] = []
+      for (const row of data ?? []) {
+        const u = (row as { uf: string | null }).uf?.trim().toUpperCase()
+        if (u && !seen.has(u)) { seen.add(u); unique.push(u) }
       }
       return unique
     },
