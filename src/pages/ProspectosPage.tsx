@@ -221,15 +221,18 @@ export default function ProspectosPage() {
   }
 
   async function handleBuscarInstagram() {
-    if (!cidadeFilter) return
+    if (!extCidade.trim()) {
+      toast.error('Informe a cidade antes de buscar no Instagram.')
+      return
+    }
     setBuscandoInsta(true)
     try {
       const resp = await fetch('https://n8n.ayalaoficial.com.br/webhook/instagram-oficinas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          cidade: cidadeFilter,
-          uf: ufFilter || undefined,
+          cidade: extCidade.trim(),
+          uf: extUf || undefined,
           hashtags: ['oficinacaminhao', 'mecanicadiesel', 'eletricadiesel', 'truckcenter', 'dieselpesado'],
         }),
       })
@@ -266,7 +269,7 @@ export default function ProspectosPage() {
           >
             <div className="flex items-center gap-2">
               <Sparkles size={14} className="text-orange shrink-0" />
-              <span className="text-xs font-display font-bold text-orange">Extrair prospectos do Google Maps</span>
+              <span className="text-xs font-display font-bold text-orange">Captação de prospectos — Maps + Instagram</span>
               {extResultado && (
                 <span className="text-[10px] font-display font-semibold text-orange/70 bg-orange/10 rounded-full px-2 py-0.5">
                   {extResultado.criados + extResultado.atualizados} oficinas · {extResultado.cidade}/{extResultado.uf}
@@ -299,15 +302,27 @@ export default function ProspectosPage() {
                   <option value="">UF</option>
                   {UF_OPTIONS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
                 </select>
+              </div>
+              <div className="flex gap-2">
                 <button
                   onClick={handleExtrair}
                   disabled={extrairProspectos.isPending || !extCidade.trim() || !extUf}
-                  className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50"
+                  className="btn-primary text-xs px-3 py-1.5 flex items-center gap-1.5 whitespace-nowrap disabled:opacity-50 flex-1"
                 >
                   {extrairProspectos.isPending
                     ? <div className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     : <Download size={13} />}
-                  {extrairProspectos.isPending ? 'Extraindo...' : 'Extrair'}
+                  {extrairProspectos.isPending ? 'Extraindo Maps...' : 'Extrair Google Maps'}
+                </button>
+                <button
+                  onClick={handleBuscarInstagram}
+                  disabled={buscandoInsta || !extCidade.trim()}
+                  className="text-xs px-3 py-1.5 flex items-center gap-1.5 whitespace-nowrap rounded-lg border border-pink-400/40 text-pink-400 hover:border-pink-400/70 hover:bg-pink-400/5 transition-colors disabled:opacity-50 flex-1"
+                >
+                  {buscandoInsta
+                    ? <div className="w-3 h-3 border-2 border-pink-400 border-t-transparent rounded-full animate-spin" />
+                    : <AtSign size={13} />}
+                  {buscandoInsta ? 'Buscando...' : 'Buscar Instagram'}
                 </button>
               </div>
               {extResultado && (
@@ -476,21 +491,7 @@ export default function ProspectosPage() {
           )}
         </div>
 
-        {/* Botão Instagram — só quando cidade selecionada */}
-        {cidadeFilter && (
-          <button
-            onClick={handleBuscarInstagram}
-            disabled={buscandoInsta}
-            className={cn(pillBase, 'border-pink-300 text-pink-600 hover:border-pink-400 hover:text-pink-700 disabled:opacity-60')}
-          >
-            {buscandoInsta ? (
-              <div className="w-3 h-3 border-2 border-pink-600 border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <AtSign size={12} />
-            )}
-            {buscandoInsta ? 'Buscando...' : 'Instagram'}
-          </button>
-        )}
+
       </div>
 
       <div className="flex items-center gap-x-3 gap-y-1 px-4 py-1.5 shrink-0 flex-wrap">
