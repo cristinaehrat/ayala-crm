@@ -143,6 +143,8 @@ export function useSearchProspectos(query: string, phoneDigits?: string, city?: 
       }
       if ((phoneDigits?.length ?? 0) >= 8) {
         orParts.push(`whatsapp_responsavel.ilike.%${phoneDigits}%`)
+        orParts.push(`telefone_oficina.ilike.%${phoneDigits}%`)
+        orParts.push(`telefone.ilike.%${phoneDigits}%`)
       }
 
       if (orParts.length > 0) {

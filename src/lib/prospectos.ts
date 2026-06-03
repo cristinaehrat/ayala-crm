@@ -1,6 +1,22 @@
 import { supabase } from '@/lib/supabase'
 
 export async function persistProspectoPayload(payload: Record<string, unknown>) {
+  // Se não há id_visita explícito (operador não selecionou sugestão),
+  // tenta encontrar registro existente por nome+cidade antes de inserir.
+  // Isso evita duplicatas quando a busca não exibiu sugestão ou foi ignorada.
+  if (!payload.id_visita && payload.empresa_oficina && payload.cidade) {
+    const { data: existing } = await supabase
+      .from('cadastro_prospectos')
+      .select('id_visita')
+      .ilike('empresa_oficina', payload.empresa_oficina as string)
+      .eq('cidade', payload.cidade as string)
+      .limit(1)
+      .maybeSingle()
+    if (existing?.id_visita) {
+      payload.id_visita = existing.id_visita
+    }
+  }
+
   const onConflict = typeof payload.id_visita === 'string' && payload.id_visita
     ? 'id_visita'
     : 'whatsapp_responsavel'
