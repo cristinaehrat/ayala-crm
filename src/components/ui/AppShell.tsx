@@ -129,26 +129,28 @@ export default function AppShell() {
             }}
           />
         </div>
-        {visibleNav.map(({ to, label, Icon }) => (
-          <NavLink
-            key={to}
-            to={to}
-            className={({ isActive }) =>
-              `flex items-center gap-3 px-4 py-3 text-sm font-display font-semibold transition-colors cursor-pointer rounded-lg mx-2 ${
-                isActive
-                  ? 'bg-orange/20 text-orange'
-                  : 'text-muted hover:text-white hover:bg-white/5'
-              }`
-            }
-          >
-            <Icon size={18} />
-            {label}
-          </NavLink>
-        ))}
-        <div className="mt-auto pb-4 px-2">
+        <div className="flex-1 overflow-y-auto py-1">
+          {visibleNav.map(({ to, label, Icon }) => (
+            <NavLink
+              key={to}
+              to={to}
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-4 py-2 text-sm font-display font-semibold transition-colors cursor-pointer rounded-lg mx-2 ${
+                  isActive
+                    ? 'bg-orange/20 text-orange'
+                    : 'text-muted hover:text-white hover:bg-white/5'
+                }`
+              }
+            >
+              <Icon size={18} />
+              {label}
+            </NavLink>
+          ))}
+        </div>
+        <div className="shrink-0 border-t border-white/10 pb-4 pt-2 px-2">
           <button
             onClick={handleLogout}
-            className="flex items-center gap-3 px-4 py-3 text-sm font-display font-semibold text-muted hover:text-white hover:bg-white/5 rounded-lg w-full cursor-pointer transition-colors"
+            className="flex items-center gap-3 px-4 py-2 text-sm font-display font-semibold text-muted hover:text-white hover:bg-white/5 rounded-lg w-full cursor-pointer transition-colors"
           >
             <LogOut size={18} />
             Sair
