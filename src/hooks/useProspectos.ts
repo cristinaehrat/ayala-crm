@@ -64,14 +64,15 @@ const FILTER_MAP: Record<ProspectoFilter, (q: AnyQuery) => AnyQuery> = {
   },
 }
 
-export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string) {
+export function useProspectos(filter: ProspectoFilter = 'todos', uf?: string, cidade?: string) {
   return useQuery<Prospecto[]>({
-    queryKey: ['prospectos', filter, uf],
+    queryKey: ['prospectos', filter, uf, cidade],
     queryFn: async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       let q: any = supabase.from('cadastro_prospectos').select('*')
       q = FILTER_MAP[filter](q)
       if (uf) q = q.eq('uf', uf)
+      if (cidade) q = q.eq('cidade', cidade)
       if (filter === 'hoje') {
         q = q.order('data_retorno', { ascending: true }).limit(300)
       } else {
@@ -254,6 +255,63 @@ export function useCreateLeadFromProspecto() {
       qc.invalidateQueries({ queryKey: ['leads'] })
       qc.invalidateQueries({ queryKey: ['prospectos', 'lead-counts'] })
     },
+  })
+}
+
+export function useProspecto(id: string | null) {
+  return useQuery<Prospecto | null>({
+    queryKey: ['prospectos', 'single', id],
+    enabled: !!id,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cadastro_prospectos')
+        .select('*')
+        .eq('id_visita', id!)
+        .single()
+      if (error) throw error
+      return data as Prospecto
+    },
+  })
+}
+
+export function useCreateProspecto() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: async (data: Partial<Omit<Prospecto, 'id_visita'>>) => {
+      const { data: row, error } = await supabase
+        .from('cadastro_prospectos')
+        .insert(data)
+        .select('*')
+        .single()
+      if (error) throw error
+      return row as Prospecto
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['prospectos'] })
+    },
+  })
+}
+
+export function useDistinctCidades() {
+  return useQuery<string[]>({
+    queryKey: ['prospectos', 'distinct-cidades'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('cadastro_prospectos')
+        .select('cidade')
+        .not('cidade', 'is', null)
+        .order('cidade', { ascending: true })
+        .limit(1000)
+      if (error) throw error
+      const seen = new Set<string>()
+      const unique: string[] = []
+      for (const row of data ?? []) {
+        const c = (row as { cidade: string }).cidade
+        if (c && !seen.has(c)) { seen.add(c); unique.push(c) }
+      }
+      return unique
+    },
+    staleTime: 5 * 60 * 1000,
   })
 }
 

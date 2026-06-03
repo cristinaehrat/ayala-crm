@@ -1,4 +1,5 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom'
+import { useEffect, useState } from 'react'
 import {
   Users, KanbanSquare, GraduationCap, ClipboardList, LayoutDashboard, LogOut, DollarSign, BarChart2, Receipt, Building2, Navigation, MessageCircle,
 } from 'lucide-react'
@@ -6,21 +7,31 @@ import { supabase } from '@/lib/supabase'
 import SyncBadge from '@/components/visita/SyncBadge'
 
 const NAV = [
+  { to: '/atendimento', label: 'Atendimento', Icon: MessageCircle },
   { to: '/leads',      label: 'Leads',      Icon: Users },
   { to: '/kanban',     label: 'Funil',      Icon: KanbanSquare },
+  { to: '/prospectos', label: 'Prospectos', Icon: Building2 },
+  { to: '/visita',      label: 'Visita',      Icon: ClipboardList },
+  { to: '/roteiro',    label: 'Roteiro',    Icon: Navigation },
   { to: '/turmas',     label: 'Turmas',     Icon: GraduationCap },
+  { to: '/dashboard',   label: 'Dashboard',   Icon: LayoutDashboard },
   { to: '/financeiro', label: 'Financeiro', Icon: DollarSign },
   { to: '/relatorios', label: 'Relatórios', Icon: BarChart2 },
-  { to: '/visita',      label: 'Visita',      Icon: ClipboardList },
-  { to: '/prospectos', label: 'Prospectos', Icon: Building2 },
-  { to: '/roteiro',    label: 'Roteiro',    Icon: Navigation },
   { to: '/despesas',     label: 'Despesas',     Icon: Receipt },
-  { to: '/dashboard',   label: 'Dashboard',   Icon: LayoutDashboard },
-  { to: '/atendimento', label: 'Atendimento', Icon: MessageCircle },
 ]
+
+const PAOLA_ROUTES = new Set(['/atendimento', '/leads', '/kanban', '/prospectos', '/visita', '/roteiro', '/turmas', '/dashboard'])
 
 export default function AppShell() {
   const navigate = useNavigate()
+  const [userEmail, setUserEmail] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUserEmail(data.user?.email ?? ''))
+  }, [])
+
+  const isPaola = userEmail === 'paola@ayalaoficial.com.br'
+  const visibleNav = isPaola ? NAV.filter(item => PAOLA_ROUTES.has(item.to)) : NAV
 
   async function handleLogout() {
     await supabase.auth.signOut()
@@ -64,7 +75,7 @@ export default function AppShell() {
 
       {/* Bottom Nav (mobile) */}
       <nav className="flex items-center overflow-x-auto scrollbar-hide bg-footer border-t border-white/10 pb-safe shrink-0 md:hidden print:hidden">
-        {NAV.map(({ to, label, Icon }) => (
+        {visibleNav.map(({ to, label, Icon }) => (
           <NavLink
             key={to}
             to={to}
@@ -96,7 +107,7 @@ export default function AppShell() {
             }}
           />
         </div>
-        {NAV.map(({ to, label, Icon }) => (
+        {visibleNav.map(({ to, label, Icon }) => (
           <NavLink
             key={to}
             to={to}

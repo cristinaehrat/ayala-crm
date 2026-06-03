@@ -13,7 +13,7 @@ function fmtLembrete(data_retorno: string) {
   const [, m, d] = data_retorno.split('-')
   return `${d}/${m}`
 }
-import { useProspectos, useProspectosByDataVisita, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
+import { useProspectos, useProspectosByDataVisita, useProspectosAgendaCount, useUpdateProspecto, useCreateLeadFromProspecto, useProspectoLeadCounts, getProspectoLeadCount, useDistinctCidades, type ProspectoFilter, type Prospecto } from '@/hooks/useProspectos'
 import { useDistinctUFs, useLeadsByProspecto } from '@/hooks/useLeads'
 import { cn, MARCA_BADGES, UF_OPTIONS, PORTE_OFICINA_OPTIONS, PERFIL_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { useHistoricoContatos, useCreateHistoricoContato, RESULTADO_LABEL, INTERESSE_LABEL, TIPO_CONTATO_LABEL } from '@/hooks/useHistoricoContatos'
@@ -91,19 +91,23 @@ export default function ProspectosPage() {
   const [filter, setFilter] = useState<ProspectoFilter>('todos')
   const [dataVisita, setDataVisita] = useState<string>('')
   const [ufFilter, setUfFilter] = useState<string>('')
+  const [cidadeFilter, setCidadeFilter] = useState<string>('')
   const [potencialFilter, setPotencialFilter] = useState<string>('')
   const [search, setSearch] = useState('')
   const [ufOpen, setUfOpen] = useState(false)
+  const [cidadeOpen, setCidadeOpen] = useState(false)
+  const [buscandoInsta, setBuscandoInsta] = useState(false)
   const [expandedId, setExpandedId] = useState<string | null>(null)
   const [detailId, setDetailId] = useState<string | null>(null)
   const [editing, setEditing] = useState<Prospecto | null>(null)
   const [contatoProspecto, setContatoProspecto] = useState<Prospecto | null>(null)
 
   const today = new Date().toISOString().split('T')[0]
-  const { data: prospectos = [], isLoading } = useProspectos(dataVisita ? 'todos' : filter, dataVisita ? undefined : (ufFilter || undefined))
+  const { data: prospectos = [], isLoading } = useProspectos(dataVisita ? 'todos' : filter, dataVisita ? undefined : (ufFilter || undefined), dataVisita ? undefined : (cidadeFilter || undefined))
   const { data: visitasData = [], isLoading: loadingVisitas } = useProspectosByDataVisita(dataVisita || null)
   const { data: leadCounts = {} } = useProspectoLeadCounts()
   const { data: ufs = [] } = useDistinctUFs()
+  const { data: cidades = [] } = useDistinctCidades()
   const { data: agendaCount = 0 } = useProspectosAgendaCount()
   const updateProspecto = useUpdateProspecto()
   const createLead = useCreateLeadFromProspecto()
@@ -157,6 +161,39 @@ export default function ProspectosPage() {
       toast.success('Lead vinculado ao CRM criado com sucesso!')
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao criar lead')
+    }
+  }
+
+  async function handleBuscarInstagram() {
+    if (!cidadeFilter) return
+    setBuscandoInsta(true)
+    try {
+      const resp = await fetch('https://n8n.ayalaoficial.com.br/webhook/instagram-oficinas', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          cidade: cidadeFilter,
+          uf: ufFilter || undefined,
+          hashtags: ['oficinacaminhao', 'mecanicadiesel', 'eletricadiesel', 'truckcenter', 'dieselpesado'],
+        }),
+      })
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
+      const data = await resp.json()
+      if (data.status === 'iniciado') {
+        toast.success('Busca iniciada! Novas oficinas aparecerão em ~10 minutos.')
+      } else {
+        const criados: number = data.criados ?? 0
+        const duplicatas: number = data.duplicatas ?? 0
+        if (criados > 0) {
+          toast.success(`${criados} nova${criados !== 1 ? 's' : ''} oficina${criados !== 1 ? 's' : ''} adicionada${criados !== 1 ? 's' : ''}!${duplicatas > 0 ? ` (${duplicatas} duplicata${duplicatas !== 1 ? 's' : ''} ignorada${duplicatas !== 1 ? 's' : ''})` : ''}`)
+        } else {
+          toast('Nenhuma oficina nova encontrada no Instagram para esta cidade.')
+        }
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao buscar no Instagram')
+    } finally {
+      setBuscandoInsta(false)
     }
   }
 
@@ -275,6 +312,55 @@ export default function ProspectosPage() {
             </div>
           )}
         </div>
+
+        {/* Cidade dropdown */}
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setCidadeOpen((o) => !o)}
+            className={cn(pillBase, cidadeFilter ? pillActive : pillInactive)}
+          >
+            {cidadeFilter || 'Cidade'}
+            <ChevronDown size={12} />
+          </button>
+          {cidadeOpen && (
+            <div className="absolute top-full left-0 mt-1 bg-white border border-slate-200 rounded-lg shadow-md z-50 max-h-48 overflow-y-auto min-w-[120px]">
+              <button
+                onClick={() => { setCidadeFilter(''); setCidadeOpen(false) }}
+                className="block w-full text-left px-3 py-2 text-xs font-display font-semibold text-muted hover:bg-slate-100"
+              >
+                Todas
+              </button>
+              {cidades.map((cidade) => (
+                <button
+                  key={cidade}
+                  onClick={() => { setCidadeFilter(cidade); setCidadeOpen(false) }}
+                  className={cn(
+                    'block w-full text-left px-3 py-2 text-xs font-display font-semibold hover:bg-slate-100',
+                    cidadeFilter === cidade ? 'text-orange' : 'text-navy',
+                  )}
+                >
+                  {cidade}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Botão Instagram — só quando cidade selecionada */}
+        {cidadeFilter && (
+          <button
+            onClick={handleBuscarInstagram}
+            disabled={buscandoInsta}
+            className={cn(pillBase, 'border-pink-300 text-pink-600 hover:border-pink-400 hover:text-pink-700 disabled:opacity-60')}
+          >
+            {buscandoInsta ? (
+              <div className="w-3 h-3 border-2 border-pink-600 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <AtSign size={12} />
+            )}
+            {buscandoInsta ? 'Buscando...' : 'Instagram'}
+          </button>
+        )}
       </div>
 
       <p className="text-xs text-muted px-4 py-1 shrink-0">
@@ -997,6 +1083,7 @@ type ProspectoEditForm = {
   perfil: string
   qtd_interessados: string
   potencial: string
+  qualificado_lead: boolean
   resultado_visita: string
   proximo_passo: string
   data_retorno: string
@@ -1051,6 +1138,7 @@ function ProspectoEditModal({
       perfil: prospecto.perfil ?? '',
       qtd_interessados: prospecto.qtd_interessados ?? '',
       potencial: prospecto.potencial ?? '',
+      qualificado_lead: prospecto.qualificado_lead ?? false,
       resultado_visita: prospecto.resultado_visita ?? '',
       proximo_passo: prospecto.proximo_passo ?? '',
       data_retorno: prospecto.data_retorno ?? '',
@@ -1111,6 +1199,7 @@ function ProspectoEditModal({
       perfil: form.perfil || null,
       qtd_interessados: form.qtd_interessados || null,
       potencial: foraPublico ? 'sem_interesse' : (form.potencial || null),
+      qualificado_lead: form.qualificado_lead,
       resultado_visita: form.resultado_visita || null,
       proximo_passo: form.proximo_passo || null,
       data_retorno: form.data_retorno || null,
@@ -1357,6 +1446,11 @@ function ProspectoEditModal({
               </div>
             ))}
           </div>
+        </div>
+
+        <div className="flex items-center gap-3 h-11 px-3 bg-white/5 border border-white/10 rounded-lg">
+          <input type="checkbox" id="qualificado_lead_edit" checked={form.qualificado_lead} onChange={(e) => set('qualificado_lead', e.target.checked)} className="w-4 h-4 accent-orange cursor-pointer" />
+          <label htmlFor="qualificado_lead_edit" className="text-sm text-white cursor-pointer">Qualificado como lead</label>
         </div>
 
         <Field label="Resultado da visita / contato">

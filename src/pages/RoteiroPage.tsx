@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from 'react'
-import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown, Pencil, Trash2, Plus, Map, AtSign, Calendar, Printer } from 'lucide-react'
+import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown, Pencil, Trash2, Plus, Map, Calendar, Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { UF_OPTIONS } from '@/lib/utils'
 import { useGerarRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota, type DiaDado } from '@/hooks/useGerarRoteiro'
@@ -67,7 +67,6 @@ export default function RoteiroPage() {
   const [resultado, setResultado] = useState<RoteirizarResult | null>(null)
   const [showLista, setShowLista] = useState(false)
   const [showMalha, setShowMalha] = useState(false)
-  const [buscandoInsta, setBuscandoInsta] = useState(false)
   const [mesMalha, setMesMalha] = useState(() => MESES_PT[new Date().getMonth()])
   const gerarRoteiro = useGerarRoteiro()
   const { data: malhaData } = useMalhaEstrategica()
@@ -142,38 +141,6 @@ export default function RoteiroPage() {
       try { localStorage.setItem('ayala_roteiro_ultimo', JSON.stringify(result)) } catch { /* ignora */ }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao gerar roteiro')
-    }
-  }
-
-  async function handleBuscarInstagram() {
-    setBuscandoInsta(true)
-    try {
-      const resp = await fetch('https://n8n.ayalaoficial.com.br/webhook/instagram-oficinas', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          cidade: form.cidade.trim(),
-          uf: form.uf,
-          hashtags: ['oficinacaminhao', 'mecanicadiesel', 'eletricadiesel', 'truckcenter', 'dieselpesado'],
-        }),
-      })
-      if (!resp.ok) throw new Error(`HTTP ${resp.status}`)
-      const data = await resp.json()
-      if (data.status === 'iniciado') {
-        toast.success('Busca iniciada! Novas oficinas aparecerão em Prospectos em ~10 minutos.')
-      } else {
-        const criados: number = data.criados ?? 0
-        const duplicatas: number = data.duplicatas ?? 0
-        if (criados > 0) {
-          toast.success(`${criados} nova${criados !== 1 ? 's' : ''} oficina${criados !== 1 ? 's' : ''} adicionada${criados !== 1 ? 's' : ''} ao banco!${duplicatas > 0 ? ` (${duplicatas} duplicata${duplicatas !== 1 ? 's' : ''} ignorada${duplicatas !== 1 ? 's' : ''})` : ''}`)
-        } else {
-          toast('Nenhuma oficina nova encontrada no Instagram para esta cidade.')
-        }
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Erro ao buscar no Instagram')
-    } finally {
-      setBuscandoInsta(false)
     }
   }
 
@@ -333,21 +300,6 @@ export default function RoteiroPage() {
               </div>
             </Field>
 
-            {form.cidade.trim() && (
-              <button
-                type="button"
-                onClick={handleBuscarInstagram}
-                disabled={buscandoInsta}
-                className="mt-3 w-full flex items-center justify-center gap-2 rounded-lg border border-pink-200 bg-pink-50 text-pink-700 text-xs font-display font-semibold py-2.5 hover:bg-pink-100 transition-colors cursor-pointer disabled:opacity-60"
-              >
-                {buscandoInsta ? (
-                  <div className="w-3.5 h-3.5 border-2 border-pink-600 border-t-transparent rounded-full animate-spin" />
-                ) : (
-                  <AtSign size={14} />
-                )}
-                {buscandoInsta ? 'Buscando no Instagram...' : 'Buscar no Instagram desta cidade'}
-              </button>
-            )}
           </div>
 
           {/* FONTE */}

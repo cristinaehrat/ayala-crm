@@ -4,7 +4,7 @@ import {
 } from 'lucide-react'
 import EmpresaSection from '@/components/empresas/EmpresaSection'
 import { useLead, useUpdateLead, useDeleteLead, useTurma } from '@/hooks/useLeads'
-import { useSearchProspectos } from '@/hooks/useProspectos'
+import { useSearchProspectos, useProspecto, useCreateProspecto } from '@/hooks/useProspectos'
 import type { Prospecto } from '@/hooks/useProspectos'
 import {
   ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, INTERESSE_TAGS, formatPhone, initials, relativeTime,
@@ -98,6 +98,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [nota, setNota] = useState('')
   const [savingNota, setSavingNota] = useState(false)
+  const [criarOficinaOpen, setCriarOficinaOpen] = useState(false)
+  const [criarOficinaForm, setCriarOficinaForm] = useState({ empresa_oficina: '', cidade: '', uf: '', telefone_oficina: '' })
   const [form, setForm] = useState<EditForm>({
     nome: '', empresa_oficina: '', cidade: '', uf: '', perfil: '',
     status: '', marca_interesse: '', potencial: '', proximo_passo: '', data_retorno: '',
@@ -107,6 +109,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   })
 
   const { data: turma } = useTurma(lead?.turma_selecionada ?? null)
+  const { data: prospectoVinculado } = useProspecto(lead?.id_prospecto ?? null)
+  const createProspecto = useCreateProspecto()
   const { data: prospectoSuggestions = [] } = useSearchProspectos(
     !lead?.id_prospecto && (lead?.empresa_oficina?.length ?? 0) >= 2 ? (lead?.empresa_oficina ?? '') : ''
   )
@@ -183,6 +187,39 @@ export default function LeadDetail({ leadId, onClose }: Props) {
       },
     })
     toast.success(`Lead vinculado à oficina ${prospecto.empresa_oficina}`)
+  }
+
+  async function handleCriarOficina() {
+    const { empresa_oficina, cidade, uf, telefone_oficina } = criarOficinaForm
+    if (!empresa_oficina.trim()) { toast.error('Informe o nome da oficina'); return }
+    try {
+      const novo = await createProspecto.mutateAsync({
+        empresa_oficina: empresa_oficina.trim() || null,
+        cidade: cidade.trim() || null,
+        uf: uf.trim() || null,
+        telefone_oficina: telefone_oficina.trim() || null,
+        status_contato: 'a_contatar',
+        multimarcas: true,
+        qualificado_lead: false,
+        convertido_lead: false,
+      })
+      await updateLead.mutateAsync({ id: lead!.id, data: { id_prospecto: novo.id_visita } })
+      setCriarOficinaOpen(false)
+      toast.success('Oficina criada e vinculada ao lead')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Erro ao criar oficina')
+    }
+  }
+
+  async function handlePassarParaPaola() {
+    const novasEtiquetas = lead!.etiqueta_chatwoot
+      ? `${lead!.etiqueta_chatwoot},para_paola`
+      : 'para_paola'
+    await updateLead.mutateAsync({
+      id: lead!.id,
+      data: { consultor: 'Paola', requer_atencao: true, etiqueta_chatwoot: novasEtiquetas },
+    })
+    toast.success('Lead passado para a Paola')
   }
 
   async function handleSaveNota() {
@@ -501,7 +538,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
       </div>
 
       {/* Action buttons */}
-      <div className="flex gap-2 p-4 border-b border-white/10 shrink-0">
+      <div className="flex gap-2 p-4 border-b border-white/10 shrink-0 flex-wrap">
         <a
           href={`tel:${lead.telefone}`}
           className="flex-1 flex items-center justify-center gap-2 btn-secondary text-center"
@@ -540,6 +577,20 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         >
           <GraduationCap size={15} />
         </button>
+        {lead.consultor !== 'Paola' && (
+          <button
+            onClick={handlePassarParaPaola}
+            disabled={updateLead.isPending}
+            aria-label="Passar este lead para a Paola"
+            className="shrink-0 flex items-center gap-1.5 text-xs font-display font-bold text-purple-400 border border-purple-400/40 rounded-lg px-3 py-1.5 hover:border-purple-400/70 transition-colors disabled:opacity-50"
+          >
+            {updateLead.isPending
+              ? <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+              : <User size={13} />
+            }
+            {updateLead.isPending ? 'Passando...' : 'Passar para Paola'}
+          </button>
+        )}
       </div>
 
       {/* Data grid */}
@@ -599,13 +650,31 @@ export default function LeadDetail({ leadId, onClose }: Props) {
         } />
       </div>
 
-      {/* Banner: sugestão de vínculo com prospecto cadastrado */}
-      {!lead.id_prospecto && prospectoSuggestions.length > 0 && (
+      {/* Banner: sugestão de vínculo / criar oficina */}
+      {!lead.id_prospecto && (
         <div className="px-4 pb-2">
           <div className="rounded-lg border border-white/20 bg-white/5 p-3 space-y-2">
-            <p className="text-xs font-display font-semibold text-muted uppercase tracking-wide">
-              Oficina cadastrada com esse nome — vincular?
-            </p>
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-display font-semibold text-muted uppercase tracking-wide">
+                {prospectoSuggestions.length > 0 ? 'Oficina cadastrada com esse nome — vincular?' : 'Vincular à oficina do banco'}
+              </p>
+              {!criarOficinaOpen && (
+                <button
+                  onClick={() => {
+                    setCriarOficinaForm({
+                      empresa_oficina: lead.empresa_oficina ?? '',
+                      cidade: lead.cidade ?? '',
+                      uf: lead.uf ?? '',
+                      telefone_oficina: '',
+                    })
+                    setCriarOficinaOpen(true)
+                  }}
+                  className="text-xs font-display font-bold text-green-400 border border-green-400/30 rounded px-2.5 py-1 hover:border-green-400/60 transition-colors shrink-0"
+                >
+                  + Criar oficina
+                </button>
+              )}
+            </div>
             {prospectoSuggestions.slice(0, 2).map((p) => (
               <div key={p.id_visita} className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
@@ -621,6 +690,86 @@ export default function LeadDetail({ leadId, onClose }: Props) {
                 </button>
               </div>
             ))}
+            {criarOficinaOpen && (
+              <div className="pt-2 border-t border-white/10 space-y-2">
+                <p className="text-xs text-muted font-display font-semibold">Nova oficina</p>
+                <input
+                  id="criar-oficina-nome"
+                  aria-label="Nome da oficina"
+                  className="input-field text-xs"
+                  placeholder="Nome da oficina"
+                  value={criarOficinaForm.empresa_oficina}
+                  onChange={(e) => setCriarOficinaForm(f => ({ ...f, empresa_oficina: e.target.value }))}
+                />
+                <div className="flex gap-2">
+                  <input
+                    aria-label="Cidade da oficina"
+                    className="input-field text-xs flex-1"
+                    placeholder="Cidade"
+                    value={criarOficinaForm.cidade}
+                    onChange={(e) => setCriarOficinaForm(f => ({ ...f, cidade: e.target.value }))}
+                  />
+                  <input
+                    aria-label="Estado (UF)"
+                    className="input-field text-xs w-16"
+                    placeholder="UF"
+                    maxLength={2}
+                    value={criarOficinaForm.uf}
+                    onChange={(e) => setCriarOficinaForm(f => ({ ...f, uf: e.target.value.toUpperCase() }))}
+                  />
+                </div>
+                <input
+                  aria-label="Telefone da oficina"
+                  className="input-field text-xs"
+                  placeholder="Telefone da oficina (opcional)"
+                  type="tel"
+                  value={criarOficinaForm.telefone_oficina}
+                  onChange={(e) => setCriarOficinaForm(f => ({ ...f, telefone_oficina: e.target.value }))}
+                />
+                <div className="flex gap-2 pt-1">
+                  <button
+                    onClick={handleCriarOficina}
+                    disabled={createProspecto.isPending || updateLead.isPending}
+                    className="flex-1 btn-primary text-xs py-2"
+                  >
+                    {createProspecto.isPending ? 'Criando...' : 'Criar e vincular'}
+                  </button>
+                  <button
+                    onClick={() => setCriarOficinaOpen(false)}
+                    className="btn-secondary text-xs px-4"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Dados da Oficina vinculada */}
+      {lead.id_prospecto && prospectoVinculado && (
+        <div className="px-4 pb-2">
+          <div className="rounded-lg border border-blue-400/20 bg-blue-400/5 p-3 space-y-1">
+            <div className="flex items-center justify-between">
+              <p className="text-xs font-display font-semibold text-blue-400 uppercase tracking-wide">Oficina Vinculada</p>
+              <button
+                onClick={() => navigate('/prospectos')}
+                className="text-xs font-display font-bold text-blue-400 border border-blue-400/30 rounded px-2.5 py-1 hover:border-blue-400/60 transition-colors"
+              >
+                Editar oficina →
+              </button>
+            </div>
+            <p className="text-sm font-display font-bold text-white">{prospectoVinculado.empresa_oficina ?? '—'}</p>
+            {(prospectoVinculado.cidade || prospectoVinculado.uf) && (
+              <p className="text-xs text-muted">{prospectoVinculado.cidade}{prospectoVinculado.uf ? `/${prospectoVinculado.uf}` : ''}</p>
+            )}
+            {prospectoVinculado.telefone_oficina && (
+              <p className="text-xs text-muted">{prospectoVinculado.telefone_oficina}</p>
+            )}
+            {prospectoVinculado.status_contato && (
+              <p className="text-xs text-muted">Status: {prospectoVinculado.status_contato.replace('_', ' ')}</p>
+            )}
           </div>
         </div>
       )}
