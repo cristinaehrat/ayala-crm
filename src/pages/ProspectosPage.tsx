@@ -619,19 +619,21 @@ function ProspectoCard({
     ? 'text-sky-400 border-sky-400/30'
     : STATUS_PILL_COLOR[p.status_contato ?? ''] ?? 'text-slate-300 border-white/10'
 
-  const bgTint = hasLeads
-    ? 'bg-sky-500/10'
+  const cardBg = hasLeads
+    ? 'bg-sky-950'
     : p.status_contato === 'retornou'
-    ? 'bg-orange/10'
+    ? 'bg-orange-950'
     : ['tentativa_1','tentativa_2','tentativa_3','sem_resposta'].includes(p.status_contato ?? '')
-    ? 'bg-amber-400/8'
-    : ''
+    ? 'bg-amber-950'
+    : isVisitado
+    ? 'bg-green-950'
+    : 'bg-navy2'
 
   return (
     <div
       className={cn(
-        'relative rounded-xl border border-white/10 bg-navy2 cursor-pointer transition-colors overflow-hidden',
-        bgTint,
+        'relative rounded-xl border border-white/10 cursor-pointer transition-colors overflow-hidden',
+        cardBg,
         isDesqualificado ? 'opacity-60' : 'hover:border-white/20',
       )}
       onClick={onClick}
