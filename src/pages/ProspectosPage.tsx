@@ -67,6 +67,33 @@ const POTENCIAL_FILTERS = [
   { value: 'baixo', label: '❄ Baixo' },
 ]
 
+const STATUS_LEGEND = [
+  { accent: 'bg-white/25',  label: 'A contatar' },
+  { accent: 'bg-orange',    label: 'Retornou' },
+  { accent: 'bg-amber-400', label: 'Em tentativa' },
+  { accent: 'bg-sky-400',   label: 'Tem leads' },
+  { accent: 'bg-slate-600', label: 'Sem interesse' },
+]
+
+const STATUS_ACCENT: Record<string, string> = {
+  retornou:    'bg-orange',
+  tentativa_1: 'bg-amber-400',
+  tentativa_2: 'bg-amber-400',
+  tentativa_3: 'bg-amber-400',
+  sem_resposta:'bg-amber-400',
+  desqualificado: 'bg-slate-600',
+}
+
+const STATUS_PILL_COLOR: Record<string, string> = {
+  retornou:    'text-orange border-orange/30',
+  tentativa_1: 'text-amber-400 border-amber-400/30',
+  tentativa_2: 'text-amber-400 border-amber-400/30',
+  tentativa_3: 'text-amber-400 border-amber-400/30',
+  sem_resposta:'text-amber-400 border-amber-400/30',
+  desqualificado: 'text-slate-500 border-slate-600/30',
+  a_contatar:  'text-slate-300 border-white/10',
+}
+
 const TIPO_OFICINA_OPTIONS = [
   { value: 'mecanica_movel',  label: 'Mecânica Móvel' },
   { value: 'mecatronica',     label: 'Mecatrônica' },
@@ -471,9 +498,18 @@ export default function ProspectosPage() {
         )}
       </div>
 
-      <p className="text-xs text-muted px-4 py-1 shrink-0">
-        {isLoading ? 'Carregando...' : `${filtered.length} prospectos`}
-      </p>
+      <div className="flex items-center gap-x-3 gap-y-1 px-4 py-1.5 shrink-0 flex-wrap">
+        <span className="text-[10px] text-slate-500 font-display uppercase tracking-wider shrink-0">Legenda</span>
+        {STATUS_LEGEND.map(({ accent, label }) => (
+          <div key={label} className="flex items-center gap-1">
+            <div className={cn('w-1 h-3.5 rounded-full shrink-0', accent)} />
+            <span className="text-[10px] text-slate-400 whitespace-nowrap">{label}</span>
+          </div>
+        ))}
+        <span className="ml-auto text-[11px] text-muted">
+          {isLoading ? '…' : `${filtered.length} prospectos`}
+        </span>
+      </div>
 
       {/* List */}
       <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2">
@@ -568,40 +604,43 @@ function ProspectoCard({
   const hasLeads = leadCount > 0
   const ligarTel = p.whatsapp_responsavel || p.telefone_oficina
   const isDesqualificado = p.status_contato === 'desqualificado' || p.potencial === 'sem_interesse'
-  const isTentativa = ['tentativa_1', 'tentativa_2', 'tentativa_3', 'sem_resposta'].includes(p.status_contato ?? '')
-  const isRetornou = p.status_contato === 'retornou'
 
-  const cardClass = hasLeads
-    ? 'border-blue-200 bg-blue-50'
-    : isRetornou
-      ? 'border-orange/50 bg-orange/5 hover:border-orange/70'
-      : isTentativa
-        ? 'border-amber-500/30 bg-amber-500/5 hover:border-amber-500/50'
-        : isDesqualificado
-          ? 'border-slate-700/50 bg-navy2/50 opacity-55'
-          : 'border-white/10 bg-navy2 hover:border-white/20'
+  const accentColor = hasLeads
+    ? 'bg-sky-400'
+    : (p.status_contato ? STATUS_ACCENT[p.status_contato] : null)
+    ?? (isDesqualificado ? 'bg-slate-600' : 'bg-white/25')
+
+  const statusPillColor = hasLeads
+    ? 'text-sky-400 border-sky-400/30'
+    : STATUS_PILL_COLOR[p.status_contato ?? ''] ?? 'text-slate-300 border-white/10'
 
   return (
     <div
-      className={cn('rounded-xl border transition-colors cursor-pointer', cardClass)}
+      className={cn(
+        'relative rounded-xl border border-white/10 bg-navy2 cursor-pointer transition-colors overflow-hidden',
+        isDesqualificado ? 'opacity-60' : 'hover:border-white/20',
+      )}
       onClick={onClick}
     >
-      <div className="p-3">
+      <div className={cn('absolute inset-y-0 left-0 w-1 shrink-0', accentColor)} />
+      <div className="p-3 pl-4">
         <div className="flex items-start justify-between gap-2">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5">
-              <p className={cn('font-display font-bold text-sm truncate', hasLeads ? 'text-navy' : 'text-white')}>{p.empresa_oficina || '—'}</p>
+              <p className="font-display font-bold text-sm truncate text-white">{p.empresa_oficina || '—'}</p>
               {p.instagram_handle && <AtSign size={11} className="text-pink-400 shrink-0" />}
             </div>
-            <p className={cn('text-xs mt-0.5 truncate', hasLeads ? 'text-slate-600' : 'text-muted')}>{nome} · {p.cidade}{p.uf ? `/${p.uf}` : ''}</p>
+            <p className="text-xs mt-0.5 truncate text-muted">{nome} · {p.cidade}{p.uf ? `/${p.uf}` : ''}</p>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
-            <span className={cn('text-xs font-display font-bold rounded-full px-2 py-0.5 border', hasLeads ? 'text-blue-700 border-blue-300 bg-white/80' : 'text-slate-300 border-white/10')}>
-              {leadCount} {leadCount === 1 ? 'lead' : 'leads'}
-            </span>
-            {p.potencial && (
+            {hasLeads && (
+              <span className="text-xs font-display font-bold rounded-full px-2 py-0.5 border text-sky-400 border-sky-400/30">
+                {leadCount} {leadCount === 1 ? 'lead' : 'leads'}
+              </span>
+            )}
+            {p.potencial && p.potencial !== 'sem_interesse' && (
               <span className={cn('text-xs font-display font-semibold', POTENCIAL_COLOR[p.potencial] ?? 'text-muted')}>
-                {p.potencial === 'alto' ? '🔥' : p.potencial === 'medio' ? '~' : '❄'} {p.potencial}
+                {p.potencial === 'alto' ? '▲' : '~'} {p.potencial}
               </span>
             )}
           </div>
@@ -614,12 +653,11 @@ function ProspectoCard({
               <span key={m} className="px-1.5 py-0.5 rounded text-xs font-display font-bold text-white" style={{ backgroundColor: badge.bg }}>{badge.label}</span>
             ) : null
           })}
-          <span className={cn(
-            'px-1.5 py-0.5 rounded text-xs font-display font-semibold border',
-            hasLeads ? 'text-slate-700 border-slate-200 bg-white/80' : 'text-muted border-white/10',
-          )}>{statusLabel}</span>
+          <span className={cn('px-1.5 py-0.5 rounded text-xs font-display font-semibold border', statusPillColor)}>
+            {statusLabel}
+          </span>
           {p.data_visita && (
-            <span className={cn('text-xs', hasLeads ? 'text-slate-500' : 'text-muted')}>{new Date(p.data_visita + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
+            <span className="text-xs text-muted">{new Date(p.data_visita + 'T12:00:00').toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit' })}</span>
           )}
           {p.data_retorno && (() => {
             const st = lembreteStatus(p.data_retorno)
@@ -629,7 +667,7 @@ function ProspectoCard({
         </div>
 
         {expanded && (
-          <div className={cn('mt-3 pt-3 flex gap-2 flex-wrap', hasLeads ? 'border-t border-slate-200' : 'border-t border-white/10')}>
+          <div className="mt-3 pt-3 flex gap-2 flex-wrap border-t border-white/10">
             {p.data_retorno && (
               <button
                 onClick={onConcluirLembrete}
