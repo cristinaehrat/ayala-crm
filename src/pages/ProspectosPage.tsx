@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X, Download, Sparkles, ChevronUp } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X, Download, Sparkles, ChevronUp, Route } from 'lucide-react'
 
 function lembreteStatus(data_retorno?: string | null) {
   if (!data_retorno) return null
@@ -127,6 +128,8 @@ export default function ProspectosPage() {
   const [extUf, setExtUf] = useState('')
   const [extResultado, setExtResultado] = useState<ExtracaoResult | null>(null)
   const [extAberto, setExtAberto] = useState(false)
+  const [checkedIds, setCheckedIds] = useState<Set<string>>(new Set())
+  const navigate = useNavigate()
   const extrairProspectos = useExtrairProspectos()
 
   useEffect(() => {
@@ -257,6 +260,16 @@ export default function ProspectosPage() {
   }
 
   const selected = detailId ? prospectos.find((p) => p.id_visita === detailId) ?? null : null
+
+  function handleRoteirizarSelecionadas() {
+    const selecionadas = filtered.filter(p => checkedIds.has(p.id_visita))
+    const lista = selecionadas.map(p => ({
+      nome: p.empresa_oficina || 'Sem nome',
+      endereco: p.endereco || [p.empresa_oficina, p.cidade, p.uf].filter(Boolean).join(', '),
+    }))
+    try { sessionStorage.setItem('ayala_roteiro_selecionados', JSON.stringify(lista)) } catch { /* ignora */ }
+    navigate('/roteiro')
+  }
 
   return (
     <div className="flex flex-col h-full md:ml-56">
@@ -539,8 +552,32 @@ export default function ProspectosPage() {
             leadCount={getProspectoLeadCount(p, leadCounts)}
             onCreateLead={(e) => handleCreateLead(p, e)}
             creatingLead={createLead.isPending}
+            checked={checkedIds.has(p.id_visita)}
+            onCheck={(e) => {
+              e.stopPropagation()
+              setCheckedIds(prev => {
+                const next = new Set(prev)
+                next.has(p.id_visita) ? next.delete(p.id_visita) : next.add(p.id_visita)
+                return next
+              })
+            }}
           />
         ))}
+
+        {checkedIds.size > 0 && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-30 bg-navy text-white rounded-full px-5 py-3 shadow-xl flex items-center gap-3">
+            <span className="text-sm font-display font-bold">{checkedIds.size} selecionada{checkedIds.size !== 1 ? 's' : ''}</span>
+            <button
+              onClick={handleRoteirizarSelecionadas}
+              className="bg-orange text-white text-sm font-display font-bold px-4 py-1.5 rounded-full flex items-center gap-1.5 cursor-pointer hover:bg-orange/90 transition-colors"
+            >
+              <Route size={14} /> Roteirizar →
+            </button>
+            <button onClick={() => setCheckedIds(new Set())} className="text-white/60 hover:text-white text-xs cursor-pointer">
+              Limpar
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Detail drawer (mobile bottom sheet style) */}
@@ -591,6 +628,8 @@ function ProspectoCard({
   onCreateLead,
   leadCount,
   creatingLead,
+  checked,
+  onCheck,
 }: {
   prospecto: Prospecto
   onClick: () => void
@@ -602,6 +641,8 @@ function ProspectoCard({
   onCreateLead: (e: React.MouseEvent) => void
   leadCount: number
   creatingLead: boolean
+  checked?: boolean
+  onCheck?: (e: React.MouseEvent) => void
 }) {
   const marcas = p.marca_interesse ? p.marca_interesse.split(',').map((m) => m.trim()).filter(Boolean) : []
   const statusLabel = p.status_contato ? STATUS_LABEL[p.status_contato] ?? p.status_contato : 'A contatar'
@@ -650,6 +691,15 @@ function ProspectoCard({
             <p className="text-xs mt-0.5 truncate text-muted">{nome} · {p.cidade}{p.uf ? `/${p.uf}` : ''}</p>
           </div>
           <div className="flex flex-col items-end gap-1 shrink-0">
+            {onCheck && (
+              <button
+                type="button"
+                onClick={onCheck}
+                className={`w-5 h-5 rounded border flex items-center justify-center shrink-0 transition-colors cursor-pointer ${checked ? 'bg-orange border-orange' : 'border-slate-400 bg-transparent hover:border-orange'}`}
+              >
+                {checked && <Check size={11} className="text-white" />}
+              </button>
+            )}
             {hasLeads && (
               <span className="text-xs font-display font-bold rounded-full px-2 py-0.5 bg-sky-500 text-white">
                 {leadCount} {leadCount === 1 ? 'lead' : 'leads'}

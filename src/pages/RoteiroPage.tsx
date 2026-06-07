@@ -2,17 +2,11 @@ import { useState, useMemo, useEffect } from 'react'
 import { Navigation, ExternalLink, Copy, Check, AlertCircle, MapPin, Clock, Route, List, MessageCircle, CalendarDays, ChevronDown, Pencil, Trash2, Plus, Map, Calendar, Printer } from 'lucide-react'
 import { toast } from 'sonner'
 import { UF_OPTIONS } from '@/lib/utils'
-import { useGerarRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota, type DiaDado } from '@/hooks/useGerarRoteiro'
+import { useGerarRoteiro, useCountProspectosRoteiro, parseLeadsFromText, type RoteirizarResult, type Rota, type DiaDado } from '@/hooks/useGerarRoteiro'
 import { useMalhaEstrategica, useCreateMalha, useUpdateMalha, useDeleteMalha, MESES_PT } from '@/hooks/useMalhaEstrategica'
 import type { MalhaEstrategica } from '@/lib/types'
 import Modal from '@/components/ui/Modal'
 
-const MARCAS = [
-  { value: '',       label: 'Todas' },
-  { value: 'volvo',  label: 'Volvo' },
-  { value: 'daf',    label: 'DAF' },
-  { value: 'scania', label: 'Scania' },
-]
 
 const POTENCIAIS_MIN = [
   { value: '',             label: 'Todos' },
@@ -37,6 +31,7 @@ interface RoteiroForm {
   startPoint: string
   returnPoint: string
   dias: number
+  maxPorDia: number
   fonte: Fonte
   listaManual: string
   potencialMin: string
@@ -50,6 +45,7 @@ const EMPTY: RoteiroForm = {
   startPoint: '',
   returnPoint: '',
   dias: 1,
+  maxPorDia: 15,
   fonte: 'manual',
   listaManual: '',
   potencialMin: '',
@@ -69,6 +65,7 @@ export default function RoteiroPage() {
   const [showMalha, setShowMalha] = useState(false)
   const [mesMalha, setMesMalha] = useState(() => MESES_PT[new Date().getMonth()])
   const gerarRoteiro = useGerarRoteiro()
+  const countQuery = useCountProspectosRoteiro(form.cidade, form.uf)
   const { data: malhaData } = useMalhaEstrategica()
 
   // Restaura último roteiro do localStorage ao montar
@@ -76,6 +73,16 @@ export default function RoteiroPage() {
     try {
       const saved = localStorage.getItem('ayala_roteiro_ultimo')
       if (saved) setResultado(JSON.parse(saved))
+    } catch { /* ignora */ }
+
+    try {
+      const sel = sessionStorage.getItem('ayala_roteiro_selecionados')
+      if (sel) {
+        const lista: { nome: string; endereco: string }[] = JSON.parse(sel)
+        sessionStorage.removeItem('ayala_roteiro_selecionados')
+        const texto = lista.map(l => `${l.nome} — ${l.endereco}`).join('\n')
+        setForm(prev => ({ ...prev, fonte: 'manual', listaManual: texto }))
+      }
     } catch { /* ignora */ }
   }, [])
 
@@ -130,11 +137,11 @@ export default function RoteiroPage() {
         regiao,
         cidade: form.cidade.trim() || undefined,
         uf: form.uf || undefined,
-        marca: form.marca || undefined,
         potencial_min: form.potencialMin || undefined,
         filtro_visita: form.filtroVisita !== 'todas' ? form.filtroVisita : undefined,
         leads: form.fonte === 'manual' ? parseLeadsFromText(form.listaManual) : undefined,
         dias: form.dias > 1 ? form.dias : undefined,
+        max_por_dia: form.maxPorDia !== 15 ? form.maxPorDia : undefined,
         return_point: form.returnPoint.trim() || undefined,
       })
       setResultado(result)
@@ -242,6 +249,13 @@ export default function RoteiroPage() {
               </Field>
             </div>
 
+            {form.fonte === 'banco' && form.cidade && form.uf && (
+              <p className="text-[11px] text-muted mt-1.5">
+                {countQuery.isLoading ? '— oficinas no banco' :
+                 countQuery.data != null ? `${countQuery.data} oficinas no banco para ${form.cidade}/${form.uf}` : ''}
+              </p>
+            )}
+
             <Field label="Ponto de partida" className="mt-3">
               <input
                 type="text"
@@ -252,52 +266,46 @@ export default function RoteiroPage() {
               />
             </Field>
 
-            <div className="mt-3 grid grid-cols-3 gap-3">
+            <div className="mt-3 grid grid-cols-2 gap-3">
               <Field label="Dividir em dias">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => set('dias', Math.max(1, form.dias - 1))}
-                    className="w-8 h-[42px] flex items-center justify-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 text-navy font-bold hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+                    className="w-8 h-[44px] flex items-center justify-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 text-navy font-bold hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
                   >−</button>
-                  <span className="flex-1 h-[42px] flex items-center justify-center border border-slate-300 bg-white font-display font-bold text-navy text-sm">
+                  <span className="flex-1 h-[44px] flex items-center justify-center border border-slate-300 bg-white font-display font-bold text-navy text-sm">
                     {form.dias}
                   </span>
                   <button
                     type="button"
                     onClick={() => set('dias', Math.min(7, form.dias + 1))}
-                    className="w-8 h-[42px] flex items-center justify-center rounded-r-lg border border-l-0 border-slate-300 bg-slate-50 text-navy font-bold hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
+                    className="w-8 h-[44px] flex items-center justify-center rounded-r-lg border border-l-0 border-slate-300 bg-slate-50 text-navy font-bold hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none"
                   >+</button>
                 </div>
               </Field>
-              <Field label="Local de retorno / fim do dia" className="col-span-2">
-                <input
-                  type="text"
-                  value={form.returnPoint}
-                  onChange={(e) => set('returnPoint', e.target.value)}
-                  placeholder="Vazio = retorna ao ponto de partida"
-                  className="input-field"
-                />
+              <Field label="Máx por dia">
+                <div className="flex items-center gap-2">
+                  <button type="button" onClick={() => set('maxPorDia', Math.max(5, form.maxPorDia - 5))}
+                    className="w-8 h-[44px] flex items-center justify-center rounded-l-lg border border-r-0 border-slate-300 bg-slate-50 text-navy font-bold hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none">−</button>
+                  <span className="flex-1 h-[44px] flex items-center justify-center border border-slate-300 bg-white font-display font-bold text-navy text-sm">
+                    {form.maxPorDia}
+                  </span>
+                  <button type="button" onClick={() => set('maxPorDia', Math.min(25, form.maxPorDia + 5))}
+                    className="w-8 h-[44px] flex items-center justify-center rounded-r-lg border border-l-0 border-slate-300 bg-slate-50 text-navy font-bold hover:bg-slate-100 transition-colors cursor-pointer text-lg leading-none">+</button>
+                </div>
+                <p className="text-[11px] text-muted mt-1">{form.dias * form.maxPorDia} oficinas no total</p>
               </Field>
             </div>
 
-            <Field label="Marca de interesse" className="mt-3">
-              <div className="flex gap-2">
-                {MARCAS.map((m) => (
-                  <button
-                    key={m.value}
-                    type="button"
-                    onClick={() => set('marca', m.value)}
-                    className={`flex-1 rounded-lg text-xs font-display font-bold py-2.5 transition-colors cursor-pointer border ${
-                      form.marca === m.value
-                        ? 'border-orange bg-orange/10 text-orange'
-                        : 'border-slate-300 bg-slate-50 text-navy hover:border-orange/50 hover:bg-orange/5'
-                    }`}
-                  >
-                    {m.label}
-                  </button>
-                ))}
-              </div>
+            <Field label="Local de retorno / fim do dia" className="mt-3">
+              <input
+                type="text"
+                value={form.returnPoint}
+                onChange={(e) => set('returnPoint', e.target.value)}
+                placeholder="Vazio = retorna ao ponto de partida"
+                className="input-field"
+              />
             </Field>
 
           </div>

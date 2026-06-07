@@ -1,6 +1,8 @@
-import { useMutation } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 
 const WEBHOOK_URL = 'https://n8n.ayalaoficial.com.br/webhook/roteiro-visitas'
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string
+const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY as string
 
 export interface LeadInput {
   nome: string
@@ -18,6 +20,7 @@ export interface RoteirizarInput {
   filtro_visita?: string
   leads?: LeadInput[]
   dias?: number
+  max_por_dia?: number
   return_point?: string
 }
 
@@ -76,6 +79,23 @@ export function useGerarRoteiro() {
       if (data.status !== 'OK') throw new Error(data.error || data.message || 'Erro ao gerar roteiro')
       return data as RoteirizarResult
     },
+  })
+}
+
+export function useCountProspectosRoteiro(cidade: string, uf: string) {
+  return useQuery({
+    queryKey: ['count-prospectos-roteiro', cidade, uf],
+    queryFn: async () => {
+      if (!cidade || !uf) return null
+      const resp = await fetch(
+        `${SUPABASE_URL}/rest/v1/cadastro_prospectos?cidade=ilike.${encodeURIComponent(cidade)}&uf=eq.${encodeURIComponent(uf.toUpperCase())}&status_contato=neq.desqualificado&select=id_visita`,
+        { headers: { apikey: SUPABASE_KEY, Prefer: 'count=exact', Range: '0-0' } }
+      )
+      const count = resp.headers.get('content-range')?.split('/')[1]
+      return count ? parseInt(count) : null
+    },
+    enabled: !!cidade && !!uf,
+    staleTime: 60_000,
   })
 }
 
