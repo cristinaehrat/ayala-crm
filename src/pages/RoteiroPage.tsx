@@ -108,6 +108,7 @@ export default function RoteiroPage() {
       marca: entry.marca.toLowerCase(),
       cidade: cidadeRaw.trim(),
       uf: (ufRaw ?? '').trim(),
+      fonte: 'banco',
     }))
     setShowMalha(false)
     toast.success(`Região carregada: ${entry.cidade_base}${entry.regiao_estrategica ? ` — ${entry.regiao_estrategica}` : ''}`)
