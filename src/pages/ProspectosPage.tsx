@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X, Download, Sparkles, ChevronUp, Route, Image as ImageIcon } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X, Download, Sparkles, ChevronUp, Route, Image as ImageIcon, Camera } from 'lucide-react'
 
 function lembreteStatus(data_retorno?: string | null) {
   if (!data_retorno) return null
@@ -25,6 +25,28 @@ function toWaLink(phone: string): string {
 }
 import { toast } from 'sonner'
 import Modal from '@/components/ui/Modal'
+import { supabase } from '@/lib/supabase'
+
+async function comprimirImagemProspecto(file: File): Promise<Blob> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    const url = URL.createObjectURL(file)
+    img.onload = () => {
+      const MAX = 1200
+      let { width, height } = img
+      if (width > MAX || height > MAX) {
+        if (width > height) { height = Math.round((height * MAX) / width); width = MAX }
+        else { width = Math.round((width * MAX) / height); height = MAX }
+      }
+      const canvas = document.createElement('canvas')
+      canvas.width = width; canvas.height = height
+      canvas.getContext('2d')!.drawImage(img, 0, 0, width, height)
+      canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.82)
+      URL.revokeObjectURL(url)
+    }
+    img.src = url
+  })
+}
 
 const FILTERS: { id: ProspectoFilter; label: string }[] = [
   { id: 'hoje',        label: 'Hoje' },
@@ -1353,10 +1375,15 @@ function ProspectoEditModal({
   saving: boolean
 }) {
   const [form, setForm] = useState<ProspectoEditForm | null>(null)
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const fotoInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!prospecto) {
       setForm(null)
+      setFotoFile(null)
+      setFotoPreview(null)
       return
     }
     setForm({
@@ -1421,9 +1448,38 @@ function ProspectoEditModal({
     }) : prev)
   }
 
+  function handleFotoChangeModal(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFotoFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setFotoPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  function removeFotoModal() {
+    setFotoFile(null)
+    setFotoPreview(null)
+    if (fotoInputRef.current) fotoInputRef.current.value = ''
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form) return
+
+    let fotoUrl: string | null | undefined = undefined
+    if (fotoFile && prospecto?.id_visita) {
+      try {
+        const blob = await comprimirImagemProspecto(fotoFile)
+        const path = `${prospecto.id_visita}/${Date.now()}.jpg`
+        const { error } = await supabase.storage.from('cartoes-visita').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+        if (error) throw error
+        fotoUrl = supabase.storage.from('cartoes-visita').getPublicUrl(path).data.publicUrl
+      } catch {
+        toast.warning('Foto não enviada — ficha salva sem ela.')
+      }
+    }
+
     const foraPublico = form.tipo_oficinas.includes('fora_publico')
     await onSave({
       empresa_oficina: form.empresa_oficina || null,
@@ -1455,6 +1511,7 @@ function ProspectoEditModal({
       instagram_handle: form.instagram_handle || null,
       facebook_url: form.facebook_url || null,
       website_url: form.website_url || null,
+      ...(fotoUrl !== undefined ? { foto_cartao_url: fotoUrl } : {}),
     })
   }
 
@@ -1604,6 +1661,53 @@ function ProspectoEditModal({
               </div>
             </Field>
           </div>
+        </div>
+
+        {/* Cartão de Visita */}
+        <div>
+          <p className="text-xs font-display font-semibold text-muted uppercase tracking-wide mb-2">Cartão de Visita</p>
+          {(fotoPreview || prospecto?.foto_cartao_url) ? (
+            <div className="flex items-start gap-3">
+              <a href={fotoPreview ?? prospecto!.foto_cartao_url!} target="_blank" rel="noreferrer" className="shrink-0">
+                <img
+                  src={fotoPreview ?? prospecto!.foto_cartao_url!}
+                  alt="Cartão de visita"
+                  className="w-24 h-16 object-cover rounded-lg border border-white/20"
+                />
+              </a>
+              <div className="flex flex-col gap-1.5 pt-1">
+                <p className="text-xs text-muted">{fotoFile ? fotoFile.name : 'Foto atual'}</p>
+                <button
+                  type="button"
+                  onClick={() => fotoInputRef.current?.click()}
+                  className="flex items-center gap-1 text-xs text-orange font-display font-bold cursor-pointer hover:text-orange/80"
+                >
+                  <Camera size={12} /> Substituir foto
+                </button>
+                {fotoFile && (
+                  <button type="button" onClick={removeFotoModal} className="flex items-center gap-1 text-xs text-red-400 cursor-pointer hover:text-red-300">
+                    <X size={12} /> Cancelar substituição
+                  </button>
+                )}
+              </div>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => fotoInputRef.current?.click()}
+              className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-white/20 rounded-xl py-4 text-sm text-muted font-display font-semibold hover:border-orange/40 hover:text-orange transition-colors cursor-pointer"
+            >
+              <Camera size={16} /> Fotografar cartão de visita
+            </button>
+          )}
+          <input
+            ref={fotoInputRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            className="hidden"
+            onChange={handleFotoChangeModal}
+          />
         </div>
 
         <div className="grid gap-3 md:grid-cols-2">
