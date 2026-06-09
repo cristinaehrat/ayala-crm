@@ -1,13 +1,14 @@
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { useOfflineSync } from '@/hooks/useOfflineSync'
 import { db } from '@/lib/dexie'
 import { isSuspiciousCity, normalizeCity, toE164, UF_OPTIONS, CONSULTORES } from '@/lib/utils'
 import { toast } from 'sonner'
-import { CheckCircle, Check, Link2, Search, X, Plus, Trash2, AtSign, Globe, MapPin, Phone } from 'lucide-react'
+import { CheckCircle, Check, Link2, Search, X, Plus, Trash2, AtSign, Globe, MapPin, Phone, Camera, ImageOff } from 'lucide-react'
 import { useSearchProspectos, type Prospecto } from '@/hooks/useProspectos'
 import { useSearchEmpresas } from '@/hooks/useEmpresasCadastradas'
 import type { Empresa } from '@/lib/types'
 import { persistProspectoPayload } from '@/lib/prospectos'
+import { supabase } from '@/lib/supabase'
 
 const MARCAS = ['Volvo', 'DAF', 'Scania'] as const
 
@@ -94,6 +95,9 @@ export default function VisitaPage() {
   const [loading, setLoading] = useState(false)
   const [saved, setSaved] = useState(false)
   const [linkedProspecto, setLinkedProspecto] = useState<Prospecto | null>(null)
+  const [fotoFile, setFotoFile] = useState<File | null>(null)
+  const [fotoPreview, setFotoPreview] = useState<string | null>(null)
+  const fotoInputRef = useRef<HTMLInputElement>(null)
   const [linkedEmpresa, setLinkedEmpresa] = useState<Empresa | null>(null)
   const { isOnline } = useOfflineSync()
   const phoneDigits = form.telefone.replace(/\D/g, '')
@@ -179,6 +183,59 @@ export default function VisitaPage() {
     setLinkedEmpresa(null)
   }
 
+  function handleFotoChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setFotoFile(file)
+    const reader = new FileReader()
+    reader.onload = (ev) => setFotoPreview(ev.target?.result as string)
+    reader.readAsDataURL(file)
+  }
+
+  function removeFoto() {
+    setFotoFile(null)
+    setFotoPreview(null)
+    if (fotoInputRef.current) fotoInputRef.current.value = ''
+  }
+
+  async function comprimirImagem(file: File): Promise<Blob> {
+    return new Promise((resolve) => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        const MAX = 1200
+        let { width, height } = img
+        if (width > MAX || height > MAX) {
+          if (width > height) { height = Math.round((height * MAX) / width); width = MAX }
+          else { width = Math.round((width * MAX) / height); height = MAX }
+        }
+        const canvas = document.createElement('canvas')
+        canvas.width = width
+        canvas.height = height
+        const ctx = canvas.getContext('2d')!
+        ctx.drawImage(img, 0, 0, width, height)
+        canvas.toBlob((blob) => resolve(blob!), 'image/jpeg', 0.82)
+        URL.revokeObjectURL(url)
+      }
+      img.src = url
+    })
+  }
+
+  async function uploadFoto(idVisita: string): Promise<string | null> {
+    if (!fotoFile) return null
+    try {
+      const blob = await comprimirImagem(fotoFile)
+      const path = `${idVisita}/${Date.now()}.jpg`
+      const { error } = await supabase.storage.from('cartoes-visita').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+      if (error) throw error
+      const { data } = supabase.storage.from('cartoes-visita').getPublicUrl(path)
+      return data.publicUrl
+    } catch (err) {
+      console.error('Erro ao fazer upload da foto:', err)
+      return null
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
@@ -191,6 +248,14 @@ export default function VisitaPage() {
     }
 
     const foraPublico = form.tipo_oficinas.includes('fora_publico')
+
+    // Upload foto se online e houver arquivo selecionado
+    let fotoUrl: string | null = null
+    if (isOnline && fotoFile) {
+      const tempId = linkedProspecto?.id_visita ?? `temp_${Date.now()}`
+      fotoUrl = await uploadFoto(tempId)
+      if (!fotoUrl) toast.warning('Foto não enviada — visita será salva sem ela.')
+    }
 
     const payload: Record<string, unknown> = {
       ...(linkedProspecto?.id_visita ? { id_visita: linkedProspecto.id_visita } : {}),
@@ -224,6 +289,7 @@ export default function VisitaPage() {
       instagram_handle:             form.instagram_handle.trim() || null,
       facebook_url:                 form.facebook_url.trim() || null,
       website_url:                  form.website_url.trim() || null,
+      foto_cartao_url:              fotoUrl,
     }
 
     try {
@@ -244,6 +310,7 @@ export default function VisitaPage() {
       }
       setForm(EMPTY)
       clearReference()
+      removeFoto()
       setSaved(true)
       setTimeout(() => setSaved(false), 3000)
     } catch (err) {
@@ -480,6 +547,53 @@ export default function VisitaPage() {
                 className="input-field"
               />
             </Field>
+          </Section>
+
+          {/* SEÇÃO 1b — CARTÃO DE VISITA */}
+          <Section title="Cartão de Visita">
+            {!isOnline ? (
+              <div className="flex items-center gap-2 text-xs text-slate-400 italic">
+                <ImageOff size={14} className="shrink-0" />
+                Foto disponível apenas com conexão ativa.
+              </div>
+            ) : fotoPreview ? (
+              <div className="flex items-start gap-3">
+                <a href={fotoPreview} target="_blank" rel="noreferrer" className="shrink-0">
+                  <img
+                    src={fotoPreview}
+                    alt="Pré-visualização do cartão"
+                    className="w-24 h-16 object-cover rounded-lg border border-slate-300"
+                  />
+                </a>
+                <div className="flex flex-col gap-1.5">
+                  <p className="text-xs text-slate-500">{fotoFile?.name}</p>
+                  <button
+                    type="button"
+                    onClick={removeFoto}
+                    className="flex items-center gap-1 text-xs text-red-400 font-display font-bold cursor-pointer hover:text-red-300"
+                  >
+                    <X size={12} /> Remover foto
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => fotoInputRef.current?.click()}
+                className="w-full flex items-center justify-center gap-2 border-2 border-dashed border-slate-300 rounded-xl py-5 text-sm text-slate-500 font-display font-semibold hover:border-orange/50 hover:text-orange transition-colors cursor-pointer"
+              >
+                <Camera size={18} />
+                Fotografar cartão de visita
+              </button>
+            )}
+            <input
+              ref={fotoInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={handleFotoChange}
+            />
           </Section>
 
           {/* SEÇÃO 2 — CONTATO */}

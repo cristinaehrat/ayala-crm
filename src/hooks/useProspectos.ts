@@ -47,6 +47,7 @@ export interface Prospecto {
   facebook_url: string | null
   website_url: string | null
   empresa_id: string | null
+  foto_cartao_url: string | null
 }
 
 export type ProspectoFilter = 'todos' | 'a_contatar' | 'em_followup' | 'sem_leads' | 'com_leads' | 'hoje'

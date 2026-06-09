@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X, Download, Sparkles, ChevronUp, Route } from 'lucide-react'
+import { Search, Phone, ChevronDown, MapPin, Wrench, Users, Building2, ClipboardList, CalendarDays, MessageCircle, Info, Edit2, UserPlus, User, Plus, Trash2, AtSign, Globe, ExternalLink, PhoneCall, BellRing, Check, X, Download, Sparkles, ChevronUp, Route, Image as ImageIcon } from 'lucide-react'
 
 function lembreteStatus(data_retorno?: string | null) {
   if (!data_retorno) return null
@@ -687,6 +687,7 @@ function ProspectoCard({
             <div className="flex items-center gap-1.5">
               <p className="font-display font-bold text-sm truncate text-white">{p.empresa_oficina || '—'}</p>
               {p.instagram_handle && <AtSign size={11} className="text-pink-400 shrink-0" />}
+              {p.foto_cartao_url && <ImageIcon size={11} className="text-sky-400 shrink-0" aria-label="Cartão de visita disponível" />}
             </div>
             <p className="text-xs mt-0.5 truncate text-muted">{nome} · {p.cidade}{p.uf ? `/${p.uf}` : ''}</p>
           </div>
@@ -936,6 +937,19 @@ function ProspectoDetail({ prospecto: p, onClose, onRegistrarContato, onConcluir
                   </div>
                 )}
               </div>
+            </div>
+          )}
+
+          {p.foto_cartao_url && (
+            <div>
+              <p className="text-xs text-muted font-display font-semibold uppercase tracking-wide mb-1.5">Cartão de Visita</p>
+              <a href={p.foto_cartao_url} target="_blank" rel="noreferrer" className="block w-fit">
+                <img
+                  src={p.foto_cartao_url}
+                  alt="Cartão de visita"
+                  className="max-w-[200px] rounded-lg border border-white/20 hover:opacity-80 transition-opacity"
+                />
+              </a>
             </div>
           )}
 
