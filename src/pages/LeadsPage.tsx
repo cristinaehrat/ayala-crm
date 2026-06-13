@@ -9,6 +9,24 @@ import LeadDetailModal from '@/components/leads/LeadDetailModal'
 import NewLeadModal from '@/components/leads/NewLeadModal'
 import { Search, Plus } from 'lucide-react'
 
+function SkeletonCard() {
+  return (
+    <div className="card-lead">
+      <div className="flex items-start gap-3">
+        <div className="w-10 h-10 rounded-full skeleton-pulse shrink-0" />
+        <div className="flex-1 space-y-2 pt-0.5">
+          <div className="h-4 w-36 skeleton-pulse" />
+          <div className="h-3 w-24 skeleton-pulse" />
+          <div className="flex gap-1.5 mt-1">
+            <div className="h-4 w-16 skeleton-pulse rounded-full" />
+            <div className="h-4 w-12 skeleton-pulse rounded-full" />
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const VALID_FILTERS: LeadFilter[] = [
   'hoje','todos','hot_lead','ag_ismenia','follow_up','qualificados',
   'aguardando_pagamento','inscrito','visualizou_preco','lista_espera',
@@ -80,16 +98,33 @@ export default function LeadsPage() {
         {/* List */}
         <div className="flex-1 overflow-y-auto">
           {(isLoading || isPhoneFetching) && (
-            <div className="flex justify-center py-8">
+            <div className="md:hidden px-3 pt-1 pb-3 space-y-2">
+              <SkeletonCard />
+              <SkeletonCard />
+              <SkeletonCard />
+            </div>
+          )}
+          {(isLoading || isPhoneFetching) && (
+            <div className="hidden md:flex justify-center py-8">
               <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
             </div>
           )}
 
           {!isLoading && !isPhoneFetching && filtered.length === 0 && (
-            <div className="text-center py-12 text-muted text-sm">
-              {isPhoneSearch
-                ? 'Nenhum lead encontrado para esse número'
-                : 'Nenhum lead encontrado'}
+            <div className="flex flex-col items-center py-12 gap-3">
+              <p className="text-muted text-sm">
+                {isPhoneSearch
+                  ? 'Nenhum lead encontrado para esse número'
+                  : 'Nenhum lead para este filtro'}
+              </p>
+              {!isPhoneSearch && filter !== 'todos' && (
+                <button
+                  onClick={() => setFilter('todos')}
+                  className="text-xs font-display font-semibold text-orange hover:text-orange2 transition-colors underline underline-offset-2"
+                >
+                  Limpar filtros
+                </button>
+              )}
             </div>
           )}
 

@@ -183,8 +183,11 @@ export default function ProspectosPage() {
     }
   }
 
+  const [agendaAberta, setAgendaAberta] = useState(true)
+
   const today = new Date().toISOString().split('T')[0]
   const { data: prospectos = [], isLoading, isError, error } = useProspectos(dataVisita ? 'todos' : filter, dataVisita ? undefined : (ufFilter || undefined), dataVisita ? undefined : (cidadeFilter || undefined))
+  const { data: agendaItems = [] } = useProspectos('hoje')
   const { data: visitasData = [], isLoading: loadingVisitas } = useProspectosByDataVisita(dataVisita || null)
   const { data: leadCounts = {} } = useProspectoLeadCounts()
   const { data: ufs = [] } = useDistinctUFsProspectos()
@@ -380,6 +383,78 @@ export default function ProspectosPage() {
           )}
         </div>
       </div>
+
+      {/* Fila de trabalho — Para hoje */}
+      {agendaCount > 0 && filter !== 'hoje' && (
+        <div className="mx-3 mt-2 shrink-0">
+          <div className="rounded-xl border border-orange/40 bg-orange/5 overflow-hidden">
+            <button
+              onClick={() => setAgendaAberta(o => !o)}
+              className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left touch-manipulation"
+            >
+              <div className="flex items-center gap-2">
+                <BellRing size={13} className="text-orange shrink-0" />
+                <span className="text-xs font-display font-bold text-orange">Para hoje</span>
+                <span className="text-[10px] font-display font-bold text-white bg-red-500 rounded-full px-1.5 leading-5 inline-block text-center min-w-[1.25rem]">
+                  {agendaCount}
+                </span>
+              </div>
+              {agendaAberta
+                ? <ChevronUp size={13} className="text-orange/60 shrink-0" />
+                : <ChevronDown size={13} className="text-orange/60 shrink-0" />}
+            </button>
+            {agendaAberta && agendaItems.length > 0 && (
+              <div className="border-t border-orange/20 divide-y divide-white/5">
+                {agendaItems.slice(0, 5).map((p) => {
+                  const phone = p.whatsapp_responsavel || p.telefone_oficina
+                  return (
+                    <div key={p.id_visita} className="flex items-center gap-2 px-3 py-2">
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs font-display font-semibold text-white truncate">
+                          {p.empresa_oficina || '—'}
+                        </p>
+                        {p.proximo_passo && (
+                          <p className="text-[10px] text-orange/70 truncate">{p.proximo_passo}</p>
+                        )}
+                      </div>
+                      {phone && (
+                        <div className="flex items-center gap-1 shrink-0">
+                          <a
+                            href={`tel:${phone}`}
+                            onClick={e => e.stopPropagation()}
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors touch-manipulation"
+                            title="Ligar"
+                          >
+                            <PhoneCall size={13} />
+                          </a>
+                          <a
+                            href={toWaLink(phone)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={e => e.stopPropagation()}
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-green-400/20 text-slate-300 hover:text-green-400 transition-colors touch-manipulation"
+                            title="WhatsApp"
+                          >
+                            <MessageCircle size={13} />
+                          </a>
+                        </div>
+                      )}
+                    </div>
+                  )
+                })}
+                {agendaCount > 5 && (
+                  <button
+                    onClick={() => { setFilter('hoje'); setAgendaAberta(false) }}
+                    className="w-full text-center py-2 text-xs font-display font-semibold text-orange hover:text-orange2 transition-colors touch-manipulation"
+                  >
+                    Ver todos {agendaCount} →
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {/* Filtro de visitas por data */}
       <div className="flex items-center gap-2 px-3 pt-3 pb-0 shrink-0 flex-wrap">

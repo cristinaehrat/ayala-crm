@@ -1,6 +1,7 @@
 import { useLeads } from '@/hooks/useLeads'
 import { useTurmas } from '@/hooks/useTurmas'
 import { useFinanceiro } from '@/hooks/useFinanceiro'
+import { useProspectosAgendaCount } from '@/hooks/useProspectos'
 import { Eye, Clock, DollarSign, AlertTriangle, BarChart2, ChevronRight, BellRing, User } from 'lucide-react'
 import { MARCA_BADGES } from '@/lib/utils'
 import { Link, useNavigate } from 'react-router-dom'
@@ -23,6 +24,8 @@ export default function DashboardPage() {
     })
   }, [])
 
+  const { data: prospectoAgendaCount = 0 } = useProspectosAgendaCount()
+
   const visPreco  = leads.filter((l) => l.etiqueta_chatwoot?.toLowerCase().includes('visualizou_preco')).length
   const agIsmenia = leads.filter((l) => l.etiqueta_chatwoot?.toLowerCase().includes('aguardando_ismenia')).length
   const paraPoala = leads.filter((l) => l.etiqueta_chatwoot?.toLowerCase().includes('para_paola')).length
@@ -30,6 +33,23 @@ export default function DashboardPage() {
 
   const turmasAbertas = turmas.filter((t) => t.status === 'aberta')
   const turmasCriticas = turmasAbertas.filter((t) => (t.vagas_disponiveis ?? 0) <= 5)
+
+  const statusCounts = {
+    novo:        leads.filter((l) => (l.status ?? 'novo') === 'novo').length,
+    em_contato:  leads.filter((l) => l.status === 'em_contato').length,
+    oportunidade:leads.filter((l) => l.status === 'oportunidade').length,
+    cliente:     leads.filter((l) => l.status === 'cliente').length,
+    inativo:     leads.filter((l) => l.status === 'inativo').length,
+  }
+  const totalAtivos = Object.values(statusCounts).reduce((a, b) => a + b, 0) - statusCounts.inativo
+
+  const FUNIL_STEPS = [
+    { key: 'novo',        label: 'Novos',      color: '#3b82f6', navFilter: 'todos' as const },
+    { key: 'em_contato',  label: 'Em Contato', color: '#f97316', navFilter: 'qualificados' as const },
+    { key: 'oportunidade',label: 'Oprtnd.',    color: '#eab308', navFilter: 'aguardando_pagamento' as const },
+    { key: 'cliente',     label: 'Clientes',   color: '#22c55e', navFilter: 'inscrito' as const },
+    { key: 'inativo',     label: 'Inativos',   color: '#94a3b8', navFilter: 'todos' as const },
+  ] as const
 
   if (isPaola) {
     return (
@@ -59,6 +79,25 @@ export default function DashboardPage() {
               </div>
             </Link>
           </div>
+
+          {/* Retornos de hoje — prospectos com data_retorno vencida */}
+          {prospectoAgendaCount > 0 && (
+            <Link to="/prospectos">
+              <div className="section-card p-4 border-l-4 border-l-orange flex items-center justify-between cursor-pointer hover:shadow-md transition-all">
+                <div className="flex items-center gap-3">
+                  <BellRing size={18} className="text-orange shrink-0" />
+                  <div>
+                    <p className="font-display font-bold text-navy text-sm">Retornos de hoje</p>
+                    <p className="text-xs text-muted mt-0.5">Oficinas aguardando contato</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="font-display font-bold text-2xl text-orange">{prospectoAgendaCount}</span>
+                  <ChevronRight size={16} className="text-muted" />
+                </div>
+              </div>
+            </Link>
+          )}
 
           {/* Vagas Críticas */}
           {!turmasLoading && turmasCriticas.length > 0 && (
@@ -166,6 +205,42 @@ export default function DashboardPage() {
               <p className="text-xs text-muted font-display font-semibold mt-0.5">Ag. Ismênia</p>
             </div>
           </Link>
+        </div>
+
+        {/* Mini-funil de leads por status */}
+        <div className="section-card p-4">
+          <h2 className="font-display font-bold text-navy text-sm mb-3 uppercase tracking-wide flex items-center gap-2">
+            <BarChart2 size={15} className="text-orange" />
+            Funil de Leads
+          </h2>
+          <div className="grid grid-cols-5 gap-1">
+            {FUNIL_STEPS.map(({ key, label, color, navFilter }) => {
+              const count = statusCounts[key as keyof typeof statusCounts]
+              const pct = totalAtivos > 0 && key !== 'inativo'
+                ? Math.round((count / totalAtivos) * 100)
+                : 0
+              return (
+                <button
+                  key={key}
+                  onClick={() => navigate(`/leads?filter=${navFilter}`)}
+                  className="flex flex-col items-center gap-1 p-2 rounded-lg hover:bg-slate-50 transition-colors cursor-pointer touch-manipulation"
+                >
+                  <span className="font-display font-bold text-lg text-navy">
+                    {leadsLoading ? '—' : count}
+                  </span>
+                  <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                    <div
+                      className="h-full rounded-full transition-all duration-500"
+                      style={{ width: `${pct}%`, backgroundColor: color }}
+                    />
+                  </div>
+                  <span className="text-[10px] text-muted font-display font-semibold text-center leading-tight">
+                    {label}
+                  </span>
+                </button>
+              )
+            })}
+          </div>
         </div>
 
         {/* Vagas Críticas */}

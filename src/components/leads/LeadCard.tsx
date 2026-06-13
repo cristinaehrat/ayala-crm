@@ -1,4 +1,4 @@
-import { BellRing } from 'lucide-react'
+import { BellRing, MapPin } from 'lucide-react'
 import { cn, initials, formatPhone, relativeTime, ETIQUETA_CORES, ETIQUETA_LABELS, MARCA_BADGES, POTENCIAL_BADGES, INTERESSE_TAGS, findRotaMes, getPrimaryLeadLabel, getLeadActionSignals, STATUS_COLORS } from '@/lib/utils'
 import { useMalhaEstrategica } from '@/hooks/useMalhaEstrategica'
 import { KANBAN_COLUMNS } from '@/lib/types'
@@ -27,6 +27,11 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
   const rotaMes       = findRotaMes(lead.cidade, lead.marca_interesse, malha)
   const statusLabel    = KANBAN_COLUMNS.find((c) => c.id === lead.status)?.label
   const statusColor    = lead.status ? STATUS_COLORS[lead.status] : undefined
+
+  const diasSemContato = lead.status === 'em_contato' && lead.ultimo_contato
+    ? Math.floor((Date.now() - new Date(lead.ultimo_contato).getTime()) / 86400000)
+    : 0
+  const semContato = diasSemContato >= 7
 
   return (
     <div
@@ -151,8 +156,18 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
             })}
             {/* Badge de Rota Estratégica */}
             {rotaMes && (
-              <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold text-white bg-orange/80 shrink-0">
-                📍 Rota {rotaMes}
+              <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-display font-bold text-white bg-orange/80 shrink-0">
+                <MapPin size={9} />Rota {rotaMes}
+              </span>
+            )}
+            {semContato && (
+              <span className={cn(
+                'inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-display font-bold shrink-0',
+                dark
+                  ? 'bg-amber-100 text-amber-700 border border-amber-200'
+                  : 'bg-amber-400/20 text-amber-300 border border-amber-400/30',
+              )}>
+                {diasSemContato}d sem contato
               </span>
             )}
             {lead.data_retorno && (() => {
