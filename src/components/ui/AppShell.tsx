@@ -11,7 +11,7 @@ import { useProspectosAgendaCount } from '@/hooks/useProspectos'
 const NAV_ALL = [
   { to: '/atendimento', label: 'Atendimento', Icon: MessageCircle },
   { to: '/leads',       label: 'Leads',       Icon: Users },
-  { to: '/kanban',      label: 'Funil',       Icon: KanbanSquare },
+  { to: '/kanban',      label: 'Kanban',      Icon: KanbanSquare },
   { to: '/prospectos',  label: 'Prospectos',  Icon: Building2 },
   { to: '/visita',      label: 'Visita',      Icon: ClipboardList },
   { to: '/roteiro',     label: 'Roteiro',     Icon: Navigation },

@@ -387,7 +387,7 @@ export default function ProspectosPage() {
       {/* Fila de trabalho — Para hoje */}
       {agendaCount > 0 && filter !== 'hoje' && (
         <div className="mx-3 mt-2 shrink-0">
-          <div className="rounded-xl border border-orange/40 bg-orange/5 overflow-hidden">
+          <div className="rounded-xl border border-orange/40 bg-navy overflow-hidden">
             <button
               onClick={() => setAgendaAberta(o => !o)}
               className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left touch-manipulation"
@@ -408,13 +408,13 @@ export default function ProspectosPage() {
                 {agendaItems.slice(0, 5).map((p) => {
                   const phone = p.whatsapp_responsavel || p.telefone_oficina
                   return (
-                    <div key={p.id_visita} className="flex items-center gap-2 px-3 py-2">
+                    <div key={p.id_visita} className="flex items-center gap-2 px-3 py-2 bg-white/5 border-b border-white/5 last:border-b-0">
                       <div className="flex-1 min-w-0">
                         <p className="text-xs font-display font-semibold text-white truncate">
                           {p.empresa_oficina || '—'}
                         </p>
                         {p.proximo_passo && (
-                          <p className="text-[10px] text-orange/70 truncate">{p.proximo_passo}</p>
+                          <p className="text-[10px] text-slate-300 truncate">{p.proximo_passo}</p>
                         )}
                       </div>
                       {phone && (

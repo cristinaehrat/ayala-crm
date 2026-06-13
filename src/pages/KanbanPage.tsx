@@ -128,7 +128,7 @@ export default function KanbanPage() {
   return (
     <div className="h-full md:ml-56 flex flex-col overflow-hidden">
       <div className="px-4 pt-4 pb-2 shrink-0">
-        <h1 className="font-display font-bold text-navy text-lg">Funil Comercial</h1>
+        <h1 className="font-display font-bold text-navy text-lg">Kanban Comercial</h1>
       </div>
 
       <div className="px-4 pt-1 pb-2 shrink-0 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

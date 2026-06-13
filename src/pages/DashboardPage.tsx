@@ -1,22 +1,17 @@
 import { useLeads } from '@/hooks/useLeads'
 import { useTurmas } from '@/hooks/useTurmas'
-import { useFinanceiro } from '@/hooks/useFinanceiro'
 import { useProspectosAgendaCount } from '@/hooks/useProspectos'
-import { Eye, Clock, DollarSign, AlertTriangle, BarChart2, ChevronRight, BellRing, User } from 'lucide-react'
+import { Eye, Clock, AlertTriangle, BarChart2, ChevronRight, BellRing, User } from 'lucide-react'
 import { MARCA_BADGES } from '@/lib/utils'
 import { Link, useNavigate } from 'react-router-dom'
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-
-const brl = (v: number) =>
-  v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 
 export default function DashboardPage() {
   const navigate = useNavigate()
   const [isPaola, setIsPaola] = useState(false)
   const { data: leads = [], isLoading: leadsLoading } = useLeads('todos')
   const { data: turmas = [], isLoading: turmasLoading } = useTurmas()
-  const { data: financeiro } = useFinanceiro()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
@@ -285,48 +280,6 @@ export default function DashboardPage() {
           </div>
         )}
 
-        {/* Faturamento por Turma */}
-        {financeiro && turmasAbertas.length > 0 && (
-          <div className="section-card p-4">
-            <h2 className="font-display font-bold text-navy text-sm mb-3 uppercase tracking-wide flex items-center gap-2">
-              <DollarSign size={15} className="text-orange" />
-              Faturamento — Turmas Abertas
-            </h2>
-            <div className="space-y-3">
-              {financeiro.turmas
-                .filter((tf) => tf.turma.status === 'aberta')
-                .map(({ turma, receita_total }) => {
-                  const marca = turma.marca ? MARCA_BADGES[turma.marca] : null
-                  return (
-                    <div
-                      key={turma.id}
-                      onClick={() => navigate(`/turmas?turma=${turma.id}`)}
-                      className="flex items-center gap-3 cursor-pointer hover:bg-slate-50 rounded-lg px-2 -mx-2 py-1 -my-1 transition-colors"
-                    >
-                      {marca && (
-                        <span
-                          className="shrink-0 px-2 py-0.5 rounded text-xs font-display font-bold text-white"
-                          style={{ backgroundColor: marca.bg }}
-                        >
-                          {marca.label}
-                        </span>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-display font-semibold text-navy truncate">
-                          {turma.nome_treinamento}
-                        </p>
-                        <p className="text-xs text-muted">{turma.vagas_disponiveis ?? 0} vagas disponíveis</p>
-                      </div>
-                      <p className="text-xs font-display font-bold text-orange shrink-0">
-                        {brl(receita_total)}
-                      </p>
-                      <ChevronRight size={13} className="text-muted shrink-0" />
-                    </div>
-                  )
-                })}
-            </div>
-          </div>
-        )}
 
         {/* Ocupação das turmas */}
         {!turmasLoading && turmasAbertas.length > 0 && (
