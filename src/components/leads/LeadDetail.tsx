@@ -602,7 +602,7 @@ export default function LeadDetail({ leadId, onClose }: Props) {
             {updateLead.isPending ? 'Passando...' : 'Passar p/ Paola'}
           </button>
         )}
-        {lead.consultor === 'Paola' && (
+        {lead.consultor !== 'Ismênia' && (
           <button
             onClick={handleEscalarParaIsmenia}
             disabled={updateLead.isPending}

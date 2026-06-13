@@ -7,8 +7,9 @@ import {
   type DragEndEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
+import { supabase } from '@/lib/supabase'
 import { useLeads, useUpdateLeadStatus, useSearchLeadByPhone } from '@/hooks/useLeads'
 import type { LeadFilter } from '@/hooks/useLeads'
 import LeadFilters from '@/components/leads/LeadFilters'
@@ -34,6 +35,12 @@ function getColumnTotalCount(leads: Lead[], colId: string): number {
   return leads.filter((l) => (l.status ?? 'novo') === colId).length
 }
 
+const EMAIL_TO_CONSULTOR: Record<string, string> = {
+  'paola@ayalaoficial.com.br': 'Paola',
+  'ismenia@ayalaoficial.com.br': 'Ismênia',
+  'cristinaehrat@gmail.com': 'Cristina',
+}
+
 export default function KanbanPage() {
   const [filter, setFilter] = useState<LeadFilter>('todos')
   const { data: leads = [], isLoading } = useLeads(filter)
@@ -44,6 +51,33 @@ export default function KanbanPage() {
   const [moveSheetLeadId, setMoveSheetLeadId] = useState<string | null>(null)
   const [openLeadId, setOpenLeadId] = useState<string | null>(null)
   const [search, setSearch] = useState('')
+  const [meuConsultorNome, setMeuConsultorNome] = useState<string | null>(null)
+  const [meusFiltro, setMeusFiltro] = useState<boolean>(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      const email = user?.email ?? ''
+      const nome = EMAIL_TO_CONSULTOR[email] ?? null
+      setMeuConsultorNome(nome)
+      const saved = sessionStorage.getItem('ayala_kanban_meus_leads')
+      if (saved !== null) {
+        setMeusFiltro(saved === 'true')
+      } else {
+        // Paola trabalha no modo "Meus leads" por padrão
+        const defaultMeus = email === 'paola@ayalaoficial.com.br'
+        setMeusFiltro(defaultMeus)
+        sessionStorage.setItem('ayala_kanban_meus_leads', String(defaultMeus))
+      }
+    })
+  }, [])
+
+  function toggleMeusFiltro() {
+    setMeusFiltro((prev) => {
+      const next = !prev
+      sessionStorage.setItem('ayala_kanban_meus_leads', String(next))
+      return next
+    })
+  }
 
   // TouchSensor removido: conflita com scroll vertical no mobile
   const sensors = useSensors(
@@ -86,7 +120,7 @@ export default function KanbanPage() {
   const isPhoneSearch = phoneDigits.length >= 8
   const { data: phoneResults = [] } = useSearchLeadByPhone(phoneDigits)
 
-  const filteredLeads = search.trim()
+  const filteredBySearch = search.trim()
     ? isPhoneSearch
       ? phoneResults
       : leads.filter((lead) => {
@@ -98,6 +132,10 @@ export default function KanbanPage() {
           )
         })
     : leads
+
+  const filteredLeads = meusFiltro && meuConsultorNome
+    ? filteredBySearch.filter((l) => l.consultor?.toLowerCase() === meuConsultorNome.toLowerCase())
+    : filteredBySearch
 
   if (isLoading) {
     return (
@@ -127,8 +165,20 @@ export default function KanbanPage() {
 
   return (
     <div className="h-full md:ml-56 flex flex-col overflow-hidden">
-      <div className="px-4 pt-4 pb-2 shrink-0">
+      <div className="px-4 pt-4 pb-2 shrink-0 flex items-center justify-between">
         <h1 className="font-display font-bold text-navy text-lg">Kanban Comercial</h1>
+        {meuConsultorNome && (
+          <button
+            onClick={toggleMeusFiltro}
+            className={`text-xs font-display font-bold px-3 py-1.5 rounded-full border transition-colors ${
+              meusFiltro
+                ? 'bg-orange text-white border-orange'
+                : 'bg-transparent text-muted border-slate-300 hover:border-orange/50 hover:text-navy'
+            }`}
+          >
+            {meusFiltro ? `Meus leads` : 'Todos'}
+          </button>
+        )}
       </div>
 
       <div className="px-4 pt-1 pb-2 shrink-0 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
