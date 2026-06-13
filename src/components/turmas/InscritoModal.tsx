@@ -253,7 +253,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
         const { data } = await supabase
           .from('leads_v2')
           .select('id, nome, telefone, empresa_oficina, status, empresa_id')
-          .eq('status', 'inscrito')
+          .neq('status', 'inativo')
           .or(`nome.ilike.%${q}%,telefone.ilike.%${q}%`)
           .limit(10)
         setSearchResults((data ?? []) as Lead[])
@@ -377,11 +377,11 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
     }
   }
 
+  const PLACEHOLDER_NOME = 'Participante a confirmar'
+
   async function handleSave() {
-    if (!form.nome.trim()) {
-      toast.error('Selecione um lead ou informe o nome')
-      return
-    }
+    const nomeFinal = form.nome.trim() || PLACEHOLDER_NOME
+    const nomePendente = !form.nome.trim()
 
     const fluxoCSV = fluxoSelecionados.join(',') || null
 
@@ -421,7 +421,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
         const created = await createInscrito.mutateAsync({
           id_turma:        turmaId,
           id_lead:         selectedLead?.id ?? null,
-          nome:            form.nome,
+          nome:            nomeFinal,
           empresa_oficina: form.empresa_oficina || null,
           cpf: form.cpf || null,
           valor_total: n(form.valor_total),
@@ -465,7 +465,11 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
         )
         await Promise.allSettled(sideEffects)
 
-        toast.success('Inscrito adicionado. Os links de formulário foram liberados.')
+        if (nomePendente) {
+          toast.warning('Inscrição salva sem participante — preencha o nome para finalizar.')
+        } else {
+          toast.success('Inscrito adicionado. Os links de formulário foram liberados.')
+        }
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Erro ao salvar')
@@ -552,7 +556,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
                   </div>
                 )}
                 {searchQuery.length > 1 && !searching && searchResults.length === 0 && (
-                  <p className="text-xs text-muted text-center py-2">Nenhum lead com status "Inscrito" encontrado</p>
+                  <p className="text-xs text-muted text-center py-2">Nenhum lead encontrado</p>
                 )}
               </div>
             )}
@@ -939,7 +943,7 @@ export default function InscritoModal({ open, onClose, inscrito, turmaId, leadId
         {/* Actions */}
         <div className="space-y-3 pt-2">
           <div className="flex gap-3">
-            <button onClick={handleSave} disabled={saving || (!isEdit && !selectedLead)} className="btn-primary flex-1 py-2.5">
+            <button onClick={handleSave} disabled={saving} className="btn-primary flex-1 py-2.5">
               {saving ? 'Salvando...' : 'Salvar'}
             </button>
             <button onClick={onClose} className="btn-secondary px-5">

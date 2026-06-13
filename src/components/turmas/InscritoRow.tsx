@@ -1,5 +1,7 @@
 import type { Inscrito } from '@/lib/types'
-import { AlertCircle, CheckCircle2 } from 'lucide-react'
+import { AlertCircle, CheckCircle2, UserX } from 'lucide-react'
+
+const PLACEHOLDER_NOME = 'Participante a confirmar'
 
 interface Props {
   inscrito: Inscrito
@@ -17,6 +19,7 @@ export default function InscritoRow({ inscrito, onClick }: Props) {
   const statusColor = inscrito.status_financeiro
     ? STATUS_COLORS[inscrito.status_financeiro] ?? 'text-muted'
     : 'text-muted'
+  const participantePendente = !inscrito.nome || inscrito.nome === PLACEHOLDER_NOME
 
   return (
     <div
@@ -27,10 +30,11 @@ export default function InscritoRow({ inscrito, onClick }: Props) {
     >
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="font-display font-semibold text-sm text-white truncate">
-            {inscrito.nome ?? '—'}
+          <p className={`font-display font-semibold text-sm truncate ${participantePendente ? 'text-amber-400 italic' : 'text-white'}`}>
+            {participantePendente ? 'Participante pendente' : inscrito.nome}
           </p>
-          {temSaldo && <AlertCircle size={13} className="text-orange shrink-0" />}
+          {participantePendente && <span title="Nome do participante não confirmado"><UserX size={13} className="text-amber-400 shrink-0" /></span>}
+          {temSaldo && !participantePendente && <AlertCircle size={13} className="text-orange shrink-0" />}
           {inscrito.comprovante_validado && <CheckCircle2 size={13} className="text-green-400 shrink-0" />}
         </div>
         <p className="text-xs text-muted truncate">{inscrito.empresa_oficina}</p>

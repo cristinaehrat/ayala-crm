@@ -444,8 +444,8 @@ export default function LeadDetail({ leadId, onClose }: Props) {
   }
 
   function handleInscrever() {
-    if (lead!.status !== 'inscrito') {
-      toast.info('Marque o lead como "Inscrito" antes de vinculá-lo a uma turma.')
+    if (lead!.status === 'inativo') {
+      toast.error('Lead inativo não pode ser inscrito em turma.')
       return
     }
     navigate('/turmas?inscrever=' + lead!.id)
