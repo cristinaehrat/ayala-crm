@@ -101,8 +101,22 @@ export default function KanbanPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full md:ml-56">
-        <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
+      <div className="h-full md:ml-56 flex flex-col overflow-hidden p-4">
+        <div className="h-6 w-36 skeleton-pulse rounded mb-4" />
+        <div className="flex gap-3 overflow-x-auto flex-1 pb-4">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex flex-col gap-2 min-w-[200px] w-[200px]">
+              <div className="h-4 w-24 skeleton-pulse rounded mb-1" />
+              {[1, 2].map((j) => (
+                <div key={j} className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+                  <div className="h-3 w-28 skeleton-pulse rounded" />
+                  <div className="h-3 w-20 skeleton-pulse rounded" />
+                  <div className="h-4 w-14 skeleton-pulse rounded-full" />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

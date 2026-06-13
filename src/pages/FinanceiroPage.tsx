@@ -37,8 +37,18 @@ export default function FinanceiroPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full md:ml-56">
-        <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
+      <div className="h-full overflow-y-auto md:ml-56 p-4 space-y-4">
+        <div className="h-6 w-28 skeleton-pulse rounded" />
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-2">
+            <div className="flex justify-between items-center">
+              <div className="h-5 w-20 skeleton-pulse rounded-full" />
+              <div className="h-4 w-24 skeleton-pulse rounded" />
+            </div>
+            <div className="h-3 w-full skeleton-pulse rounded mt-2" />
+            <div className="h-3 w-3/4 skeleton-pulse rounded" />
+          </div>
+        ))}
       </div>
     )
   }

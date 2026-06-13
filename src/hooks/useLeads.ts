@@ -16,27 +16,30 @@ export type LeadFilter =
   | 'visualizou_preco'
   | 'para_paola'
   | 'requer_atencao'
+  | 'disponivel_transmissao'
   | `uf:${string}`
   | `cidade:${string}`
+  | `consultor:${string}`
 
-type FixedFilter = Exclude<LeadFilter, `uf:${string}` | `cidade:${string}`>
+type FixedFilter = Exclude<LeadFilter, `uf:${string}` | `cidade:${string}` | `consultor:${string}`>
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type AnyQuery = any
 
 const FILTER_MAP: Record<FixedFilter, (q: AnyQuery) => AnyQuery> = {
-  todos:                (q) => q,
-  hoje:                 (q) => { const today = new Date().toISOString().split('T')[0]; return q.not('data_retorno', 'is', null).lte('data_retorno', today) },
-  ag_ismenia:           (q) => q.ilike('etiqueta_chatwoot', '%aguardando_ismenia%'),
-  qualificados:         (q) => q.eq('status', 'em_contato'),
-  hot_lead:             (q) => q.ilike('etiqueta_chatwoot', '%hot_lead%'),
-  follow_up:            (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
-  lista_espera:         (q) => q.ilike('etiqueta_chatwoot', '%lista_espera%'),
-  aguardando_pagamento: (q) => q.eq('status', 'oportunidade'),
-  inscrito:             (q) => q.eq('status', 'cliente'),
-  visualizou_preco:     (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
-  para_paola:           (q) => q.ilike('etiqueta_chatwoot', '%para_paola%'),
-  requer_atencao:       (q) => q.eq('requer_atencao', true),
+  todos:                    (q) => q,
+  hoje:                     (q) => { const today = new Date().toISOString().split('T')[0]; return q.not('data_retorno', 'is', null).lte('data_retorno', today) },
+  ag_ismenia:               (q) => q.ilike('etiqueta_chatwoot', '%aguardando_ismenia%'),
+  qualificados:             (q) => q.eq('status', 'em_contato'),
+  hot_lead:                 (q) => q.ilike('etiqueta_chatwoot', '%hot_lead%'),
+  follow_up:                (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
+  lista_espera:             (q) => q.ilike('etiqueta_chatwoot', '%lista_espera%'),
+  aguardando_pagamento:     (q) => q.eq('status', 'oportunidade'),
+  inscrito:                 (q) => q.eq('status', 'cliente'),
+  visualizou_preco:         (q) => q.ilike('etiqueta_chatwoot', '%visualizou_preco%'),
+  para_paola:               (q) => q.ilike('etiqueta_chatwoot', '%para_paola%'),
+  requer_atencao:           (q) => q.eq('requer_atencao', true),
+  disponivel_transmissao:   (q) => q, // client-side filtered via useFollowupEncerrados
 }
 
 export function useLeads(filter: LeadFilter = 'todos') {
@@ -69,6 +72,8 @@ export function useLeads(filter: LeadFilter = 'todos') {
 
       if (filter.startsWith('uf:')) {
         query = query.ilike('uf', filter.slice(3).trim())
+      } else if (filter.startsWith('consultor:')) {
+        query = query.ilike('consultor', filter.slice(10).trim())
       } else {
         query = FILTER_MAP[filter as FixedFilter](query)
       }
@@ -298,5 +303,22 @@ export function useSearchLeadByPhone(phoneDigits: string) {
       return (data ?? []) as Lead[]
     },
     staleTime: 30 * 1000,
+  })
+}
+
+export function useFollowupEncerrados() {
+  return useQuery<string[]>({
+    queryKey: ['followup-encerrados'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('followup_clientes')
+        .select('remoteid')
+        .eq('encerrado', true)
+      if (error) throw error
+      return (data ?? [])
+        .map((r: { remoteid: string | null }) => r.remoteid)
+        .filter((v): v is string => !!v)
+    },
+    staleTime: 60_000,
   })
 }

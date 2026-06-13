@@ -47,8 +47,21 @@ export default function TurmasPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center h-full md:ml-56">
-        <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
+      <div className="h-full md:ml-56 flex flex-col overflow-y-auto p-4">
+        <div className="h-6 w-24 skeleton-pulse rounded mb-4" />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {[1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-4 space-y-3">
+              <div className="h-4 w-40 skeleton-pulse rounded" />
+              <div className="h-3 w-24 skeleton-pulse rounded" />
+              <div className="flex gap-2 mt-2">
+                <div className="h-5 w-16 skeleton-pulse rounded-full" />
+                <div className="h-5 w-12 skeleton-pulse rounded-full" />
+              </div>
+              <div className="h-3 w-full skeleton-pulse rounded mt-1" />
+            </div>
+          ))}
+        </div>
       </div>
     )
   }

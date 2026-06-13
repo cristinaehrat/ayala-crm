@@ -9,9 +9,10 @@ interface Props {
   active?: boolean
   onClick: () => void
   variant?: 'light' | 'dark'
+  followupEncerrado?: boolean
 }
 
-export default function LeadCard({ lead, active, onClick, variant = 'light' }: Props) {
+export default function LeadCard({ lead, active, onClick, variant = 'light', followupEncerrado = false }: Props) {
   const { data: malha = [] } = useMalhaEstrategica()
   const dark = variant === 'dark'
 
@@ -48,7 +49,7 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
           : active && 'card-lead-active',
       )}
     >
-      {actionSignals.length > 0 && (
+      {(actionSignals.length > 0 || followupEncerrado) && (
         <div className="flex items-center gap-1.5 mb-2 flex-wrap">
           {actionSignals.map((signal) => (
             <span
@@ -59,6 +60,14 @@ export default function LeadCard({ lead, active, onClick, variant = 'light' }: P
               {signal.label}
             </span>
           ))}
+          {followupEncerrado && (
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold tracking-wide uppercase"
+              style={{ backgroundColor: '#059669', color: '#fff' }}
+            >
+              LIVRE 6207
+            </span>
+          )}
         </div>
       )}
 

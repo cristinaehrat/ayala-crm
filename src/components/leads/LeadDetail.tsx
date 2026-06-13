@@ -222,6 +222,17 @@ export default function LeadDetail({ leadId, onClose }: Props) {
     toast.success('Lead passado para a Paola')
   }
 
+  async function handleEscalarParaIsmenia() {
+    const novasEtiquetas = lead!.etiqueta_chatwoot
+      ? `${lead!.etiqueta_chatwoot},aguardando_ismenia`
+      : 'aguardando_ismenia'
+    await updateLead.mutateAsync({
+      id: lead!.id,
+      data: { consultor: 'Ismênia', requer_atencao: true, etiqueta_chatwoot: novasEtiquetas },
+    })
+    toast.success('Lead escalado para a Ismênia — aparece em "Ag. Consultora"')
+  }
+
   async function handleSaveNota() {
     if (!nota.trim() || !lead) return
     setSavingNota(true)
@@ -588,7 +599,21 @@ export default function LeadDetail({ leadId, onClose }: Props) {
               ? <div className="w-3 h-3 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
               : <User size={13} />
             }
-            {updateLead.isPending ? 'Passando...' : 'Passar para Paola'}
+            {updateLead.isPending ? 'Passando...' : 'Passar p/ Paola'}
+          </button>
+        )}
+        {lead.consultor === 'Paola' && (
+          <button
+            onClick={handleEscalarParaIsmenia}
+            disabled={updateLead.isPending}
+            aria-label="Escalar este lead para a Ismênia"
+            className="shrink-0 flex items-center gap-1.5 text-xs font-display font-bold text-teal-400 border border-teal-400/40 rounded-lg px-3 py-1.5 hover:border-teal-400/70 transition-colors disabled:opacity-50"
+          >
+            {updateLead.isPending
+              ? <div className="w-3 h-3 border-2 border-teal-400 border-t-transparent rounded-full animate-spin" />
+              : <User size={13} />
+            }
+            {updateLead.isPending ? 'Escalando...' : 'Escalar p/ Ismênia'}
           </button>
         )}
       </div>

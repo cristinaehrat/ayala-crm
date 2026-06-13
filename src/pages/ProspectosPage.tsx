@@ -620,8 +620,19 @@ export default function ProspectosPage() {
       {/* List */}
       <div className="flex-1 overflow-y-auto px-3 pb-3 space-y-2">
         {isLoading && (
-          <div className="flex justify-center py-8">
-            <div className="w-6 h-6 border-2 border-orange border-t-transparent rounded-full animate-spin" />
+          <div className="space-y-2 pt-1">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="rounded-xl border border-slate-200 bg-slate-50 p-3 space-y-2">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-full skeleton-pulse shrink-0" />
+                  <div className="flex-1 space-y-1.5">
+                    <div className="h-3.5 w-36 skeleton-pulse rounded" />
+                    <div className="h-3 w-24 skeleton-pulse rounded" />
+                  </div>
+                  <div className="h-5 w-16 skeleton-pulse rounded-full" />
+                </div>
+              </div>
+            ))}
           </div>
         )}
         {isError && (

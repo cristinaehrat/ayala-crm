@@ -5,6 +5,7 @@ import type { Lead } from '@/lib/types'
 interface Props {
   lead: Lead
   onClick: () => void
+  followupEncerrado?: boolean
 }
 
 const COL = 'grid-cols-[minmax(240px,300px)_128px_92px_180px_minmax(180px,1fr)_84px_112px] xl:grid-cols-[minmax(280px,340px)_138px_100px_198px_minmax(220px,1fr)_92px_124px] gap-x-3 justify-start'
@@ -30,7 +31,7 @@ export function LeadRowHeader() {
   )
 }
 
-export default function LeadRow({ lead, onClick }: Props) {
+export default function LeadRow({ lead, onClick, followupEncerrado = false }: Props) {
   const marca = lead.marca_interesse ? MARCA_BADGES[lead.marca_interesse] : null
   const actionSignals = getLeadActionSignals(lead)
   const primaryLabel = getPrimaryLeadLabel(lead.etiqueta_chatwoot)
@@ -108,7 +109,15 @@ export default function LeadRow({ lead, onClick }: Props) {
               {statusLabel}
             </span>
           ) : null}
-          {actionSignals.length === 0 && (!statusLabel || !statusColor) && (
+          {followupEncerrado && (
+            <span
+              className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-display font-bold tracking-wide uppercase"
+              style={{ backgroundColor: '#059669', color: '#fff' }}
+            >
+              LIVRE 6207
+            </span>
+          )}
+          {actionSignals.length === 0 && !followupEncerrado && (!statusLabel || !statusColor) && (
             <span className="text-xs text-slate-400">—</span>
           )}
         </div>

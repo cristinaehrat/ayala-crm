@@ -1,6 +1,6 @@
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useLeads, useSearchLeadByPhone, type LeadFilter } from '@/hooks/useLeads'
+import { useLeads, useSearchLeadByPhone, useFollowupEncerrados, type LeadFilter } from '@/hooks/useLeads'
 import { useRealtime } from '@/hooks/useRealtime'
 import LeadFilters from '@/components/leads/LeadFilters'
 import LeadCard from '@/components/leads/LeadCard'
@@ -30,7 +30,7 @@ function SkeletonCard() {
 const VALID_FILTERS: LeadFilter[] = [
   'hoje','todos','hot_lead','ag_ismenia','follow_up','qualificados',
   'aguardando_pagamento','inscrito','visualizou_preco','lista_espera',
-  'para_paola','requer_atencao',
+  'para_paola','requer_atencao','disponivel_transmissao',
 ]
 
 export default function LeadsPage() {
@@ -44,16 +44,24 @@ export default function LeadsPage() {
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [newLeadOpen, setNewLeadOpen] = useState(false)
 
-  const { data: leads = [], isLoading } = useLeads(filter)
+  const leadsQueryFilter: LeadFilter = filter === 'disponivel_transmissao' ? 'todos' : filter
+  const { data: leads = [], isLoading } = useLeads(leadsQueryFilter)
+
+  const { data: encerradoPhones = [] } = useFollowupEncerrados()
+  const encerradoSet = useMemo(() => new Set(encerradoPhones), [encerradoPhones])
 
   const phoneDigits = search.replace(/\D/g, '')
   const isPhoneSearch = phoneDigits.length >= 8
   const { data: phoneResults = [], isFetching: isPhoneFetching } = useSearchLeadByPhone(phoneDigits)
 
+  const baseLeads = filter === 'disponivel_transmissao'
+    ? leads.filter((l) => encerradoSet.has(l.telefone ?? ''))
+    : leads
+
   const filtered = search.trim()
     ? isPhoneSearch
       ? phoneResults
-      : leads.filter((l) => {
+      : baseLeads.filter((l) => {
           const q = search.toLowerCase()
           return (
             l.nome?.toLowerCase().includes(q) ||
@@ -61,7 +69,7 @@ export default function LeadsPage() {
             l.empresa_oficina?.toLowerCase().includes(q)
           )
         })
-    : leads
+    : baseLeads
 
   return (
     <>
@@ -136,6 +144,7 @@ export default function LeadsPage() {
                   key={lead.id}
                   lead={lead}
                   onClick={() => setSelectedId(lead.id)}
+                  followupEncerrado={encerradoSet.has(lead.telefone ?? '')}
                 />
               ))}
             </div>
@@ -150,6 +159,7 @@ export default function LeadsPage() {
                   key={lead.id}
                   lead={lead}
                   onClick={() => setSelectedId(lead.id)}
+                  followupEncerrado={encerradoSet.has(lead.telefone ?? '')}
                 />
               ))}
             </div>
